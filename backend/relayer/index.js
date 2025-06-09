@@ -24,23 +24,33 @@ app.use(express.json());
 
 /**
  * POST /meta-vote
- * Request body: { electionId, candidate, voter, signature }
+ * Request body: { electionId, selectedCandidate, voter, signature }
  * Relayer pays gas and calls voteMeta on-chain.
  */
 app.post("/meta-vote", async (req, res) => {
+  console.log("Relayer received vote request:", req.body);
   try {
-    const { electionId, candidate, voter, signature } = req.body;
+    const { electionId, selectedCandidate, voter, signature } = req.body;
+    
+    // Validate required parameters
+    if (!electionId || !selectedCandidate || !voter || !signature) {
+      return res.status(400).json({ 
+        error: "Missing required parameters: electionId, selectedCandidate, voter, signature" 
+      });
+    }
+    
+    const candidate = selectedCandidate;
     const tx = await votingContract.voteMeta(
       electionId,
       candidate,
       voter,
-      signature,
+      signature
     );
     const receipt = await tx.wait();
     return res.json({
       success: true,
       txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber
+      blockNumber: receipt.blockNumber,
     });
   } catch (error) {
     console.error("Relayer error:", error || error);
@@ -52,3 +62,4 @@ const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Relayer listening on http://localhost:${PORT}`);
 });
+

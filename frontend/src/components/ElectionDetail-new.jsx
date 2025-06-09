@@ -13,13 +13,12 @@ import {
   Shield,
   CheckCircle,
   AlertCircle,
-  XCircle,
   BarChart3,
   Wallet,
   ExternalLink
 } from "lucide-react";
 import ReactECharts from 'echarts-for-react';
-import { getElectionById, getResults, submitVote, hasVoted } from "../api";
+import { getElectionById, getResults, submitVote } from "../api";
 import { CONFIG } from "../config";
 
 const ElectionDetail = ({ user }) => {
@@ -33,104 +32,50 @@ const ElectionDetail = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
-  const [showConfirmVote, setShowConfirmVote] = useState(false);
+
   useEffect(() => {
     loadElectionData();
-  }, [electionId, user]);
+  }, [electionId]);
+
   const loadElectionData = async () => {
     try {
       setLoading(true);
       
-      // Get real election data from API
-      const electionData = await getElectionById(electionId);
-      const resultsData = await getResults(electionId);
-        // Determine election status based on time and disabled flag
-      const currentTime = Date.now() / 1000; // Current time in seconds
-      let status;
-      if (electionData.disabled) {
-        status = "disabled";
-      } else if (currentTime < electionData.startTime) {
-        status = "upcoming";
-      } else if (currentTime > electionData.endTime) {
-        status = "expired";
-      } else {
-        status = "active";
-      }
-
-      // Format election data
-      const formattedElection = {
-        electionId: electionData.electionId,
-        name: electionData.name,
-        description: "Vote for the next leader of the Dominican Republic",
-        startDate: new Date(electionData.startTime * 1000).toISOString(),
-        endDate: new Date(electionData.endTime * 1000).toISOString(),
-        startTime: electionData.startTime,
-        endTime: electionData.endTime,
-        status: status,
-        location: "Dominican Republic",
-        type: "presidential",
-        totalVoters: 1247, // This would need to come from user count API
-        candidates: electionData.candidates
-      };
-        setElection(formattedElection);
-      setResults(resultsData);
-        // Check if user has already voted using blockchain data (priority)
-      if (user?.socialId) {
-        try {
-          const votingStatus = await hasVoted(electionId, user.socialId);
-          setHasVoted(votingStatus.hasVoted);
-            // Clear localStorage if blockchain says not voted (contract might have been redeployed)
-          if (!votingStatus.hasVoted) {
-            const votedKey = `voted-${user.socialId}-${electionId}`;
-            localStorage.removeItem(votedKey);
-          }
-        } catch (error) {
-          console.error('Error checking voting status:', error);
-          // Use localStorage as fallback if blockchain check fails
-          const votedKey = `voted-${user.socialId}-${electionId}`;
-          const localVoted = localStorage.getItem(votedKey) === 'true';
-          
-          // If we have local storage indicating the user voted, trust it
-          // since blockchain verification failed (network issues, etc.)
-          if (localVoted) {
-            setHasVoted(true);
-            console.log('Using localStorage voting status due to blockchain verification failure');
-          } else {
-            // Only set to false if localStorage also says not voted
-            setHasVoted(false);
-          }
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error loading election:', error);
-      toast.error('Failed to load election details');
-        // Fallback to mock data if API fails
+      // For now, use mock data since the API might not be fully set up
       const mockElection = {
         electionId: 1,
         name: "Presidential Election 2024",
-        description: "Vote for the next President of the Dominican Republic",
+        description: "Vote for the next President of the Dominican Republic. This election will determine the leadership for the next four years and shape the future of our nation.",
         startDate: "2024-01-15T09:00:00Z",
         endDate: "2024-01-15T18:00:00Z",
         status: "active",
         location: "Dominican Republic",
         type: "presidential",
         totalVoters: 1247,
-        candidates: ["Candidate A", "Candidate B"]
+        candidates: ["Danilo Medina", "Leonel Fernández"]
       };
       
       const mockResults = {
-        "Candidate A": 2,
-        "Candidate B": 1
+        "Danilo Medina": 2,
+        "Leonel Fernández": 1
       };
 
       setElection(mockElection);
       setResults(mockResults);
+      
+      // Check if user has already voted
+      const votedKey = `voted-${user?.socialId}-${electionId}`;
+      setHasVoted(localStorage.getItem(votedKey) === 'true');
+      
+    } catch (error) {
+      console.error('Error loading election:', error);
+      toast.error('Failed to load election details');
     } finally {
       setLoading(false);
     }
   };
-  const handleVoteSubmit = (e) => {
+
+  const handleVote = async (e) => {
     e.preventDefault();
     
     if (!selectedCandidate) {
@@ -143,112 +88,57 @@ const ElectionDetail = ({ user }) => {
       return;
     }
 
-    setShowConfirmVote(true);
-  };
-
-  const handleVote = async () => {
     try {
       setVoting(true);
-      setShowConfirmVote(false);
       
-      let signature;
-      let voterAddress;
+      // Get stored wallet info
+      const stored = JSON.parse(localStorage.getItem(`user-${user.socialId}`));
+      if (!stored || !stored.privateKey) {
+        toast.error("No private key found. Please re-register.");
+        return;
+      }
 
-      // Handle different authentication methods
-      if (user.authMethod === 'metamask') {
-        // Use MetaMask for signing
-        if (!window.ethereum) {
-          throw new Error("MetaMask not found");
-        }
+      const wallet = new ethers.Wallet(stored.privateKey);
+      const voterAddress = wallet.address;
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        voterAddress = await signer.getAddress();
+      // Create message hash for signing
+      const contractAddress = CONFIG.CONTRACT_ADDRESS;
+      const messageHash = ethers.solidityPackedKeccak256(
+        ["uint256", "string", "address", "address"],
+        [electionId, selectedCandidate, voterAddress, contractAddress]
+      );
 
-        // Verify the signer address matches the user's registered address
-        if (voterAddress.toLowerCase() !== user.address.toLowerCase()) {
-          throw new Error("MetaMask account doesn't match registered address");
-        }
+      // Sign the message
+      const signature = await wallet.signMessage(ethers.getBytes(messageHash));
 
-        // Create message hash for signing
-        const contractAddress = CONFIG.CONTRACT_ADDRESS;
-        const messageHash = ethers.solidityPackedKeccak256(
-          ["uint256", "string", "address", "address"],
-          [electionId, selectedCandidate, voterAddress, contractAddress]
-        );
+      // Verify signature locally
+      const recoveredAddress = ethers.verifyMessage(ethers.getBytes(messageHash), signature);
+      if (recoveredAddress.toLowerCase() !== voterAddress.toLowerCase()) {
+        throw new Error("Signature verification failed!");
+      }
 
-        // Sign with MetaMask
-        signature = await signer.signMessage(ethers.getBytes(messageHash));
-
-      } else if (user.authMethod === 'generated') {
-        // Use stored private key
-        const stored = JSON.parse(localStorage.getItem(`user-${user.socialId}`));
-        if (!stored || !stored.privateKey) {
-          throw new Error("No private key found. Please re-register.");
-        }
-
-        const wallet = new ethers.Wallet(stored.privateKey);
-        voterAddress = wallet.address;
-
-        // Create message hash for signing
-        const contractAddress = CONFIG.CONTRACT_ADDRESS;
-        const messageHash = ethers.solidityPackedKeccak256(
-          ["uint256", "string", "address", "address"],
-          [electionId, selectedCandidate, voterAddress, contractAddress]
-        );
-
-        // Sign the message
-        signature = await wallet.signMessage(ethers.getBytes(messageHash));
-      } else {
-        throw new Error("Unknown authentication method");
-      }      // Submit vote
+      // Submit vote
       const response = await submitVote({
         socialId: user.socialId,
         electionId: electionId,
         selectedCandidate: selectedCandidate,
+        voter: voterAddress,
         signature: signature,
       });
 
-      console.log('Vote response:', response);
-
       if (response.error) {
         throw new Error(response.error);
-      }      // Mark as voted locally (backup)
+      }
+
+      // Mark as voted
       const votedKey = `voted-${user.socialId}-${electionId}`;
       localStorage.setItem(votedKey, 'true');
+      setHasVoted(true);
+
+      toast.success(`Vote submitted successfully! TX: ${response.txHash}`);
       
-      // Store transaction hash for later reference
-      if (response.txHash) {
-        localStorage.setItem(`txHash-${user.socialId}-${electionId}`, response.txHash);
-      }
-      
-      // Update voting status immediately 
-      setHasVoted(true);// Show success message with transaction hash
-      const txHash = response.txHash || 'Transaction submitted';
-      if (response.txHash) {
-        // Create a custom toast with clickable explorer link
-        toast.success(
-          <div>
-            Vote submitted successfully!<br/>
-            <a 
-              href={`https://www.megaexplorer.xyz/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#3b82f6', textDecoration: 'underline' }}
-            >
-              View on MegaETH Explorer: {txHash.slice(0, 10)}...{txHash.slice(-8)}
-            </a>
-          </div>,
-          { duration: 10000 } // Show for 10 seconds
-        );
-      } else {
-        toast.success(`Vote submitted successfully! TX: ${txHash}`);
-      }
-      
-      // Refresh results after a short delay
-      setTimeout(async () => {
-        await loadElectionData();
-      }, 3000);
+      // Refresh results
+      loadElectionData();
       
     } catch (error) {
       console.error('Voting error:', error);
@@ -441,7 +331,7 @@ const ElectionDetail = ({ user }) => {
                 <span>Cast Your Vote</span>
               </h2>
               
-              <form onSubmit={handleVoteSubmit} className="space-y-6">
+              <form onSubmit={handleVote} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-3">
                     Select a candidate:
@@ -503,85 +393,21 @@ const ElectionDetail = ({ user }) => {
                 </button>
               </form>
             </motion.div>
-          )}          {/* Vote Confirmation */}
+          )}
+
+          {/* Vote Confirmation */}
           {hasVoted && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
               className="card p-6 bg-green-500/10 border border-green-500/20"
             >
               <div className="flex items-center space-x-3 mb-4">
                 <CheckCircle className="w-8 h-8 text-green-400" />
                 <h2 className="text-xl font-bold text-white">Vote Successfully Cast!</h2>
               </div>
-              <p className="text-green-300 mb-3">
+              <p className="text-green-300">
                 Your vote has been securely recorded on the blockchain. Thank you for participating in this election.
-              </p>
-              {localStorage.getItem(`txHash-${user?.socialId}-${electionId}`) && (
-                <a 
-                  href={`https://www.megaexplorer.xyz/tx/${localStorage.getItem(`txHash-${user?.socialId}-${electionId}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 text-green-400 hover:text-green-300 underline"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>View transaction on MegaETH Explorer</span>
-                </a>
-              )}
-            </motion.div>
-          )}
-
-          {/* Expired Election Message */}
-          {election.status === 'expired' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-gray-500/10 border border-gray-500/20"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Clock className="w-8 h-8 text-gray-400" />
-                <h2 className="text-xl font-bold text-white">Election Has Ended</h2>
-              </div>
-              <p className="text-gray-300">
-                This election ended on {new Date(election.endTime * 1000).toLocaleString()}. 
-                Voting is no longer available, but you can view the final results below.
-              </p>
-            </motion.div>
-          )}
-
-          {/* Upcoming Election Message */}
-          {election.status === 'upcoming' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-blue-500/10 border border-blue-500/20"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Calendar className="w-8 h-8 text-blue-400" />
-                <h2 className="text-xl font-bold text-white">Election Starts Soon</h2>
-              </div>
-              <p className="text-blue-300">
-                This election will begin on {new Date(election.startTime * 1000).toLocaleString()}. 
-                Please check back when voting opens.
-              </p>
-            </motion.div>
-          )}
-
-          {/* Disabled Election Message */}
-          {election.status === 'disabled' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-red-500/10 border border-red-500/20"
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <XCircle className="w-8 h-8 text-red-400" />
-                <h2 className="text-xl font-bold text-white">Election Disabled</h2>
-              </div>
-              <p className="text-red-300">
-                This election has been temporarily disabled by administrators. 
-                Voting is currently not available.
               </p>
             </motion.div>
           )}
@@ -684,77 +510,6 @@ const ElectionDetail = ({ user }) => {
           </motion.div>
         </div>
       </div>
-
-      {/* Vote Confirmation Modal */}
-      <AnimatePresence>
-        {showConfirmVote && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowConfirmVote(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="card p-6 max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Vote className="w-8 h-8 text-primary" />
-                <h3 className="text-xl font-bold text-white">Confirm Your Vote</h3>
-              </div>
-              
-              <div className="mb-6">
-                <p className="text-gray-300 mb-2">You are about to vote for:</p>
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-primary font-semibold text-lg">{selectedCandidate}</p>
-                </div>
-              </div>
-              
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-yellow-400 font-medium text-sm">Important Notice</h4>
-                    <p className="text-gray-300 text-sm mt-1">
-                      Your vote will be permanently recorded on the blockchain and cannot be changed.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowConfirmVote(false)}
-                  className="btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleVote}
-                  disabled={voting}
-                  className="btn-primary flex-1 flex items-center justify-center space-x-2"
-                >
-                  {voting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Voting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-4 h-4" />
-                      <span>Confirm Vote</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

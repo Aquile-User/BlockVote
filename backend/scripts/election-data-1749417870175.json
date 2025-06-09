@@ -1,0 +1,49 @@
+{
+  "contractAddress": "0xB514AaB6e30497db5C16d283a6CbB2251f9c5220",
+  "timestamp": "2025-06-08T21:24:28.678Z",
+  "elections": [
+    {
+      "id": 1,
+      "name": "Eleccion presidencial",
+      "startTime": "2025-06-08T20:23:51.000Z",
+      "endTime": "+130971-12-19T00:00:00.000Z",
+      "disabled": false,
+      "candidates": [
+        {
+          "name": "Danilo",
+          "votes": 2
+        },
+        {
+          "name": "Leonel",
+          "votes": 1
+        }
+      ]
+    }
+  ],
+  "votes": [
+    {
+      "electionId": 1,
+      "candidate": "Danilo",
+      "voter": "0x842a0CA672FF597b7a8b05417A08cc59e29b6007",
+      "timestamp": "2025-06-08T20:52:12.000Z",
+      "transactionHash": "0x76927ce16f7b5ddd3cae967f68cd58b75bf1e601745daf35ce2e6764f7ce4f2e",
+      "blockNumber": 8234858
+    },
+    {
+      "electionId": 1,
+      "candidate": "Danilo",
+      "voter": "0x27Ee69a1c1A8eC594E8758aF64aDd8626e7129E0",
+      "timestamp": "2025-06-08T21:12:35.000Z",
+      "transactionHash": "0x3a513e0bee254f765487ffd28ada90ef46c7ca7a9bc7383a9d54e7b37e967a83",
+      "blockNumber": 8236081
+    },
+    {
+      "electionId": 1,
+      "candidate": "Leonel",
+      "voter": "0xf624FAc0933F32E8C0C1A127A479BC633921dA46",
+      "timestamp": "2025-06-08T21:14:45.000Z",
+      "transactionHash": "0x0f52f1bb11773d402b741f07747edd8d651bab431816a9f1cc5802faa6d15a81",
+      "blockNumber": 8236211
+    }
+  ]
+}

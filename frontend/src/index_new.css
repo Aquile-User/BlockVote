@@ -3,8 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
+@layer base {  * {
     @apply border-gray-700;
   }
   

@@ -124,7 +124,7 @@ contract Voting {
         require(!e.hasVoted[voter], "Voter has already voted");
 
         bytes32 message = prefixed(
-            keccak256(abi.encodePacked(electionId, candidate, voter))
+            keccak256(abi.encodePacked(electionId, candidate, voter, address(this)))
         );
         require(
             recoverSigner(message, signature) == voter,
@@ -151,6 +151,15 @@ contract Voting {
     ) external view returns (uint256) {
         require(elections[electionId].exists, "Election does not exist");
         return elections[electionId].votes[candidate];
+    }
+
+    /// @notice Check if a voter has already voted in an election
+    function hasVoted(
+        uint256 electionId,
+        address voter
+    ) external view returns (bool) {
+        require(elections[electionId].exists, "Election does not exist");
+        return elections[electionId].hasVoted[voter];
     }
 
     /// @notice Fetch election metadata (name, candidate list, timings, disabled)
