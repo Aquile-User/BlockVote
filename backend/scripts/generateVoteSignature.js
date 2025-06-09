@@ -27,15 +27,14 @@ async function main() {
   }
 
   const voterAddress = user.address;
-  const wallet = new ethers.Wallet(user.privateKey);
-
-  // Recreate on‐chain message: keccak256(electionId, candidate, voterAddress)
+  const wallet = new ethers.Wallet(user.privateKey);  // Recreate on‐chain message: keccak256(electionId, candidate, voterAddress, contractAddress)
+  const contractAddress = process.env.CONTRACT_ADDRESS;
   const messageHash = ethers.solidityPackedKeccak256(
-    ["uint256", "string", "address"],
-    [electionId, candidate, voterAddress]
+    ["uint256", "string", "address", "address"],
+    [electionId, candidate, voterAddress, contractAddress]
   );
-  const ethMessage = ethers.hashMessage(ethers.getBytes(messageHash));
-  const signature = await wallet.signMessage(ethers.getBytes(ethMessage));
+  // Use getBytes() to ensure 32-byte signing (compatible with contract verification)
+  const signature = await wallet.signMessage(ethers.getBytes(messageHash));
 
   console.log("Signature:", signature);
 }

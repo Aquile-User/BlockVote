@@ -15,9 +15,9 @@ import {
   AlertCircle
 } from "lucide-react";
 import { registerUser } from "../api";
-import { DOMINICAN_PROVINCES, validateDominicanID } from "../utils/dominican";
+import { DOMINICAN_PROVINCES, validateDominicanId } from "../utils/dominican";
 
-const Register = ({ setUser, setIsConnected, switchToLogin }) => {
+const Register = ({ setUser, setIsConnected }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +44,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
       toast.error("Please enter your full name");
       return false;
     }
-    if (!validateDominicanID(formData.socialId)) {
+    if (!validateDominicanId(formData.socialId)) {
       toast.error("Please enter a valid Dominican ID (000-0000000-0)");
       return false;
     }
@@ -244,7 +244,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   className="input-field"
                   maxLength={13}
                 />
-                {formData.socialId && !validateDominicanID(formData.socialId) && (
+                {formData.socialId && !validateDominicanId(formData.socialId) && (
                   <div className="flex items-center mt-2 text-red-400 text-sm">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     Invalid ID format. Use: 000-0000000-0
@@ -430,27 +430,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 <span>Complete Registration</span>
               </button>
             </motion.div>
-          )}        </div>
-
-        {/* Login Link */}
-        {switchToLogin && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="text-center mt-6"
-          >
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <button
-                onClick={switchToLogin}
-                className="text-primary hover:text-primary-dark font-medium transition-colors"
-              >
-                Sign in here
-              </button>
-            </p>
-          </motion.div>
-        )}
+          )}
+        </div>
 
         {/* Footer */}
         <div className="text-center mt-6">

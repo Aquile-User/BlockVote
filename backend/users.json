@@ -1,50 +1,42 @@
 {
-  "123": {
-    "address": "0x8e50a27b3C53Ad8d8260d0506953Ea35373707A2",
-    "privateKey": "0xf993aa6ad29026b30b1c70e34d86f003121b116aa76dabf8e9623f73d41892b0"
+  "111-1111111-1": {
+    "address": "0x58f709ef64d5d6a7ac626c1fe6be8b122ff3ae86",
+    "privateKey": null,
+    "name": "Sebastian",
+    "province": "San Pedro de Macorís",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-09T04:45:10.263Z"
   },
-  "333": {
-    "address": "0xFF62319673349BC57A7dD8ccE16eA6aefEbD7E77",
-    "privateKey": "0x5833c615a9140fc0d37eea873cfb4a5726da6b4e25d6ea2a13f03c2edef89661"
+  "000-0000000-0": {
+    "address": "0x8F8409FA08308FA90fe08afcE0cb3e398634f015",
+    "privateKey": "0x954dd3b70e27ee7704009735880ead257cfca45fe1601d8ab748ad48ee3948fa",
+    "name": "Sebastian",
+    "province": "San Pedro de Macorís",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-09T06:31:42.425Z"
   },
-  "444": {
-    "address": "0x712b4384E79d03e5f365a529d6675F60954eC447",
-    "privateKey": "0xe764969c8b5b03426abc626d5c1c410f348a8d7c75b82805c7bfa9d2b60e45c1"
+  "333-3333333-3": {
+    "address": "0x47E9c8132d62834B0D00fa9FfF43C0618cc8588D",
+    "privateKey": "0xafabd87131e8138cbec7f55b7c8030bd5b9d34f2bf75bdce7163e2862b96d9e1",
+    "name": "q",
+    "province": "Monte Plata",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-09T06:44:09.376Z"
   },
-  "555": {
-    "address": "0x4C3492cF36DF47b318F19bAB06cb29cEFE935F7F",
-    "privateKey": "0x4af45c5ad71f9111045f546090c020bb2fc1e61a2e3d48a368c242392e658daa"
+  "444-4444444-4": {
+    "address": "0xBC50780561Cd03248B43046f2F74205919dd918d",
+    "privateKey": "0x45a1322bf50052486e1b9a3d952de3d359aa1fbb7d179cfb4c7d2f2bb723b224",
+    "name": "mm",
+    "province": "Monte Plata",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-09T06:52:46.145Z"
   },
-  "777": {
-    "address": "0xdE8bBa9bc83B1d1E2BB6c59f58d68C0385f5Ccdb",
-    "privateKey": "0x8cfdf352739ab58fcb19fb7dad13865f46d9bfb42fac4c495d9a16229b6b33ff"
-  },
-  "888": {
-    "address": "0x8CF4852EDEb755282bf1B2eff68541C8a73fc8f3",
-    "privateKey": "0xeb7dc044c2cae1654039f2e0d73798d21cf25bf24bb26d7770098e254cd7cee3"
-  },
-  "1234": {
-    "address": "0x50c84Bc01bF6D796D16Df847f5475bb6D8Ea8C4A",
-    "privateKey": "0x178ac46925f01a8ae4944eb843fa3bb2b3a9e43443a5e7000bab3c1e6e9293b8"
-  },
-  "12345": {
-    "address": "0x2DEF88AA57AbAC633C744b494e936D276Ac99471",
-    "privateKey": "0x7682a2988a03e38f43bd800e9202145e3f2b0f612057cdd44d873e87e2ee9dc0"
-  },
-  "123456": {
-    "address": "0xddb79418f4E1ded5F786337Df608Cf7b4395091a",
-    "privateKey": "0xff1273e1221563250e4a79347be8e7030a972385282c8b73ab7371b700c89ffb"
-  },
-  "1234567890": {
-    "address": "0xb770775BCE61Df0161b14d2944f84A27Aee15037",
-    "privateKey": "0x58a2adc4b1b2ef6ca3517b4e1b86d79ed5665cb7a41bc725ba2fe606b5dbec7e"
-  },
-  "0987": {
-    "address": "0xFA254aad8eaf43030867f4d9fd14F2772ff3F9B4",
-    "privateKey": "0x8d5ce7ebb9251d9d5ea76fd32a7afb3ce57df1e88abb9f96b8be831326c44c5b"
-  },
-  "000": {
-    "address": "0x05B7aFF34CF60b33e49a07898977Beb2Ff405966",
-    "privateKey": "0x7df15c886a5161e62fa6cc6aa0966842255e236ea69f211500a927acc40f29e3"
+  "555-5555555-5": {
+    "address": "0x8fc93E21DC6Cf2adBA78C44F83AB424396950b07",
+    "privateKey": "0xfafce802ba79cce2a67a9c5a88f534a3fe3bb50975717eef37006b79fd481cbe",
+    "name": "cc",
+    "province": "Sánchez Ramírez",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-09T07:19:33.378Z"
   }
 }
