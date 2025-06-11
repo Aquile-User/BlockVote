@@ -56,50 +56,22 @@ export const mapUsersToProvinces = (users, electionResults) => {
   // Calculate total real votes
   const totalVotes = Object.values(electionResults).reduce((sum, count) => sum + count, 0);
   
-  // Create province data array
+  // Create province data array - ONLY for provinces with real users
   const provinceData = [];
   
-  // Add provinces with real users and proportional vote distribution
   Object.keys(realProvinceUsers).forEach(provinceName => {
     const userCount = realProvinceUsers[provinceName].length;
-    const population = PROVINCE_POPULATIONS[provinceName] || 100000;
     
     // Distribute votes proportionally based on user count
     const voteShare = totalVotes > 0 ? (userCount / Object.keys(users).length) * totalVotes : 0;
     const votes = Math.round(voteShare);
     
-    // Estimate registered users based on population (0.1% registration rate)
-    const estimatedRegistered = Math.max(userCount, Math.floor(population * 0.001));
-    
     provinceData.push({
       name: provinceName,
       votes: votes,
-      registered: estimatedRegistered,
+      registered: userCount, // Only show REAL registered users
       realUsers: userCount
     });
-  });
-
-  // Add major provinces with no real users but estimated data
-  const majorProvinces = [
-    'Distrito Nacional',
-    'Santiago',
-    'Santo Domingo',
-    'La Altagracia',
-    'Puerto Plata'
-  ];
-
-  majorProvinces.forEach(provinceName => {
-    if (!realProvinceUsers[provinceName]) {
-      const population = PROVINCE_POPULATIONS[provinceName] || 500000;
-      const estimatedRegistered = Math.floor(population * 0.001);
-      
-      provinceData.push({
-        name: provinceName,
-        votes: 0,
-        registered: estimatedRegistered,
-        realUsers: 0
-      });
-    }
   });
 
   return provinceData.sort((a, b) => b.votes - a.votes);

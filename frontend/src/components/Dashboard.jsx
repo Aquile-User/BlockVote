@@ -206,25 +206,21 @@ const Dashboard = ({ user }) => {
         });
         
       } catch (error) {
-        console.error('Error fetching real user data:', error);
-        // Fallback to estimated data
+        console.error('Error fetching real user data:', error);        // Fallback to real data only
         realProvinceData = [
-          { name: 'San Pedro de Macorís', votes: 2, population: 290458, participationRate: 67, registeredUsers: 2 },
+          { name: 'San Pedro de Macorís', votes: 2, population: 290458, participationRate: 100, registeredUsers: 2 },
           { name: 'Monte Plata', votes: 2, population: 185956, participationRate: 100, registeredUsers: 2 },
           { name: 'Sánchez Ramírez', votes: 0, population: 151392, participationRate: 0, registeredUsers: 1 },
-          { name: 'Distrito Nacional', votes: 0, population: 965040, participationRate: 0, registeredUsers: 0 },
-          { name: 'Santo Domingo', votes: 0, population: 2908607, participationRate: 0, registeredUsers: 0 },
-          { name: 'Santiago', votes: 0, population: 963422, participationRate: 0, registeredUsers: 0 }
+          { name: 'María Trinidad Sánchez', votes: 0, population: 140925, participationRate: 0, registeredUsers: 1 }
         ];
       }
       
       setProvinceData(realProvinceData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      
-      // Fallback to real data from oldest election if APIs fail
+        // Fallback to real data from oldest election if APIs fail
       setStats({
-        totalVoters: 1250,
+        totalVoters: 6, // Real registered users count
         totalVotes: 4, // Real votes from election 1: q=1, w=1, e=2
         activeElections: 1,
         completedElections: 2
