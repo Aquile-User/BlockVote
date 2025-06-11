@@ -52,9 +52,7 @@ const Dashboard = ({ user }) => {
             return null;
           }
         })
-      );
-
-      // Find election with oldest end time
+      );      // Find election with oldest end time
       const validElections = electionDetails.filter(e => e !== null);
       const oldestElection = validElections.reduce((oldest, current) => 
         (oldest.endTime < current.endTime) ? oldest : current
@@ -65,9 +63,7 @@ const Dashboard = ({ user }) => {
       let activeElections = 0;
       let completedElections = 0;
       
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      for (const election of validElections) {
+      const currentTime = Math.floor(Date.now() / 1000);      for (const election of validElections) {
         try {
           const results = await getResults(election.electionId);
           const electionVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
@@ -99,16 +95,12 @@ const Dashboard = ({ user }) => {
         console.log('Could not fetch user count, using estimate');
         // Fallback to estimate based on total votes
         registeredUsers = Math.max(totalVotes * 2, 50);
-      }
-
-      setStats({
+      }      setStats({
         totalVoters: registeredUsers,
         totalVotes,
         activeElections,
         completedElections
-      });
-
-      // Generate recent activity based on real election data
+      });// Generate recent activity based on real election data
       const activity = [];
       let activityId = 1;
       
@@ -119,8 +111,7 @@ const Dashboard = ({ user }) => {
         try {
           const oldestResults = await getResults(oldestElection.electionId);
           const oldestVotes = Object.values(oldestResults).reduce((sum, count) => sum + count, 0);
-          
-          // If oldest election has no votes, find an election with votes for more meaningful activity
+            // If oldest election has no votes, find an election with votes for more meaningful activity
           if (oldestVotes === 0) {
             for (const election of validElections) {
               const results = await getResults(election.electionId);
@@ -220,9 +211,7 @@ const Dashboard = ({ user }) => {
         });
         
       } catch (error) {
-        console.error('Error fetching real user data:', error);
-        
-        // Fallback to real data only
+        console.error('Error fetching real user data:', error);        // Fallback to real data only
         realProvinceData = [
           { name: 'San Pedro de Macorís', votes: 2, population: 290458, participationRate: 100, registeredUsers: 2 },
           { name: 'Monte Plata', votes: 2, population: 185956, participationRate: 100, registeredUsers: 2 },
@@ -234,8 +223,7 @@ const Dashboard = ({ user }) => {
       setProvinceData(realProvinceData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      
-      // Fallback to real data from oldest election if APIs fail
+        // Fallback to real data from oldest election if APIs fail
       setStats({
         totalVoters: 6, // Real registered users count
         totalVotes: 4, // Real votes from election 1: q=1, w=1, e=2
@@ -287,7 +275,6 @@ const Dashboard = ({ user }) => {
       setLoading(false);
     }
   };
-
   const voteDistributionOption = {
     backgroundColor: 'transparent',
     title: {
@@ -325,7 +312,7 @@ const Dashboard = ({ user }) => {
               if (existing) {
                 existing.value += 1;
               } else {
-                const colors = ['#14b8a6', '#ff5722', '#8b5cf6', '#f59e0b', '#ef4444'];
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                 acc.push({ 
                   value: 1, 
                   name: candidateName.toUpperCase(), 
@@ -363,8 +350,7 @@ const Dashboard = ({ user }) => {
     title: {
       text: '',
       left: 'center'
-    },
-    tooltip: {
+    },    tooltip: {
       trigger: 'axis',
       backgroundColor: '#ffffff',
       borderColor: '#e5e7eb',
@@ -375,7 +361,7 @@ const Dashboard = ({ user }) => {
         const data = provinceData.find(item => item.name === params[0].axisValue);
         return `
           <strong>${params[0].axisValue}</strong><br/>
-          Votos: <span style="color: #14b8a6">${params[0].value}</span><br/>
+          Votos: <span style="color: #3b82f6">${params[0].value}</span><br/>
           Población: ${data?.population?.toLocaleString() || 'N/A'}<br/>
           Participación: ${data?.participationRate || 0}%
         `;
@@ -424,7 +410,7 @@ const Dashboard = ({ user }) => {
         data: provinceData.map((item, index) => ({
           value: item.votes,
           itemStyle: {
-            color: `hsl(${170 + index * 20}, 70%, 55%)`
+            color: `hsl(${220 + index * 30}, 70%, 55%)`
           }
         })),
         type: 'bar',
@@ -442,38 +428,33 @@ const Dashboard = ({ user }) => {
       }
     ]
   };
-
-  const StatCard = ({ icon: Icon, title, value, subtitle, trend, color = 'primary', bgColor = 'primary', delay = 0 }) => (
+  const StatCard = ({ icon: Icon, title, value, subtitle, trend, color = 'primary', bgColor = 'primary' }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="relative group"
+      className="card card-hover p-6 group"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-      <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex-1">
-            <p className="text-gray-500 text-sm font-medium mb-2">{title}</p>
-            <p className="text-4xl font-bold text-gray-900 mb-2">{value}</p>
-            {subtitle && (
-              <p className="text-gray-600 text-sm">{subtitle}</p>
-            )}
-          </div>
-          <div className={`w-16 h-16 bg-gradient-to-br from-${color}-500 to-${color}-600 rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200`}>
-            <Icon className="w-8 h-8 text-white" />
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+          {subtitle && (
+            <p className="text-gray-600 text-sm">{subtitle}</p>
+          )}
         </div>
-        {trend && (
-          <div className="flex items-center pt-4 border-t border-gray-100">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-emerald-600 text-sm font-semibold">{trend}</span>
-            </div>
-            <span className="text-gray-500 text-sm ml-2">vs período anterior</span>
-          </div>
-        )}
+        <div className={`w-14 h-14 bg-${bgColor}-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
+          <Icon className={`w-7 h-7 text-${color}-600`} />
+        </div>
       </div>
+      {trend && (
+        <div className="flex items-center mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center space-x-1">
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <span className="text-emerald-600 text-sm font-semibold">{trend}</span>
+          </div>
+          <span className="text-gray-500 text-sm ml-2">vs período anterior</span>
+        </div>
+      )}
     </motion.div>
   );
 
@@ -487,7 +468,6 @@ const Dashboard = ({ user }) => {
       </div>
     );
   }
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -600,9 +580,7 @@ const Dashboard = ({ user }) => {
           bgColor="violet"
           delay={0.4}
         />
-      </div>
-
-      {/* Enhanced Charts Section */}
+      </div>      {/* Enhanced Charts Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Vote Distribution Chart */}
         <motion.div
@@ -624,9 +602,7 @@ const Dashboard = ({ user }) => {
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
               </div>
-            </div>
-            
-            <ReactECharts
+            </div>            <ReactECharts
               option={{
                 ...voteDistributionOption,
                 backgroundColor: 'transparent',
@@ -681,194 +657,162 @@ const Dashboard = ({ user }) => {
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
               </div>
             </div>
-            
-            <ReactECharts
-              option={{
-                ...provinceVotesOption,
-                backgroundColor: 'transparent',
-                title: {
-                  ...provinceVotesOption.title,
-                  textStyle: {
-                    color: '#111827',
-                    fontSize: 16,
-                    fontWeight: 'bold'
-                  }
-                },
-                tooltip: {
-                  ...provinceVotesOption.tooltip,
-                  backgroundColor: '#ffffff',
-                  borderColor: '#e5e7eb',
-                  borderRadius: 12,
-                  padding: [12, 16],
-                  textStyle: {
-                    color: '#111827'
-                  }
-                },
-                xAxis: {
-                  ...provinceVotesOption.xAxis,
-                  axisLabel: {
-                    color: '#6b7280'
-                  }
-                },
-                yAxis: {
-                  ...provinceVotesOption.yAxis,
-                  axisLabel: {
-                    color: '#6b7280'
-                  }
+          <ReactECharts
+            option={{
+              ...provinceVotesOption,
+              backgroundColor: 'transparent',
+              title: {
+                ...provinceVotesOption.title,
+                textStyle: {
+                  color: '#111827',
+                  fontSize: 16,
+                  fontWeight: 'bold'
                 }
-              }}
-              style={{ height: '320px' }}
-            />
-          </div>
+              },
+              tooltip: {
+                ...provinceVotesOption.tooltip,
+                backgroundColor: '#ffffff',
+                borderColor: '#e5e7eb',
+                textStyle: {
+                  color: '#111827'
+                }
+              },
+              xAxis: {
+                ...provinceVotesOption.xAxis,
+                axisLabel: {
+                  color: '#6b7280'
+                }
+              },
+              yAxis: {
+                ...provinceVotesOption.yAxis,
+                axisLabel: {
+                  color: '#6b7280'
+                }
+              }
+            }}
+            style={{ height: '300px' }}
+          />
         </motion.div>
       </div>
 
-      {/* Enhanced Activity & User Info Section */}
+      {/* Recent Activity & User Info */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="xl:col-span-2 relative group"
+          className="xl:col-span-2 card p-6"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-emerald-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-primary-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
-            <div className="flex items-center justify-between mb-8">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900">Actividad Reciente</h3>
-                <p className="text-gray-600">Últimas acciones del sistema</p>
-              </div>
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Activity className="w-7 h-7 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full border-2 border-white animate-pulse"></div>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="section-title">Actividad Reciente</h3>
+              <p className="section-subtitle">Últimas acciones del sistema</p>
             </div>
-            
-            <div className="space-y-4 max-h-80 overflow-y-auto">
-              {recentActivity.length > 0 ? (
-                recentActivity.map((activity, index) => (
-                  <motion.div
-                    key={activity.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.8 + (index * 0.1) }}
-                    className="flex items-start space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 hover:border-primary-300/50 hover:shadow-soft transition-all duration-200"
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center shadow-soft">
-                        <Vote className="w-5 h-5 text-white" />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 font-medium text-sm leading-relaxed">
-                        {activity.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-gray-500 text-xs">{activity.user}</p>
-                        <p className="text-gray-400 text-xs">{activity.timestamp}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-8 h-8 text-gray-400" />
+            <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary-600" />
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  {activity.type === 'vote' ? (
+                    <Vote className="w-5 h-5 text-primary-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-900 font-medium text-sm">{activity.description}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-gray-600 text-xs">{activity.user}</p>
+                    <p className="text-gray-500 text-xs">{activity.timestamp}</p>
                   </div>
-                  <p className="text-gray-500 font-medium">No hay actividad reciente</p>
-                  <p className="text-gray-400 text-sm mt-1">La actividad aparecerá aquí cuando ocurran eventos</p>
                 </div>
-              )}
-            </div>
+              </div>
+            ))}
+            
+            {recentActivity.length === 0 && (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 font-medium">No hay actividad reciente</p>
+                <p className="text-gray-400 text-sm">Las nuevas actividades aparecerán aquí</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Enhanced User Info */}
+        {/* User Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="relative group"
+          className="card p-6"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-violet-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
-            <div className="flex items-center justify-between mb-8">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900">Tu Perfil</h3>
-                <p className="text-gray-600">Información de cuenta</p>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="section-title">Tu Información</h3>
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Shield className="w-4 h-4 text-emerald-600" />
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            {/* User Avatar and Basic Info */}
+            <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Shield className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center">
+                  <span className="text-xl font-bold text-white">
+                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
                 </div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white"></div>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-lg">{user?.name || 'Usuario'}</p>
+                <p className="text-gray-500 text-sm">{user?.socialId || 'ID no disponible'}</p>
               </div>
             </div>
-            
-            <div className="space-y-6">
-              {/* Enhanced User Avatar and Basic Info */}
-              <div className="flex items-center space-x-4 p-6 bg-white/60 rounded-2xl border border-gray-200/50">
-                <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary-500 via-violet-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-lg">
-                    <span className="text-2xl font-bold text-white">
-                      {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-3 border-white flex items-center justify-center">
-                    <CheckCircle className="w-3 h-3 text-white" />
-                  </div>
+
+            {/* User Details */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-cyan-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-lg">{user?.name || 'Usuario'}</p>
-                  <p className="text-gray-600 text-sm">{user?.socialId || 'ID no disponible'}</p>
-                  <div className="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></div>
-                    Verificado
-                  </div>
+                  <p className="text-gray-900 text-sm font-medium">{user?.province || 'Provincia no establecida'}</p>
+                  <p className="text-gray-500 text-xs">República Dominicana</p>
                 </div>
               </div>
 
-              {/* Enhanced User Details */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4 p-4 bg-white/60 rounded-2xl border border-gray-200/50 hover:border-cyan-300/50 transition-colors duration-200">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-soft">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-semibold">{user?.province || 'Provincia no establecida'}</p>
-                    <p className="text-gray-500 text-sm">República Dominicana</p>
-                  </div>
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-amber-600" />
                 </div>
-
-                <div className="flex items-center space-x-4 p-4 bg-white/60 rounded-2xl border border-gray-200/50 hover:border-amber-300/50 transition-colors duration-200">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-soft">
-                    <Wallet className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-mono text-sm font-semibold">
-                      {user?.address ? `${user.address.slice(0, 8)}...${user.address.slice(-6)}` : 'Sin billetera'}
-                    </p>
-                    <p className="text-gray-500 text-sm capitalize">Billetera {user?.authMethod || 'generada'}</p>
-                  </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 text-sm font-mono font-medium">
+                    {user?.address ? `${user.address.slice(0, 8)}...${user.address.slice(-6)}` : 'Sin billetera'}
+                  </p>
+                  <p className="text-gray-500 text-xs capitalize">Billetera {user?.authMethod || 'generada'}</p>
                 </div>
+              </div>
 
-                <div className="flex items-center space-x-4 p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200/50">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center shadow-soft">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-emerald-700 font-semibold">Cuenta Verificada</p>
-                    <p className="text-emerald-600 text-sm">Listo para participar en elecciones</p>
-                  </div>
+              <div className="flex items-center space-x-3 p-3 bg-emerald-50 rounded-xl">
+                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-emerald-700 text-sm font-medium">Cuenta Verificada</p>
+                  <p className="text-emerald-600 text-xs">Listo para votar</p>
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
