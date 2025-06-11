@@ -371,11 +371,13 @@ const Analytics = () => {
           value={analyticsData.votesByProvince.filter(p => p.votes > 0).length}
           subtitle="Out of 32 provinces"
           color="purple"
-        />
-        <StatCard
+        />        <StatCard
           icon={Calendar}
           title="Peak Hour"
-          value="10:00-12:00"
+          value={analyticsData.votesByTime.length > 0 ? 
+            analyticsData.votesByTime.reduce((peak, current) => 
+              current.votes > peak.votes ? current : peak
+            ).time : "10:00"}
           subtitle="Highest activity"
           color="yellow"
         />

@@ -38,5 +38,13 @@
     "province": "Sánchez Ramírez",
     "authMethod": "generated",
     "registeredAt": "2025-06-09T07:19:33.378Z"
+  },
+  "666-6666666-6": {
+    "address": "0x3D9E91023dE4d9D9ae6E07FA6f6e804D72f54f4F",
+    "privateKey": "0x8c1522a84d942a3474df171d56a601c9d0b8cb9850eaea22d7aa7afb2141715a",
+    "name": "pablo",
+    "province": "María Trinidad Sánchez",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-10T02:30:30.909Z"
   }
 }

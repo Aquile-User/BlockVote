@@ -22,6 +22,18 @@ import ReactECharts from 'echarts-for-react';
 import { getElectionById, getResults, submitVote, hasVoted } from "../api";
 import { CONFIG } from "../config";
 
+// Utility function to get total registered users
+const getTotalRegisteredUsers = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/users');
+    const users = await response.json();
+    return Object.keys(users).length;
+  } catch (error) {
+    console.error('Error fetching user count:', error);
+    return 5; // Fallback to known user count
+  }
+};
+
 const ElectionDetail = ({ user }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -62,14 +74,13 @@ const ElectionDetail = ({ user }) => {
         electionId: electionData.electionId,
         name: electionData.name,
         description: "Vote for the next leader of the Dominican Republic",
-        startDate: new Date(electionData.startTime * 1000).toISOString(),
-        endDate: new Date(electionData.endTime * 1000).toISOString(),
+        startDate: new Date(electionData.startTime * 1000).toISOString(),        endDate: new Date(electionData.endTime * 1000).toISOString(),
         startTime: electionData.startTime,
         endTime: electionData.endTime,
         status: status,
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: 1247, // This would need to come from user count API
+        totalVoters: await getTotalRegisteredUsers(),
         candidates: electionData.candidates
       };
         setElection(formattedElection);
@@ -104,8 +115,7 @@ const ElectionDetail = ({ user }) => {
       
     } catch (error) {
       console.error('Error loading election:', error);
-      toast.error('Failed to load election details');
-        // Fallback to mock data if API fails
+      toast.error('Failed to load election details');      // Fallback to mock data if API fails
       const mockElection = {
         electionId: 1,
         name: "Presidential Election 2024",
@@ -115,7 +125,7 @@ const ElectionDetail = ({ user }) => {
         status: "active",
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: 1247,
+        totalVoters: await getTotalRegisteredUsers(),
         candidates: ["Candidate A", "Candidate B"]
       };
       

@@ -13,13 +13,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  console.log('App component loading...', { user, isConnected });
-
   useEffect(() => {
-    console.log('App useEffect running...');
     // Check if user is registered
     const userData = localStorage.getItem('currentUser');
-    console.log('Current user data from localStorage:', userData);
     if (userData) {
       setUser(JSON.parse(userData));
       setIsConnected(true);
@@ -28,10 +24,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
-      <div style={{position: 'fixed', top: '10px', left: '10px', color: 'white', zIndex: 9999, background: 'rgba(0,0,0,0.8)', padding: '10px', borderRadius: '5px'}}>
-        Debug: App loaded, isConnected: {isConnected ? 'true' : 'false'}
-      </div>
-      
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -61,10 +53,7 @@ function App() {
           </main>
         </div>
       ) : (
-        <div>
-          <div style={{color: 'white', padding: '20px'}}>Loading AuthWrapper...</div>
-          <AuthWrapper setUser={setUser} setIsConnected={setIsConnected} />
-        </div>
+        <AuthWrapper setUser={setUser} setIsConnected={setIsConnected} />
       )}
     </div>
   );
