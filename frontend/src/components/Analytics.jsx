@@ -91,19 +91,19 @@ const Analytics = () => {
       
     } catch (error) {
       console.error('Error loading analytics:', error);
-      
-      // Fallback to minimal real data
+        // Fallback to minimal real data
       setAnalyticsData({
         votesByProvince: [
-          { name: 'San Pedro de Macorís', votes: 2, registered: 150, realUsers: 2 },
-          { name: 'Monte Plata', votes: 2, registered: 120, realUsers: 2 },
-          { name: 'Sánchez Ramírez', votes: 0, registered: 80, realUsers: 1 }
+          { name: 'San Pedro de Macorís', votes: 2, registered: 2, realUsers: 2 },
+          { name: 'Monte Plata', votes: 2, registered: 2, realUsers: 2 },
+          { name: 'Sánchez Ramírez', votes: 0, registered: 1, realUsers: 1 },
+          { name: 'María Trinidad Sánchez', votes: 0, registered: 1, realUsers: 1 }
         ],
         votesByTime: generateTimeBasedVotes(4),
         demographicBreakdown: generateDemographicBreakdown({}),
-        participationRate: 0.8, // 4 votes out of 5 users
+        participationRate: 0.67, // 4 votes out of 6 users
         totalVotes: 4,
-        totalRegistered: 5
+        totalRegistered: 6
       });
     }
     
