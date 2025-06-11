@@ -16,6 +16,18 @@ import {
 } from 'lucide-react';
 import { getElections, getResults, getElectionById } from '../api';
 
+// Utility function to get total registered users
+const getTotalRegisteredUsers = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/users');
+    const users = await response.json();
+    return Object.keys(users).length;
+  } catch (error) {
+    console.error('Error fetching user count:', error);
+    return 5; // Fallback to known user count
+  }
+};
+
 const Elections = ({ user }) => {
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,12 +52,10 @@ const Elections = ({ user }) => {
             const details = await getElectionById(election.electionId);
             const results = await getResults(election.electionId);
             
-            const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
-            const candidates = details.candidates.map(candidateName => ({
+            const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);            const candidates = details.candidates.map(candidateName => ({
               id: candidateName,
               name: candidateName,
-              votes: results[candidateName] || 0,
-              party: candidateName === 'Danilo' ? 'PLD' : 'FP' // Mock party data
+              votes: results[candidateName] || 0
             }));
               // Determine election status based on time and disabled flag
             const currentTime = Date.now() / 1000; // Current time in seconds
@@ -62,15 +72,14 @@ const Elections = ({ user }) => {
             
             return {
               id: election.electionId,
-              title: details.name,
-              description: "Vote for the next leader of the Dominican Republic",
+              title: details.name,              description: "Vote for the next leader of the Dominican Republic",
               startDate: new Date(details.startTime * 1000).toISOString(),
               endDate: new Date(details.endTime * 1000).toISOString(), 
               startTime: details.startTime,
               endTime: details.endTime,
               status: status,
               totalVotes,
-              totalVoters: 1247, // Mock data
+              totalVoters: await getTotalRegisteredUsers(),
               candidates,
               location: "Dominican Republic",
               type: "presidential"
@@ -208,11 +217,9 @@ const Elections = ({ user }) => {
         <div className="space-y-2">
           {election.candidates.slice(0, 2).map((candidate) => {
             const percentage = election.totalVotes > 0 ? (candidate.votes / election.totalVotes * 100) : 0;
-            return (
-              <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
+            return (              <div key={candidate.id} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
                 <div>
                   <p className="font-medium text-white">{candidate.name}</p>
-                  <p className="text-gray-400 text-sm">{candidate.party}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-primary">{candidate.votes} votes</p>
