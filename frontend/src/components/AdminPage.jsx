@@ -77,10 +77,9 @@ const AdminPage = () => {
 
   if (!isAuthenticated) {
     return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
-  }
-  const tabs = [
-    { id: 'overview', label: 'System Overview', icon: Activity },
-    { id: 'elections', label: 'Election Management', icon: Vote }
+  } const tabs = [
+    { id: 'overview', label: 'Vista General', icon: Activity },
+    { id: 'elections', label: 'Gestión de Elecciones', icon: Vote }
   ];
   const renderOverview = () => (
     <div className="space-y-8">
@@ -96,20 +95,18 @@ const AdminPage = () => {
               <Activity className="w-8 h-8 text-primary" />
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">System Health Monitor</h2>
-              <p className="text-slate-600">Real-time system status and performance</p>
+            <div>              <h2 className="text-2xl font-bold text-gray-800">Monitor del Sistema</h2>
+              <p className="text-gray-600">Estado y rendimiento en tiempo real</p>
             </div>
-          </div>
-          <motion.button
+          </div>          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={fetchSystemHealth}
             disabled={loading}
-            className="btn-primary px-4 py-2"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg shadow-sm transition-colors duration-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            <span className="ml-2">Refresh</span>
+            <span className="ml-2">Actualizar</span>
           </motion.button>
         </div>
 
@@ -122,14 +119,13 @@ const AdminPage = () => {
               transition={{ delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                    Active
-                  </span>
-                </div>
-                <h3 className="font-bold text-emerald-800 mb-1">API Service</h3>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              <div className="relative">                <div className="flex items-center justify-between mb-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                  Activo
+                </span>
+              </div>
+                <h3 className="font-bold text-emerald-800 mb-1">Servicio API</h3>
                 <p className="text-emerald-600 text-sm capitalize">{systemHealth.status}</p>
               </div>
             </motion.div>
@@ -140,32 +136,32 @@ const AdminPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
               className={`relative overflow-hidden rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${systemHealth.relayer?.status === 'running'
-                  ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50'
-                  : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/50'
+                ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50'
+                : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/50'
                 }`}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${systemHealth.relayer?.status === 'running'
-                  ? 'from-emerald-400/5 to-emerald-600/5'
-                  : 'from-red-400/5 to-red-600/5'
+                ? 'from-emerald-400/5 to-emerald-600/5'
+                : 'from-red-400/5 to-red-600/5'
                 }`}></div>
               <div className="relative">
-                <div className="flex items-center justify-between mb-3">                  {systemHealth.relayer?.status === 'running' ? (
+                <div className="flex items-center justify-between mb-3">                {systemHealth.relayer?.status === 'running' ? (
                   <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 ) : (
                   <XCircle className="w-8 h-8 text-red-600" />
                 )}
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${systemHealth.relayer?.status === 'running'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-red-100 text-red-700'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-red-100 text-red-700'
                     }`}>
-                    {systemHealth.relayer?.status === 'running' ? 'Running' : 'Error'}
+                    {systemHealth.relayer?.status === 'running' ? 'Ejecutándose' : 'Error'}
                   </span>
                 </div>
                 <h3 className={`font-bold mb-1 ${systemHealth.relayer?.status === 'running' ? 'text-emerald-800' : 'text-red-800'
-                  }`}>Relayer Service</h3>
+                  }`}>Servicio Relayer</h3>
                 <p className={`text-sm capitalize ${systemHealth.relayer?.status === 'running' ? 'text-emerald-600' : 'text-red-600'
                   }`}>
-                  {systemHealth.relayer?.status || 'Unknown'}
+                  {systemHealth.relayer?.status === 'running' ? 'Activo' : (systemHealth.relayer?.status || 'Desconocido')}
                 </p>
               </div>
             </motion.div>
@@ -178,15 +174,14 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <Database className="w-8 h-8 text-indigo-600" />
-                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                    Synced
-                  </span>
-                </div>
+              <div className="relative">                <div className="flex items-center justify-between mb-3">
+                <Database className="w-8 h-8 text-indigo-600" />
+                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                  Sincronizado
+                </span>
+              </div>
                 <h3 className="font-bold text-indigo-800 mb-1">Blockchain</h3>
-                <p className="text-indigo-600 text-sm">Block #{systemHealth.blockchain?.blockNumber || 'N/A'}</p>
+                <p className="text-indigo-600 text-sm">Bloque #{systemHealth.blockchain?.blockNumber || 'N/A'}</p>
               </div>
             </motion.div>
 
@@ -198,12 +193,11 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 border border-violet-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-violet-400/5 to-violet-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <Users className="w-8 h-8 text-violet-600" />
-                  <TrendingUp className="w-5 h-5 text-violet-600" />
-                </div>
-                <h3 className="font-bold text-violet-800 mb-1">Registered Users</h3>
+              <div className="relative">                <div className="flex items-center justify-between mb-3">
+                <Users className="w-8 h-8 text-violet-600" />
+                <TrendingUp className="w-5 h-5 text-violet-600" />
+              </div>
+                <h3 className="font-bold text-violet-800 mb-1">Usuarios Registrados</h3>
                 <p className="text-violet-600 text-sm font-semibold">{systemHealth.users?.registered || 0}</p>
               </div>
             </motion.div>
@@ -228,69 +222,64 @@ const AdminPage = () => {
             <ShieldCheck className="w-8 h-8 text-primary" />
             <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Blockchain Configuration</h2>
-            <p className="text-slate-600">Network and contract information</p>
+          <div>            <h2 className="text-2xl font-bold text-gray-800">Configuración Blockchain</h2>
+            <p className="text-gray-600">Información de red y contratos</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Network Information */}
-          <div className="space-y-6">
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
-                <Globe className="w-5 h-5 mr-2 text-primary" />
-                Network Details
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Network:</span>
-                  <span className="font-medium text-slate-800 bg-primary/10 px-3 py-1 rounded-full text-sm">
-                    MegaETH Testnet
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Contract Status:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.contractDeployed
-                      ? 'text-emerald-700 bg-emerald-100'
-                      : 'text-red-700 bg-red-100'
-                    }`}>
-                    {systemHealth?.blockchain?.contractDeployed ? 'Deployed' : 'Not Found'}
-                  </span>
-                </div>
-                <div className="pt-2">
-                  <span className="text-slate-600 block mb-2">Contract Address:</span>
-                  <div className="bg-slate-100 rounded-lg p-3 font-mono text-xs text-slate-700 break-all">
-                    {systemHealth?.blockchain?.contractAddress || 'Loading...'}
-                  </div>
+          <div className="space-y-6">            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+              <Globe className="w-5 h-5 mr-2 text-primary-500" />
+              Detalles de Red
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Red:</span>
+                <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
+                  MegaETH Testnet
+                </span>
+              </div>                <div className="flex justify-between items-center">
+                <span className="text-gray-600">Estado del Contrato:</span>
+                <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.contractDeployed
+                  ? 'text-emerald-700 bg-emerald-100'
+                  : 'text-red-700 bg-red-100'
+                  }`}>
+                  {systemHealth?.blockchain?.contractDeployed ? 'Desplegado' : 'No Encontrado'}
+                </span>
+              </div>
+              <div className="pt-2">
+                <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
+                <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
+                  {systemHealth?.blockchain?.contractAddress || 'Cargando...'}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Service Information */}
+          </div>            {/* Service Information */}
           <div className="space-y-6">
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
-                <Server className="w-5 h-5 mr-2 text-primary" />
-                Service Configuration
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                <Server className="w-5 h-5 mr-2 text-primary-500" />
+                Configuración del Servicio
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">API Version:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.api?.version || 'N/A'}</span>
+                  <span className="text-gray-600">Versión API:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">API Port:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.api?.port || 3000}</span>
+                  <span className="text-gray-600">Puerto API:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.api?.port || 3000}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Relayer Port:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.relayer?.port || 3001}</span>
+                  <span className="text-gray-600">Puerto Relayer:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.relayer?.port || 3001}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Last Check:</span>
-                  <span className="font-medium text-slate-800 flex items-center">
+                  <span className="text-gray-600">Última Verificación:</span>
+                  <span className="font-medium text-gray-800 flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
                     {systemHealth?.timestamp ? new Date(systemHealth.timestamp).toLocaleTimeString() : 'N/A'}
                   </span>
@@ -303,7 +292,7 @@ const AdminPage = () => {
     </div>
   );
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden">
       {/* Floating Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-float"></div>
@@ -319,29 +308,28 @@ const AdminPage = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-4"
-            >
-              <div className="relative">
-                <ShieldCheck className="w-10 h-10 text-primary" />
-                <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
+            >              <div className="relative">
+                <div className="w-11 h-11 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
+                  <ShieldCheck className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-300 to-primary-500 rounded-xl opacity-20 blur-sm -z-10"></div>
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-gray-800">
                   BlockVote Admin
                 </h1>
-                <p className="text-sm text-slate-600">System Administration Panel</p>
+                <p className="text-sm text-gray-500">Sistema de Administración</p>
               </div>
-            </motion.div>
-
-            <motion.button
+            </motion.div>            <motion.button
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
-              className="btn-secondary flex items-center space-x-2"
+              className="flex items-center space-x-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors duration-300"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span>Cerrar Sesión</span>
             </motion.button>
           </div>
         </div>
@@ -358,14 +346,13 @@ const AdminPage = () => {
                   key={tab.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => setActiveTab(tab.id)}
+                  transition={{ delay: index * 0.1 }} onClick={() => setActiveTab(tab.id)}
                   className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
-                      ? 'text-primary'
-                      : 'text-slate-600 hover:text-slate-800'
+                    ? 'text-primary-600'
+                    : 'text-gray-600 hover:text-gray-800'
                     }`}
                 >
-                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 group-hover:text-slate-700'
+                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary-600' : 'text-gray-500 group-hover:text-gray-700'
                     }`} />
                   <span>{tab.label}</span>
 
@@ -373,16 +360,14 @@ const AdminPage = () => {
                   {activeTab === tab.id && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary rounded-full"
+                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-full"
                       initial={false}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
-                  )}
-
-                  {/* Hover background */}
+                  )}                  {/* Hover background */}
                   <div className={`absolute inset-0 rounded-lg transition-all duration-300 ${activeTab === tab.id
-                      ? 'bg-primary/5'
-                      : 'bg-transparent group-hover:bg-slate-100/50'
+                    ? 'bg-primary-50'
+                    : 'bg-transparent group-hover:bg-gray-100'
                     }`}></div>
                 </motion.button>
               );

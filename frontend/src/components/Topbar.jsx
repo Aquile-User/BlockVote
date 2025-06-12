@@ -24,7 +24,6 @@ const Topbar = ({ user }) => {
     localStorage.removeItem('currentUser');
     window.location.reload();
   };
-
   const navItems = [
     {
       path: '/dashboard',
@@ -48,22 +47,21 @@ const Topbar = ({ user }) => {
       color: 'amber'
     }
   ];
-
   const ProfileCard = () => (
-    <div className="p-6 bg-white rounded-2xl shadow-xl border border-gray-200/50 flex flex-col gap-4 min-w-[320px]">
+    <div className="p-6 bg-white rounded-xl shadow-lg border border-gray-200/50 flex flex-col gap-4 min-w-[320px]">
       <div className="flex items-center gap-4">
         <div className="relative">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary-500 via-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/50">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
             <span className="text-2xl font-bold text-white">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </span>
           </div>
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-soft">
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-sm">
             <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-40"></div>
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{user?.name || 'Usuario'}</h2>
+          <h2 className="text-xl font-bold text-gray-800">{user?.name || 'Usuario'}</h2>
           <div className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-mono mt-1">
             <span className="text-xs mr-1">ID:</span>
             {user?.socialId || 'No disponible'}
@@ -117,31 +115,29 @@ const Topbar = ({ user }) => {
 
   return (
     <>
-      {/* Desktop Topbar */}
-      <div className="hidden lg:block sticky top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 shadow-sm">
+      {/* Desktop Topbar */}      <div className="hidden lg:block sticky top-0 left-0 right-0 z-30 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-button">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
                   <ShieldCheck className="w-5 h-5 text-white" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl opacity-20 blur-sm -z-10"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-300 to-primary-500 rounded-xl opacity-20 blur-sm -z-10"></div>
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold text-gray-800">
                   BlockVote
                 </h1>
-                <p className="text-xs text-slate-500 font-medium tracking-wide">
+                <p className="text-xs text-gray-500 font-medium tracking-wide">
                   Votación Blockchain
                 </p>
               </div>
             </div>
 
-            {/* Navigation */}
-            <nav>
-              <ul className="flex items-center space-x-1">
+            {/* Navigation */}            <nav>
+              <ul className="flex items-center space-x-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -149,10 +145,9 @@ const Topbar = ({ user }) => {
                       <NavLink
                         to={item.path}
                         className={({ isActive }) =>
-                          `flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-                            isActive
-                              ? `bg-gradient-to-r from-${item.color}-50 to-${item.color}-100/50 text-${item.color}-700 shadow-soft border border-${item.color}-200/50`
-                              : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                          `flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isActive
+                            ? `bg-${item.color}-50 text-${item.color}-600 shadow-sm`
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                           }`
                         }
                       >
@@ -165,30 +160,29 @@ const Topbar = ({ user }) => {
               </ul>
             </nav>
 
-            {/* User Profile */}
-            <div className="relative">
-              <button 
+            {/* User Profile */}            <div className="relative">
+              <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-2 p-2 rounded-xl hover:bg-slate-100 transition-colors duration-300 group"
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-300 group border border-transparent hover:border-gray-100"
               >
                 <div className="relative">
-                  <div className="w-8 h-8 bg-gradient-to-br from-coral-400 via-coral-500 to-coral-600 rounded-xl flex items-center justify-center shadow-medium">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 via-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-sm">
                     <span className="text-sm font-bold text-white">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-soft">
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm">
                     <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-40"></div>
                   </div>
                 </div>
-                <span className="text-sm font-medium text-slate-700">{user?.name?.split(' ')[0] || 'Usuario'}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium text-gray-700">{user?.name?.split(' ')[0] || 'Usuario'}</span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
 
               <AnimatePresence>
                 {isProfileOpen && (
                   <>
-                    <div 
+                    <div
                       className="fixed inset-0 z-10"
                       onClick={() => setIsProfileOpen(false)}
                     ></div>
@@ -209,16 +203,15 @@ const Topbar = ({ user }) => {
         </div>
       </div>
 
-      {/* Mobile Topbar */}
-      <div className="lg:hidden sticky top-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 shadow-sm">
+      {/* Mobile Topbar */}      <div className="lg:hidden sticky top-0 left-0 right-0 z-30 bg-white shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-button">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-sm">
                 <ShieldCheck className="w-5 h-5 text-white" />
               </div>
             </div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
+            <h1 className="text-lg font-bold text-gray-800">
               BlockVote
             </h1>
           </div>
@@ -226,79 +219,77 @@ const Topbar = ({ user }) => {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="relative p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <User className="w-5 h-5 text-slate-700" />
+              <User className="w-5 h-5 text-gray-700" />
               <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></div>
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-slate-700" />
+                <X className="w-5 h-5 text-gray-700" />
               ) : (
-                <Menu className="w-5 h-5 text-slate-700" />
+                <Menu className="w-5 h-5 text-gray-700" />
               )}
             </button>
           </div>
         </div>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-slate-200/80 overflow-hidden"
-            >
-              <nav className="p-4">
-                <ul className="flex flex-col space-y-2">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <li key={item.path}>
-                        <NavLink
-                          to={item.path}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={({ isActive }) =>
-                            `flex items-center space-x-3 p-3 rounded-xl ${
-                              isActive
-                                ? `bg-${item.color}-50 text-${item.color}-700`
-                                : 'text-slate-600 hover:bg-slate-100'
-                            }`
-                          }
-                        >
-                          <Icon className="w-5 h-5" />
-                          <div>
-                            <p className="font-medium">{item.label}</p>
-                            <p className="text-xs text-slate-500">{item.description}</p>
-                          </div>
-                        </NavLink>
-                      </li>
-                    );
-                  })}
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center space-x-3 p-3 text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span className="font-medium">Cerrar Sesión</span>
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </motion.div>
-          )}
+        <AnimatePresence>          {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="border-t border-gray-100 overflow-hidden"
+          >
+            <nav className="p-4">
+              <ul className="flex flex-col space-y-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.path}>
+                      <NavLink
+                        to={item.path}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `flex items-center space-x-3 p-3 rounded-lg ${isActive
+                            ? `bg-${item.color}-50 text-${item.color}-600`
+                            : 'text-gray-600 hover:bg-gray-50'
+                          }`
+                        }
+                      >
+                        <Icon className="w-5 h-5" />
+                        <div>
+                          <p className="font-medium">{item.label}</p>
+                          <p className="text-xs text-gray-500">{item.description}</p>
+                        </div>
+                      </NavLink>
+                    </li>
+                  );
+                })}
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 p-3 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Cerrar Sesión</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </motion.div>
+        )}
         </AnimatePresence>
 
         {/* Mobile Profile Card */}
         <AnimatePresence>
           {isProfileOpen && (
             <>
-              <div 
+              <div
                 className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm"
                 onClick={() => setIsProfileOpen(false)}
               ></div>
