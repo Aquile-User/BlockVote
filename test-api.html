@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Test de API</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test elections
+                console.log('Testing elections...');
+                const electionsResponse = await fetch('http://localhost:3000/elections');
+                const elections = await electionsResponse.json();
+                console.log('Elections:', elections);
+                results.innerHTML += `<p><strong>Elections:</strong> ${JSON.stringify(elections)}</p>`;
+
+                // Test users
+                console.log('Testing users...');
+                const usersResponse = await fetch('http://localhost:3000/users');
+                const users = await usersResponse.json();
+                console.log('Users:', users);
+                results.innerHTML += `<p><strong>Users count:</strong> ${Object.keys(users).length}</p>`;
+
+                // Test election details
+                if (elections.length > 0) {
+                    const firstElection = elections[0];
+                    console.log('Testing election details...');
+                    const detailResponse = await fetch(`http://localhost:3000/elections/${firstElection.electionId}`);
+                    const details = await detailResponse.json();
+                    console.log('Election details:', details);
+                    results.innerHTML += `<p><strong>First election:</strong> ${JSON.stringify(details)}</p>`;
+
+                    // Test results
+                    console.log('Testing results...');
+                    const resultsResponse = await fetch(`http://localhost:3000/elections/${firstElection.electionId}/results`);
+                    const electionResults = await resultsResponse.json();
+                    console.log('Election results:', electionResults);
+                    results.innerHTML += `<p><strong>Results:</strong> ${JSON.stringify(electionResults)}</p>`;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                results.innerHTML += `<p style="color: red;"><strong>Error:</strong> ${error.message}</p>`;
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testAPI);
+    </script>
+</body>
+</html>
