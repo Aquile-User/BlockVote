@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import firewallAqua from '../assets/firewallAqua.png';
 import {
   LayoutGrid,
   Vote,
@@ -117,15 +118,9 @@ const Topbar = ({ user }) => {
     <>
       {/* Desktop Topbar */}      <div className="hidden lg:block sticky top-0 left-0 right-0 z-30 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
-                  <ShieldCheck className="w-5 h-5 text-white" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-300 to-primary-500 rounded-xl opacity-20 blur-sm -z-10"></div>
-              </div>
+          <div className="flex items-center justify-between h-16">            {/* Logo */}
+            <div className="flex items-center space-x-3">              <div className="flex items-center">
+              <img src={firewallAqua} alt="Firewall Aqua" className="h-[34.5px] w-8 mr-2" />
               <div>
                 <h1 className="text-xl font-bold text-gray-800">
                   BlockVote
@@ -134,6 +129,7 @@ const Topbar = ({ user }) => {
                   Votación Blockchain
                 </p>
               </div>
+            </div>
             </div>
 
             {/* Navigation */}            <nav>
