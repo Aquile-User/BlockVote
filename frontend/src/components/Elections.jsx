@@ -209,11 +209,10 @@ const Elections = ({ user }) => {
       transition={{ duration: 0.5 }}
       className="space-y-8"
     >
-      {/* Enhanced Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-50 via-white to-secondary-50 rounded-3xl"></div>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-200/30 to-secondary-200/30 rounded-full -translate-y-8 translate-x-8"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary-200/30 to-primary-200/30 rounded-full translate-y-4 -translate-x-4"></div>
+      {/* Enhanced Header */}      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-white rounded-3xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary-100/20 rounded-full -translate-y-8 translate-x-8"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-100/20 rounded-full translate-y-4 -translate-x-4"></div>
 
         <div className="relative p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -224,8 +223,7 @@ const Elections = ({ user }) => {
                 transition={{ delay: 0.1 }}
                 className="flex items-center space-x-3"
               >
-                <Sparkles className="w-7 h-7 text-primary-600" />
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 bg-clip-text text-transparent">
+                <Sparkles className="w-7 h-7 text-primary-600" />                <h1 className="text-4xl font-bold text-primary-700">
                   Elecciones
                 </h1>
               </motion.div>
@@ -245,13 +243,12 @@ const Elections = ({ user }) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
               className="mt-6 lg:mt-0"
-            >
-              <motion.button
+            >              <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={loadElections}
                 disabled={loading}
-                className="flex items-center space-x-3 bg-gradient-to-r from-primary-500 to-secondary-600 hover:from-primary-600 hover:to-secondary-700 text-white px-6 py-3 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium disabled:opacity-50"
+                className="flex items-center space-x-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium disabled:opacity-50"
               >
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 <span className="font-semibold">Actualizar</span>
@@ -261,15 +258,14 @@ const Elections = ({ user }) => {
         </div>
       </div>
 
-      {/* Enhanced Search and Filter */}
-      <motion.div
+      {/* Enhanced Search and Filter */}      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="relative"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white rounded-3xl"></div>
-        <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 p-8 shadow-soft">
+        <div className="absolute inset-0 bg-white rounded-3xl"></div>
+        <div className="relative bg-white rounded-3xl border border-gray-200 p-8 shadow-soft">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Search */}
             <div className="flex-1 relative">
@@ -321,9 +317,8 @@ const Elections = ({ user }) => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: index * 0.1, duration: 0.4 }}
               className="relative group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-50/50 to-secondary-50/50 rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+            >              <div className="absolute inset-0 bg-white rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
+              <div className="relative bg-white rounded-3xl border border-gray-200 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
                 {/* Status Badge */}
                 <div className="flex items-center justify-between mb-6">
                   <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(election.status)}`}>
@@ -376,22 +371,21 @@ const Elections = ({ user }) => {
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl">
+                {/* Stats */}                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="text-center p-4 bg-primary-50 border border-primary-100 rounded-2xl shadow-soft">
                     <div className="flex items-center justify-center mb-2">
                       <Vote className="w-5 h-5 text-primary-600" />
                     </div>
-                    <p className="text-2xl font-bold text-primary-600">{election.totalVotes}</p>
-                    <p className="text-sm text-primary-500">Votos</p>
+                    <p className="text-2xl font-bold text-primary-700">{election.totalVotes}</p>
+                    <p className="text-sm text-primary-600">Votos</p>
                   </div>
 
-                  <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl">
+                  <div className="text-center p-4 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-soft">
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <p className="text-2xl font-bold text-emerald-600">{election.participation}%</p>
-                    <p className="text-sm text-emerald-500">Participación</p>
+                    <p className="text-2xl font-bold text-emerald-700">{election.participation}%</p>
+                    <p className="text-sm text-emerald-600">Participación</p>
                   </div>
                 </div>
 
@@ -428,11 +422,10 @@ const Elections = ({ user }) => {
                 <Link
                   to={`/elections/${election.electionId}`}
                   className="block"
-                >
-                  <motion.button
+                >                  <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full bg-gradient-to-r from-primary-500 to-secondary-600 hover:from-primary-600 hover:to-secondary-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-3 group"
+                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-3 group"
                   >
                     <Eye className="w-5 h-5" />
                     <span>Ver Detalles</span>
@@ -470,7 +463,7 @@ const Elections = ({ user }) => {
                 setSearchTerm('');
                 setFilterStatus('all');
               }}
-              className="mt-6 px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl transition-colors duration-200"
+              className="mt-6 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl transition-colors duration-200 shadow-soft hover:shadow-medium"
             >
               Limpiar filtros
             </motion.button>
