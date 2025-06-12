@@ -365,23 +365,22 @@ const ElectionManagement = ({ user }) => {
                   ID: {election.id}
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  {!election.disabled && (
-                    <button
-                      className="text-red-200 hover:text-white hover:bg-red-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-red-400/50 hover:border-red-400"
-                      onClick={() => handleToggleElectionStatus(election)}
-                    >
-                      <XCircle className="w-4 h-4 inline mr-1" />
-                      Deshabilitar
-                    </button>
-                  )}
+                <div className="flex items-center space-x-2">                  {!election.disabled && (
+                  <button
+                    className="flex items-center space-x-1 text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-rose-200 hover:border-rose-500 shadow-sm"
+                    onClick={() => handleToggleElectionStatus(election)}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Deshabilitar</span>
+                  </button>
+                )}
                   {election.disabled && (
                     <button
-                      className="text-green-200 hover:text-white hover:bg-green-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-green-400/50 hover:border-green-400"
+                      className="flex items-center space-x-1 text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-200 hover:border-emerald-500 shadow-sm"
                       onClick={() => handleToggleElectionStatus(election)}
                     >
-                      <CheckCircle className="w-4 h-4 inline mr-1" />
-                      Habilitar
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Habilitar</span>
                     </button>
                   )}
                 </div>

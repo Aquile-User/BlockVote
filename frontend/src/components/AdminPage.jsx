@@ -346,28 +346,29 @@ const AdminPage = () => {
                   key={tab.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }} onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
-                    ? 'text-primary-600'
-                    : 'text-gray-600 hover:text-gray-800'
+                  transition={{ delay: index * 0.1 }} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
+                    ? 'text-primary-600 bg-primary-50/80'
+                    : 'text-gray-600 hover:text-primary-600'
                     }`}
                 >
-                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary-600' : 'text-gray-500 group-hover:text-gray-700'
+                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary-600' : 'text-gray-500 group-hover:text-primary-600'
                     }`} />
-                  <span>{tab.label}</span>
+                  <span className="relative z-10">{tab.label}</span>
 
                   {/* Active indicator */}
                   {activeTab === tab.id && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-full"
+                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-full shadow-sm"
                       initial={false}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
-                  )}                  {/* Hover background */}
-                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 ${activeTab === tab.id
-                    ? 'bg-primary-50'
-                    : 'bg-transparent group-hover:bg-gray-100'
+                  )}
+
+                  {/* Hover background */}
+                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 opacity-0 group-hover:opacity-100 ${activeTab === tab.id
+                      ? 'bg-primary-100/0'
+                      : 'bg-primary-50/80'
                     }`}></div>
                 </motion.button>
               );
