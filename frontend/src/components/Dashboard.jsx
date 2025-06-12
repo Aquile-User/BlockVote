@@ -39,10 +39,40 @@ const Dashboard = ({ user }) => {
   const [provinceData, setProvinceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('7d');
+  const [now, setNow] = useState(new Date());
+
+  const formatTimeAgo = (timestamp) => {
+    const minutes = Math.floor((now - new Date(timestamp)) / 60000);
+    if (minutes < 1) return 'Justo ahora';
+    if (minutes < 60) return `Hace ${minutes} minutos`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours} horas`;
+    const days = Math.floor(hours / 24);
+    return `Hace ${days} días`;
+  };
+
+  const getRecentActivitiesCount = (minutes = 60) => {
+    return recentActivity.filter(a => {
+      const activityTime = new Date(a.timestamp);
+      const diffInMinutes = Math.floor((now - activityTime) / 60000);
+      return diffInMinutes <= minutes;
+    }).length;
+  };
+  useEffect(() => {
+    // Actualizar tiempo cada minuto
+    const timeInterval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => {
+      clearInterval(timeInterval);
+    };
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [timeframe]);
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -155,7 +185,7 @@ const Dashboard = ({ user }) => {
                   id: activityId++,
                   type: 'vote',
                   description: `Vote cast for ${candidate} in ${electionForActivity.name}`,
-                  timestamp: `${Math.floor(Math.random() * 60) + 5} minutes ago`,
+                  timestamp: new Date(Date.now() - Math.floor(Math.random() * 1800000)).toISOString(), // Actividad en los últimos 30 minutos
                   user: `User from ${['Santo Domingo', 'Santiago', 'La Vega', 'Puerto Plata', 'San Cristóbal'][Math.floor(Math.random() * 5)]}`
                 });
               }
@@ -166,7 +196,9 @@ const Dashboard = ({ user }) => {
         }
       }
 
-      setRecentActivity(activity.slice(0, 8)); // Show last 8 activities      // Real Dominican Republic province data based on actual registered users
+      // Ordenar actividades por tiempo y mostrar las 8 más recientes
+      activity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setRecentActivity(activity.slice(0, 8));      // Real Dominican Republic province data based on actual registered users
       let realProvinceData = [];
 
       try {
@@ -1079,7 +1111,7 @@ const Dashboard = ({ user }) => {
                               <div className="w-5 h-5 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <Clock className="w-3 h-3 text-gray-600" />
                               </div>
-                              <p className="text-gray-500 text-xs">{activity.timestamp}</p>
+                              <p className="text-gray-500 text-xs">{formatTimeAgo(activity.timestamp)}</p>
                             </div>
                           </div>
                         </div>
@@ -1122,7 +1154,7 @@ const Dashboard = ({ user }) => {
                     <Clock className="w-4 h-4 text-white" />
                   </div>
                   <p className="text-2xl font-bold text-emerald-700">
-                    {recentActivity.filter(a => a.timestamp.includes('minute')).length}
+                    {getRecentActivitiesCount(60)}
                   </p>
                   <p className="text-xs text-emerald-600 font-medium">Última Hora</p>
                 </div>
