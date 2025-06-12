@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Vote, 
-  BarChart3, 
+import {
+  LayoutGrid,
+  Vote,
+  TrendingUp,
   LogOut,
-  Shield,
-  Wallet,
+  ShieldCheck,
+  CreditCard,
   Settings,
   Menu,
   X,
   ChevronRight,
-  MapPin
+  MapPin,
+  Sparkles,
+  Home,
+  PieChart,
+  Wallet
 } from 'lucide-react';
 
 const Sidebar = ({ user }) => {
@@ -24,32 +28,31 @@ const Sidebar = ({ user }) => {
     localStorage.removeItem('currentUser');
     window.location.reload();
   };
-
   const navItems = [
-    { 
-      path: '/dashboard', 
-      icon: LayoutDashboard, 
+    {
+      path: '/dashboard',
+      icon: LayoutGrid,
       label: 'Dashboard',
       description: 'Resumen y estadísticas',
       color: 'primary'
     },
-    { 
-      path: '/elections', 
-      icon: Vote, 
+    {
+      path: '/elections',
+      icon: Vote,
       label: 'Elecciones',
       description: 'Elecciones activas y pasadas',
       color: 'emerald'
     },
-    { 
-      path: '/analytics', 
-      icon: BarChart3, 
+    {
+      path: '/analytics',
+      icon: PieChart,
       label: 'Analíticas',
       description: 'Gráficos y análisis de votos',
       color: 'violet'
     },
-    { 
-      path: '/admin', 
-      icon: Settings, 
+    {
+      path: '/admin',
+      icon: Settings,
       label: 'Administración',
       description: 'Gestionar elecciones',
       color: 'amber'
@@ -63,7 +66,7 @@ const Sidebar = ({ user }) => {
           <div className="flex items-center space-x-3">
             <div className="relative">
               <div className="w-11 h-11 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl flex items-center justify-center shadow-button">
-                <Shield className="w-6 h-6 text-white" />
+                <ShieldCheck className="w-6 h-6 text-white" />
               </div>
               {/* Subtle glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl opacity-20 blur-sm -z-10"></div>
@@ -79,7 +82,7 @@ const Sidebar = ({ user }) => {
               </div>
             )}
           </div>
-          
+
           {/* Desktop collapse button with subtle animation */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -88,10 +91,10 @@ const Sidebar = ({ user }) => {
             <ChevronRight className={`w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-all duration-300 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`} />
           </button>
         </div>
-      </div>      {/* User Info */}
+      </div>      {/* User Info - Enhanced for Collapsed Mode */}
       <div className="p-6 border-b border-slate-200/80">
-        <div className="flex items-center space-x-3">
-          <div className="relative">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+          <div className="relative group">
             <div className="w-12 h-12 bg-gradient-to-br from-coral-400 via-coral-500 to-coral-600 rounded-2xl flex items-center justify-center shadow-medium">
               <span className="text-lg font-bold text-white">
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -101,8 +104,26 @@ const Sidebar = ({ user }) => {
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow-soft">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-40"></div>
             </div>
+
+            {/* Enhanced tooltip for collapsed user info */}
+            {isCollapsed && (
+              <div className="absolute left-full ml-3 px-4 py-3 bg-slate-900 text-white text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl min-w-[200px]">
+                <div className="font-bold text-sm mb-1">{user?.name || 'Usuario'}</div>
+                <div className="text-slate-300 text-[10px] mb-2 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {user?.province || 'República Dominicana'}
+                </div>
+                <div className="border-t border-slate-700 pt-2 mt-2">
+                  <div className="text-slate-400 text-[9px] uppercase tracking-wide mb-1">Billetera</div>
+                  <div className="font-mono text-[10px] text-slate-300">
+                    {user?.address ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}` : 'No conectado'}
+                  </div>
+                </div>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-900 rotate-45"></div>
+              </div>
+            )}
           </div>
-          
+
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-900 truncate">
@@ -115,12 +136,13 @@ const Sidebar = ({ user }) => {
             </div>
           )}
         </div>
-        
-        {/* Enhanced Wallet Info */}
+
+        {/* Enhanced Wallet Info - Only show when expanded */}
         {!isCollapsed && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ delay: 0.1 }}
             className="mt-5 p-4 bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100/50 rounded-2xl border border-slate-200/50 shadow-soft"
           >
@@ -130,7 +152,7 @@ const Sidebar = ({ user }) => {
               </div>
               <span className="text-xs font-semibold text-slate-700 tracking-wide">BILLETERA</span>
             </div>
-            
+
             <div className="relative">
               <p className="text-xs font-mono text-slate-600 break-all bg-white px-3 py-2 rounded-xl border border-slate-200/80 shadow-inner-soft">
                 {user?.address ? `${user.address.slice(0, 8)}...${user.address.slice(-6)}` : 'No conectado'}
@@ -138,7 +160,7 @@ const Sidebar = ({ user }) => {
               {/* Copy button subtle indicator */}
               <div className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary-400 rounded-full opacity-60"></div>
             </div>
-            
+
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200/60">
               <span className="text-xs text-slate-500 font-medium">Método:</span>
               <span className="text-xs font-semibold px-2 py-1 bg-primary-100 text-primary-700 rounded-lg capitalize">
@@ -147,9 +169,9 @@ const Sidebar = ({ user }) => {
             </div>
           </motion.div>
         )}
-      </div>      {/* Enhanced Navigation */}
-      <nav className="flex-1 p-4">
-        <div className="space-y-1">
+      </div>      {/* Enhanced Navigation - Improved Collapsed Layout */}
+      <nav className={`flex-1 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+        <div className={`space-y-1 ${isCollapsed ? 'space-y-2' : ''}`}>
           {navItems.map((item, index) => {
             const Icon = item.icon;
             return (
@@ -157,10 +179,9 @@ const Sidebar = ({ user }) => {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `group relative flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 p-3'} rounded-2xl transition-all duration-300 transform hover:scale-[1.02] ${
-                    isActive
-                      ? 'bg-gradient-to-r from-primary-50 via-primary-50 to-primary-100/50 text-primary-700 shadow-soft border border-primary-200/50'
-                      : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 hover:shadow-soft'
+                  `group relative flex items-center ${isCollapsed ? 'justify-center p-3 w-12 h-12 mx-auto' : 'space-x-3 p-3'} rounded-2xl transition-all duration-300 transform hover:scale-[1.02] ${isActive
+                    ? 'bg-gradient-to-r from-primary-50 via-primary-50 to-primary-100/50 text-primary-700 shadow-soft border border-primary-200/50'
+                    : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 hover:shadow-soft'
                   }`
                 }
               >
@@ -169,7 +190,7 @@ const Sidebar = ({ user }) => {
                     <div className={`relative transition-all duration-300 ${isActive ? 'text-primary-600' : 'text-slate-500 group-hover:text-slate-700'}`}>
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       {/* Active indicator with sophisticated animation */}
-                      {isActive && (
+                      {isActive && !isCollapsed && (
                         <>
                           <motion.div
                             layoutId="activeIndicator"
@@ -184,10 +205,18 @@ const Sidebar = ({ user }) => {
                           />
                         </>
                       )}
+                      {/* Compact mode active indicator */}
+                      {isActive && isCollapsed && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full shadow-sm border-2 border-white"
+                        />
+                      )}
                     </div>
-                    
+
                     {!isCollapsed && (
-                      <motion.div 
+                      <motion.div
                         className="flex-1 min-w-0"
                         initial={false}
                         animate={{ opacity: 1 }}
@@ -207,33 +236,32 @@ const Sidebar = ({ user }) => {
                     )}
 
                     {/* Subtle hover effect */}
-                    <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-primary-200/20 to-primary-300/20 opacity-0 group-hover:opacity-100' 
-                        : 'bg-slate-200/50 opacity-0 group-hover:opacity-100'
-                    }`}></div>
+                    <div className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${isActive
+                      ? 'bg-gradient-to-r from-primary-200/20 to-primary-300/20 opacity-0 group-hover:opacity-100'
+                      : 'bg-slate-200/50 opacity-0 group-hover:opacity-100'
+                      }`}></div>
                   </>
                 )}
               </NavLink>
             );
           })}
         </div>
-      </nav>      {/* Enhanced Footer */}
-      <div className="p-4 border-t border-slate-200/80">
+      </nav>{/* Enhanced Footer - Improved Collapsed Mode */}
+      <div className={`p-4 border-t border-slate-200/80 ${isCollapsed ? 'px-3' : ''}`}>
         <button
           onClick={handleLogout}
-          className={`group relative flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 p-3'} w-full text-slate-600 hover:text-rose-600 hover:bg-gradient-to-r hover:from-rose-50 hover:to-rose-100/50 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] border border-transparent hover:border-rose-200/50`}
+          className={`group relative flex items-center ${isCollapsed ? 'justify-center p-3 w-12 h-12 mx-auto' : 'space-x-3 p-3 w-full'} text-slate-600 hover:text-rose-600 hover:bg-gradient-to-r hover:from-rose-50 hover:to-rose-100/50 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] border border-transparent hover:border-rose-200/50 hover:shadow-soft`}
         >
           <div className="relative">
             <LogOut className="w-5 h-5 flex-shrink-0 transition-transform duration-300 group-hover:scale-110" />
             {/* Subtle glow on hover */}
             <div className="absolute inset-0 bg-rose-500 rounded-full opacity-0 group-hover:opacity-20 blur-sm transition-opacity duration-300"></div>
           </div>
-          
+
           {!isCollapsed && (
             <span className="text-sm font-semibold tracking-wide">Cerrar Sesión</span>
           )}
-          
+
           {/* Enhanced tooltip for collapsed state */}
           {isCollapsed && (
             <div className="absolute left-full ml-3 px-3 py-2 bg-slate-900 text-white text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
@@ -273,7 +301,7 @@ const Sidebar = ({ user }) => {
       </AnimatePresence>
 
       {/* Desktop Sidebar with enhanced styling */}
-      <motion.div 
+      <motion.div
         animate={{ width: isCollapsed ? 80 : 280 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="hidden lg:block fixed left-0 top-0 h-full bg-white/95 backdrop-blur-sm border-r border-slate-200/80 z-30 shadow-xl"

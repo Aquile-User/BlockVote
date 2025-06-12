@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Shield, 
-  Settings, 
-  Database, 
+import {
+  ShieldCheck,
+  Settings,
+  Database,
   Activity,
   Users,
   Vote,
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   XCircle,
   RefreshCw,
   LogOut,
@@ -17,7 +17,9 @@ import {
   Server,
   Lock,
   TrendingUp,
-  Clock
+  Clock,
+  Monitor,
+  Zap
 } from "lucide-react";
 import AdminLogin from "./AdminLogin";
 import ElectionManagement from "./ElectionManagement";
@@ -41,11 +43,11 @@ const AdminPage = () => {
       setLoading(true);
       console.log('Fetching system health...');
       const response = await fetch('http://localhost:3000/health');
-      
+
       if (!response.ok) {
         throw new Error(`Health API responded with status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('System health data:', data);
       setSystemHealth(data);
@@ -120,10 +122,9 @@ const AdminPage = () => {
               transition={{ delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>
-              <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              <div className="relative">
                 <div className="flex items-center justify-between mb-3">
-                  <CheckCircle className="w-8 h-8 text-emerald-600" />
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                   <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                     Active
                   </span>
@@ -138,38 +139,32 @@ const AdminPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className={`relative overflow-hidden rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${
-                systemHealth.relayer?.status === 'running' 
-                  ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50' 
+              className={`relative overflow-hidden rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${systemHealth.relayer?.status === 'running'
+                  ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50'
                   : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/50'
-              }`}
+                }`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${
-                systemHealth.relayer?.status === 'running' 
-                  ? 'from-emerald-400/5 to-emerald-600/5' 
+              <div className={`absolute inset-0 bg-gradient-to-br ${systemHealth.relayer?.status === 'running'
+                  ? 'from-emerald-400/5 to-emerald-600/5'
                   : 'from-red-400/5 to-red-600/5'
-              }`}></div>
+                }`}></div>
               <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  {systemHealth.relayer?.status === 'running' ? (
-                    <CheckCircle className="w-8 h-8 text-emerald-600" />
-                  ) : (
-                    <XCircle className="w-8 h-8 text-red-600" />
-                  )}
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    systemHealth.relayer?.status === 'running' 
-                      ? 'bg-emerald-100 text-emerald-700' 
+                <div className="flex items-center justify-between mb-3">                  {systemHealth.relayer?.status === 'running' ? (
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-600" />
+                )}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${systemHealth.relayer?.status === 'running'
+                      ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-red-100 text-red-700'
-                  }`}>
+                    }`}>
                     {systemHealth.relayer?.status === 'running' ? 'Running' : 'Error'}
                   </span>
                 </div>
-                <h3 className={`font-bold mb-1 ${
-                  systemHealth.relayer?.status === 'running' ? 'text-emerald-800' : 'text-red-800'
-                }`}>Relayer Service</h3>
-                <p className={`text-sm capitalize ${
-                  systemHealth.relayer?.status === 'running' ? 'text-emerald-600' : 'text-red-600'
-                }`}>
+                <h3 className={`font-bold mb-1 ${systemHealth.relayer?.status === 'running' ? 'text-emerald-800' : 'text-red-800'
+                  }`}>Relayer Service</h3>
+                <p className={`text-sm capitalize ${systemHealth.relayer?.status === 'running' ? 'text-emerald-600' : 'text-red-600'
+                  }`}>
                   {systemHealth.relayer?.status || 'Unknown'}
                 </p>
               </div>
@@ -230,7 +225,7 @@ const AdminPage = () => {
       >
         <div className="flex items-center space-x-3 mb-6">
           <div className="relative">
-            <Shield className="w-8 h-8 text-primary" />
+            <ShieldCheck className="w-8 h-8 text-primary" />
             <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
           </div>
           <div>
@@ -238,7 +233,7 @@ const AdminPage = () => {
             <p className="text-slate-600">Network and contract information</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Network Information */}
           <div className="space-y-6">
@@ -256,11 +251,10 @@ const AdminPage = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Contract Status:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${
-                    systemHealth?.blockchain?.contractDeployed 
-                      ? 'text-emerald-700 bg-emerald-100' 
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.contractDeployed
+                      ? 'text-emerald-700 bg-emerald-100'
                       : 'text-red-700 bg-red-100'
-                  }`}>
+                    }`}>
                     {systemHealth?.blockchain?.contractDeployed ? 'Deployed' : 'Not Found'}
                   </span>
                 </div>
@@ -321,13 +315,13 @@ const AdminPage = () => {
       <div className="relative backdrop-blur-sm bg-white/80 border-b border-slate-200/80 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-4"
             >
               <div className="relative">
-                <Shield className="w-10 h-10 text-primary" />
+                <ShieldCheck className="w-10 h-10 text-primary" />
                 <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
               </div>
               <div>
@@ -337,7 +331,7 @@ const AdminPage = () => {
                 <p className="text-sm text-slate-600">System Administration Panel</p>
               </div>
             </motion.div>
-            
+
             <motion.button
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -366,17 +360,15 @@ const AdminPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${
-                    activeTab === tab.id
+                  className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
                       ? 'text-primary'
                       : 'text-slate-600 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
-                  <Icon className={`w-5 h-5 transition-all duration-300 ${
-                    activeTab === tab.id ? 'text-primary' : 'text-slate-500 group-hover:text-slate-700'
-                  }`} />
+                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 group-hover:text-slate-700'
+                    }`} />
                   <span>{tab.label}</span>
-                  
+
                   {/* Active indicator */}
                   {activeTab === tab.id && (
                     <motion.div
@@ -386,13 +378,12 @@ const AdminPage = () => {
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
-                  
+
                   {/* Hover background */}
-                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 ${
-                    activeTab === tab.id 
-                      ? 'bg-primary/5' 
+                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 ${activeTab === tab.id
+                      ? 'bg-primary/5'
                       : 'bg-transparent group-hover:bg-slate-100/50'
-                  }`}></div>
+                    }`}></div>
                 </motion.button>
               );
             })}
