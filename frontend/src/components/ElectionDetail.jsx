@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import { 
+import {
   ArrowLeft,
   Vote,
   Users,
@@ -52,11 +52,11 @@ const ElectionDetail = ({ user }) => {
   const loadElectionData = async () => {
     try {
       setLoading(true);
-      
+
       // Get real election data from API
       const electionData = await getElectionById(electionId);
       const resultsData = await getResults(electionId);
-        // Determine election status based on time and disabled flag
+      // Determine election status based on time and disabled flag
       const currentTime = Date.now() / 1000; // Current time in seconds
       let status;
       if (electionData.disabled) {
@@ -74,7 +74,7 @@ const ElectionDetail = ({ user }) => {
         electionId: electionData.electionId,
         name: electionData.name,
         description: "Vote for the next leader of the Dominican Republic",
-        startDate: new Date(electionData.startTime * 1000).toISOString(),        endDate: new Date(electionData.endTime * 1000).toISOString(),
+        startDate: new Date(electionData.startTime * 1000).toISOString(), endDate: new Date(electionData.endTime * 1000).toISOString(),
         startTime: electionData.startTime,
         endTime: electionData.endTime,
         status: status,
@@ -83,14 +83,14 @@ const ElectionDetail = ({ user }) => {
         totalVoters: await getTotalRegisteredUsers(),
         candidates: electionData.candidates
       };
-        setElection(formattedElection);
+      setElection(formattedElection);
       setResults(resultsData);
-        // Check if user has already voted using blockchain data (priority)
+      // Check if user has already voted using blockchain data (priority)
       if (user?.socialId) {
         try {
           const votingStatus = await hasVoted(electionId, user.socialId);
           setHasVoted(votingStatus.hasVoted);
-            // Clear localStorage if blockchain says not voted (contract might have been redeployed)
+          // Clear localStorage if blockchain says not voted (contract might have been redeployed)
           if (!votingStatus.hasVoted) {
             const votedKey = `voted-${user.socialId}-${electionId}`;
             localStorage.removeItem(votedKey);
@@ -100,7 +100,7 @@ const ElectionDetail = ({ user }) => {
           // Use localStorage as fallback if blockchain check fails
           const votedKey = `voted-${user.socialId}-${electionId}`;
           const localVoted = localStorage.getItem(votedKey) === 'true';
-          
+
           // If we have local storage indicating the user voted, trust it
           // since blockchain verification failed (network issues, etc.)
           if (localVoted) {
@@ -112,7 +112,7 @@ const ElectionDetail = ({ user }) => {
           }
         }
       }
-      
+
     } catch (error) {
       console.error('Error loading election:', error);
       toast.error('Failed to load election details');      // Fallback to mock data if API fails
@@ -128,7 +128,7 @@ const ElectionDetail = ({ user }) => {
         totalVoters: await getTotalRegisteredUsers(),
         candidates: ["Candidate A", "Candidate B"]
       };
-      
+
       const mockResults = {
         "Candidate A": 2,
         "Candidate B": 1
@@ -142,7 +142,7 @@ const ElectionDetail = ({ user }) => {
   };
   const handleVoteSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!selectedCandidate) {
       toast.error("Please select a candidate");
       return;
@@ -160,7 +160,7 @@ const ElectionDetail = ({ user }) => {
     try {
       setVoting(true);
       setShowConfirmVote(false);
-      
+
       let signature;
       let voterAddress;
 
@@ -169,26 +169,34 @@ const ElectionDetail = ({ user }) => {
         // Use MetaMask for signing
         if (!window.ethereum) {
           throw new Error("MetaMask not found");
-        }
-
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        } const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         voterAddress = await signer.getAddress();
 
+        console.log('MetaMask address:', voterAddress);
+        console.log('Registered address:', user.address);
+
         // Verify the signer address matches the user's registered address
         if (voterAddress.toLowerCase() !== user.address.toLowerCase()) {
-          throw new Error("MetaMask account doesn't match registered address");
-        }
-
-        // Create message hash for signing
+          throw new Error(`MetaMask account (${voterAddress}) doesn't match registered address (${user.address}). Please switch to the correct account in MetaMask.`);
+        }        // Create message hash for signing
         const contractAddress = CONFIG.CONTRACT_ADDRESS;
         const messageHash = ethers.solidityPackedKeccak256(
           ["uint256", "string", "address", "address"],
           [electionId, selectedCandidate, voterAddress, contractAddress]
         );
 
+        console.log('Signing data:', {
+          electionId,
+          selectedCandidate,
+          voterAddress,
+          contractAddress,
+          messageHash
+        });
+
         // Sign with MetaMask
         signature = await signer.signMessage(ethers.getBytes(messageHash));
+        console.log('Generated signature:', signature);
 
       } else if (user.authMethod === 'generated') {
         // Use stored private key
@@ -226,12 +234,12 @@ const ElectionDetail = ({ user }) => {
       }      // Mark as voted locally (backup)
       const votedKey = `voted-${user.socialId}-${electionId}`;
       localStorage.setItem(votedKey, 'true');
-      
+
       // Store transaction hash for later reference
       if (response.txHash) {
         localStorage.setItem(`txHash-${user.socialId}-${electionId}`, response.txHash);
       }
-      
+
       // Update voting status immediately 
       setHasVoted(true);// Show success message with transaction hash
       const txHash = response.txHash || 'Transaction submitted';
@@ -239,8 +247,8 @@ const ElectionDetail = ({ user }) => {
         // Create a custom toast with clickable explorer link
         toast.success(
           <div>
-            Vote submitted successfully!<br/>
-            <a 
+            Vote submitted successfully!<br />
+            <a
               href={`https://www.megaexplorer.xyz/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -254,12 +262,12 @@ const ElectionDetail = ({ user }) => {
       } else {
         toast.success(`Vote submitted successfully! TX: ${txHash}`);
       }
-      
+
       // Refresh results after a short delay
       setTimeout(async () => {
         await loadElectionData();
       }, 3000);
-      
+
     } catch (error) {
       console.error('Voting error:', error);
       toast.error(error.message || "Vote submission failed");
@@ -281,7 +289,7 @@ const ElectionDetail = ({ user }) => {
 
   const getChartOption = () => {
     if (!results) return {};
-    
+
     const data = Object.entries(results).map(([name, votes]) => ({
       value: votes,
       name: name
@@ -406,7 +414,7 @@ const ElectionDetail = ({ user }) => {
           >
             <h2 className="text-xl font-bold text-white mb-4">Election Details</h2>
             <p className="text-gray-300 mb-6">{election.description}</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
                 <Calendar className="w-5 h-5 text-blue-400" />
@@ -450,7 +458,7 @@ const ElectionDetail = ({ user }) => {
                 <Vote className="w-6 h-6" />
                 <span>Cast Your Vote</span>
               </h2>
-              
+
               <form onSubmit={handleVoteSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-3">
@@ -460,11 +468,10 @@ const ElectionDetail = ({ user }) => {
                     {election.candidates.map((candidate) => (
                       <label
                         key={candidate}
-                        className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          selectedCandidate === candidate
+                        className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedCandidate === candidate
                             ? 'border-primary bg-primary/10'
                             : 'border-gray-600 hover:border-gray-500'
-                        }`}
+                          }`}
                       >
                         <input
                           type="radio"
@@ -474,11 +481,10 @@ const ElectionDetail = ({ user }) => {
                           onChange={(e) => setSelectedCandidate(e.target.value)}
                           className="sr-only"
                         />
-                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          selectedCandidate === candidate
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${selectedCandidate === candidate
                             ? 'border-primary bg-primary'
                             : 'border-gray-400'
-                        }`}>
+                          }`}>
                           {selectedCandidate === candidate && (
                             <div className="w-2 h-2 bg-white rounded-full"></div>
                           )}
@@ -529,7 +535,7 @@ const ElectionDetail = ({ user }) => {
                 Your vote has been securely recorded on the blockchain. Thank you for participating in this election.
               </p>
               {localStorage.getItem(`txHash-${user?.socialId}-${electionId}`) && (
-                <a 
+                <a
                   href={`https://www.megaexplorer.xyz/tx/${localStorage.getItem(`txHash-${user?.socialId}-${electionId}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -554,7 +560,7 @@ const ElectionDetail = ({ user }) => {
                 <h2 className="text-xl font-bold text-white">Election Has Ended</h2>
               </div>
               <p className="text-gray-300">
-                This election ended on {new Date(election.endTime * 1000).toLocaleString()}. 
+                This election ended on {new Date(election.endTime * 1000).toLocaleString()}.
                 Voting is no longer available, but you can view the final results below.
               </p>
             </motion.div>
@@ -572,7 +578,7 @@ const ElectionDetail = ({ user }) => {
                 <h2 className="text-xl font-bold text-white">Election Starts Soon</h2>
               </div>
               <p className="text-blue-300">
-                This election will begin on {new Date(election.startTime * 1000).toLocaleString()}. 
+                This election will begin on {new Date(election.startTime * 1000).toLocaleString()}.
                 Please check back when voting opens.
               </p>
             </motion.div>
@@ -590,7 +596,7 @@ const ElectionDetail = ({ user }) => {
                 <h2 className="text-xl font-bold text-white">Election Disabled</h2>
               </div>
               <p className="text-red-300">
-                This election has been temporarily disabled by administrators. 
+                This election has been temporarily disabled by administrators.
                 Voting is currently not available.
               </p>
             </motion.div>
@@ -609,7 +615,7 @@ const ElectionDetail = ({ user }) => {
               <h3 className="text-lg font-bold text-white">Live Results</h3>
               <BarChart3 className="w-5 h-5 text-gray-400" />
             </div>
-            
+
             <div className="text-center mb-4">
               <p className="text-3xl font-bold text-primary">{getTotalVotes()}</p>
               <p className="text-gray-400 text-sm">Total Votes Cast</p>
@@ -716,14 +722,14 @@ const ElectionDetail = ({ user }) => {
                 <Vote className="w-8 h-8 text-primary" />
                 <h3 className="text-xl font-bold text-white">Confirm Your Vote</h3>
               </div>
-              
+
               <div className="mb-6">
                 <p className="text-gray-300 mb-2">You are about to vote for:</p>
                 <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <p className="text-primary font-semibold text-lg">{selectedCandidate}</p>
                 </div>
               </div>
-              
+
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
@@ -735,7 +741,7 @@ const ElectionDetail = ({ user }) => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowConfirmVote(false)}
