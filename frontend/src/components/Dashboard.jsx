@@ -73,12 +73,10 @@ const Dashboard = ({ user }) => {
       let activeElections = 0;
       let completedElections = 0;
 
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      for (const election of validElections) {
+      const currentTime = Math.floor(Date.now() / 1000); for (const election of validElections) {
         try {
           const results = await getResults(election.electionId);
-          const electionVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
+          const electionVotes = Object.values(results || {}).reduce((sum, count) => sum + count, 0);
           totalVotes += electionVotes;
 
           // Check election status based on time and disabled flag
@@ -126,16 +124,20 @@ const Dashboard = ({ user }) => {
       if (oldestElection) {
         try {
           const oldestResults = await getResults(oldestElection.electionId);
-          const oldestVotes = Object.values(oldestResults).reduce((sum, count) => sum + count, 0);
+          const oldestVotes = Object.values(oldestResults || {}).reduce((sum, count) => sum + count, 0);
 
           // If oldest election has no votes, find an election with votes for more meaningful activity
           if (oldestVotes === 0) {
             for (const election of validElections) {
-              const results = await getResults(election.electionId);
-              const votes = Object.values(results).reduce((sum, count) => sum + count, 0);
-              if (votes > 0) {
-                electionForActivity = election;
-                break;
+              try {
+                const results = await getResults(election.electionId);
+                const votes = Object.values(results || {}).reduce((sum, count) => sum + count, 0);
+                if (votes > 0) {
+                  electionForActivity = election;
+                  break;
+                }
+              } catch (error) {
+                console.error(`Error checking votes for election ${election.electionId}:`, error);
               }
             }
           }
@@ -143,7 +145,7 @@ const Dashboard = ({ user }) => {
           const results = await getResults(electionForActivity.electionId);
 
           // Real activity from the selected election
-          for (const [candidate, votes] of Object.entries(results)) {
+          for (const [candidate, votes] of Object.entries(results || {})) {
             if (votes > 0) {
               // Create realistic activity entries based on actual votes
               for (let i = 0; i < Math.min(votes, 3); i++) {
