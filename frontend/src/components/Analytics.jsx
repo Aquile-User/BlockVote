@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart3, 
-  PieChart, 
-  TrendingUp, 
-  Users, 
+import {
+  BarChart4,
+  PieChart,
+  TrendingUp,
+  Users,
   MapPin,
   Calendar,
   Download,
@@ -16,7 +16,8 @@ import {
   Target,
   Clock,
   Award,
-  Globe
+  Globe,
+  Zap
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { DOMINICAN_PROVINCES } from '../utils/dominican';
@@ -42,11 +43,11 @@ const Analytics = () => {
 
   const loadAnalytics = async () => {
     setLoading(true);
-    
+
     try {
       // Get real election data and user data
       const elections = await getElections();
-      
+
       // Get real user data
       let users = {};
       let totalRegistered = 5; // Default from our known data
@@ -61,13 +62,13 @@ const Analytics = () => {
       // Calculate total votes across all elections
       let totalVotes = 0;
       let allResults = [];
-      
+
       for (const election of elections) {
         try {
           const results = await getResults(election.electionId);
           const electionVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
           totalVotes += electionVotes;
-          
+
           // Store results with election info for detailed analysis
           allResults.push({
             electionId: election.electionId,
@@ -82,13 +83,13 @@ const Analytics = () => {
 
       // Map users to provinces
       const provinceMapping = mapUsersToProvinces(users);
-      
+
       // Generate vote distribution by province
       const votesByProvince = Object.entries(provinceMapping).map(([province, userCount]) => {
         // Distribute total votes proportionally based on registered users
         const percentage = userCount / totalRegistered;
         const provincialVotes = Math.floor(totalVotes * percentage);
-        
+
         return {
           province,
           votes: provincialVotes,
@@ -99,10 +100,10 @@ const Analytics = () => {
 
       // Generate time-based analytics
       const votesByTime = generateTimeBasedVotes(allResults);
-      
+
       // Generate demographic breakdown
       const demographicBreakdown = generateDemographicBreakdown(users, totalVotes);
-      
+
       // Calculate participation rate
       const participationRate = totalRegistered > 0 ? ((totalVotes / totalRegistered) * 100).toFixed(1) : 0;
 
@@ -117,7 +118,7 @@ const Analytics = () => {
 
     } catch (error) {
       console.error('Error loading analytics:', error);
-      
+
       // Fallback data
       setAnalyticsData({
         votesByProvince: [
@@ -163,7 +164,7 @@ const Analytics = () => {
       textStyle: {
         color: '#111827'
       },
-      formatter: function(params) {
+      formatter: function (params) {
         const dataIndex = params[0].dataIndex;
         const data = analyticsData.votesByProvince[dataIndex];
         return `
@@ -182,7 +183,7 @@ const Analytics = () => {
     },
     xAxis: {
       type: 'category',
-      data: analyticsData.votesByProvince.map(item => 
+      data: analyticsData.votesByProvince.map(item =>
         selectedProvince === 'all' || selectedProvince === item.province ? item.province : ''
       ).filter(Boolean),
       axisLabel: {
@@ -378,7 +379,7 @@ const Analytics = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -389,7 +390,7 @@ const Analytics = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-50 via-white to-secondary-50 rounded-3xl"></div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-200/30 to-secondary-200/30 rounded-full -translate-y-8 translate-x-8"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary-200/30 to-primary-200/30 rounded-full translate-y-4 -translate-x-4"></div>
-        
+
         <div className="relative p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
@@ -404,7 +405,7 @@ const Analytics = () => {
                   Analíticos
                 </h1>
               </motion.div>
-              
+
               <motion.p
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -414,7 +415,7 @@ const Analytics = () => {
                 Análisis detallado de participación electoral y tendencias de votación
               </motion.p>
             </div>
-            
+
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -471,7 +472,7 @@ const Analytics = () => {
                 <option value="month">Este mes</option>
               </select>
             </div>
-            
+
             <div className="flex-1">
               <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-3">
                 <MapPin className="w-4 h-4" />
@@ -592,10 +593,10 @@ const Analytics = () => {
                 <p className="text-gray-600">Distribución geográfica de la participación</p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <BarChart3 className="w-7 h-7 text-white" />
+                <BarChart4 className="w-7 h-7 text-white" />
               </div>
             </div>
-            
+
             <ReactECharts
               option={provinceChartOption}
               style={{ height: '350px' }}
@@ -621,7 +622,7 @@ const Analytics = () => {
                 <PieChart className="w-7 h-7 text-white" />
               </div>
             </div>
-            
+
             <ReactECharts
               option={demographicChartOption}
               style={{ height: '350px' }}
@@ -648,7 +649,7 @@ const Analytics = () => {
               <Activity className="w-7 h-7 text-white" />
             </div>
           </div>
-          
+
           <ReactECharts
             option={timeChartOption}
             style={{ height: '350px' }}
