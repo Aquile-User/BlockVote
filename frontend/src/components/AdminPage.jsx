@@ -37,7 +37,7 @@ const AdminPage = () => {
       setIsAuthenticated(true);
       fetchSystemHealth();
     }
-  }, []);  const fetchSystemHealth = async () => {
+  }, []); const fetchSystemHealth = async () => {
     try {
       setLoading(true);
       console.log('Obteniendo estado del sistema...');
@@ -48,13 +48,13 @@ const AdminPage = () => {
       }
 
       const data = await response.json();
-      console.log('Estado del sistema:', data);      setSystemHealth(data);
+      console.log('Estado del sistema:', data); setSystemHealth(data);
     } catch (error) {
       console.error('Error al obtener estado del sistema:', error);
       setSystemHealth({
         status: "error",
         timestamp: new Date().toISOString(),
-        api: { 
+        api: {
           status: "error",
           message: "Error al conectar con la API",
           version: "N/A",
@@ -109,11 +109,11 @@ const AdminPage = () => {
               <Activity className="w-8 h-8 text-primary" />
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
             </div>
-            <div>              
+            <div>
               <h2 className="text-2xl font-bold text-gray-800">Monitor del Sistema</h2>
               <p className="text-gray-600">Estado y rendimiento en tiempo real</p>
             </div>
-          </div>          
+          </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -135,8 +135,8 @@ const AdminPage = () => {
               transition={{ delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              
-              <div className="relative">                
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>
+              <div className="relative">
                 <div className="flex items-center justify-between mb-3">
                   <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                   <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
@@ -156,7 +156,7 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-              <div className="relative">                
+              <div className="relative">
                 <div className="flex items-center justify-between mb-3">
                   <Database className="w-8 h-8 text-indigo-600" />
                   <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
@@ -228,42 +228,53 @@ const AdminPage = () => {
             <ShieldCheck className="w-8 h-8 text-primary" />
             <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
           </div>
-          <div>            <h2 className="text-2xl font-bold text-gray-800">Configuración Blockchain</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Configuración Blockchain</h2>
             <p className="text-gray-600">Información de red y contratos</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Network Information */}
-          <div className="space-y-6">            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-              <Globe className="w-5 h-5 mr-2 text-primary-500" />
-              Detalles de Red
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Red:</span>
-                <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
-                  MegaETH Testnet
-                </span>
-              </div>                <div className="flex justify-between items-center">
-                <span className="text-gray-600">Estado del Contrato:</span>
-                <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.contractDeployed
-                  ? 'text-emerald-700 bg-emerald-100'
-                  : 'text-red-700 bg-red-100'
-                  }`}>
-                  {systemHealth?.blockchain?.contractDeployed ? 'Desplegado' : 'No Encontrado'}
-                </span>
-              </div>
-              <div className="pt-2">
-                <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
-                <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
-                  {systemHealth?.blockchain?.contractAddress || 'Cargando...'}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                <Globe className="w-5 h-5 mr-2 text-primary-500" />
+                Detalles de Red
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Red:</span>
+                  <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
+                    {systemHealth?.services?.blockchain?.message?.includes('Connected') ? 'MegaETH Testnet' : 'Desconectado'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Estado:</span>
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.blockchain?.status === 'online'
+                      ? 'text-emerald-700 bg-emerald-100'
+                      : 'text-red-700 bg-red-100'
+                    }`}>
+                    {systemHealth?.services?.blockchain?.message || 'Sin conexión'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Bloque Actual:</span>
+                  <span className="font-medium text-gray-800">
+                    #{systemHealth?.services?.blockchain?.currentBlock || 'N/A'}
+                  </span>
+                </div>
+                <div className="pt-2">
+                  <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
+                  <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
+                    {systemHealth?.services?.blockchain?.contractAddress || 'No disponible'}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          </div>            {/* Service Information */}
+
+          {/* Service Information */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
@@ -273,15 +284,20 @@ const AdminPage = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Versión API:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.services?.api?.version || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Puerto API:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.api?.port || 3000}</span>
+                  <span className="text-gray-600">Estado API:</span>
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.api?.status === 'online'
+                      ? 'text-emerald-700 bg-emerald-100'
+                      : 'text-red-700 bg-red-100'
+                    }`}>
+                    {systemHealth?.services?.api?.message || 'Sin conexión'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Puerto Relayer:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.relayer?.port || 3001}</span>
+                  <span className="text-gray-600">Usuarios Registrados:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.services?.database?.userCount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Última Verificación:</span>
@@ -373,8 +389,8 @@ const AdminPage = () => {
 
                   {/* Hover background */}
                   <div className={`absolute inset-0 rounded-lg transition-all duration-300 opacity-0 group-hover:opacity-100 ${activeTab === tab.id
-                      ? 'bg-primary-100/0'
-                      : 'bg-primary-50/80'
+                    ? 'bg-primary-100/0'
+                    : 'bg-primary-50/80'
                     }`}></div>
                 </motion.button>
               );
