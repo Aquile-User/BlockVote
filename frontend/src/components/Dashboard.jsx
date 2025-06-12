@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getElections, getResults, getElectionById } from '../api';
+import { mapUsersToProvinces } from '../utils/provinceUtils';
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState({
@@ -42,13 +43,14 @@ const Dashboard = ({ user }) => {
   useEffect(() => {
     loadDashboardData();
   }, []);
-
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('Dashboard: Loading data...');
 
       // Get elections and find the one with oldest end time
       const elections = await getElections();
+      console.log('Dashboard: Elections loaded:', elections);
 
       // Get detailed election data to find oldest
       const electionDetails = await Promise.all(
@@ -164,80 +166,44 @@ const Dashboard = ({ user }) => {
         }
       }
 
-      setRecentActivity(activity.slice(0, 8)); // Show last 8 activities
-
-      // Real Dominican Republic province data based on actual registered users
+      setRecentActivity(activity.slice(0, 8)); // Show last 8 activities      // Real Dominican Republic province data based on actual registered users
       let realProvinceData = [];
 
       try {
         const usersResponse = await fetch('http://localhost:3000/users');
         const usersData = await usersResponse.json();
 
-        // Count real users by province
-        const provinceUserCount = {};
-        Object.values(usersData).forEach(user => {
-          const province = user.province || 'Unknown';
-          provinceUserCount[province] = (provinceUserCount[province] || 0) + 1;
-        });
-
-        // Calculate total registered users
-        const totalUsers = Object.keys(usersData).length;
-
-        // Distribute total votes proportionally based on actual user distribution
-        realProvinceData = Object.entries(provinceUserCount).map(([province, userCount]) => {
-          const percentage = userCount / totalUsers;
-          const votesForProvince = Math.floor(totalVotes * percentage);
-
-          // Get real population data for known provinces
-          const populationData = {
-            'San Pedro de Macorís': 290458,
-            'Monte Plata': 185956,
-            'Sánchez Ramírez': 151392,
-            'Distrito Nacional': 965040,
-            'Santo Domingo': 2908607,
-            'Santiago': 963422,
-            'La Vega': 394205,
-            'Puerto Plata': 321597,
-            'San Cristóbal': 569930
-          };
-
-          return {
-            name: province,
-            votes: votesForProvince,
-            population: populationData[province] || 200000, // Default for unknown provinces
-            participationRate: Math.floor((votesForProvince / userCount) * 100),
-            registeredUsers: userCount
-          };
-        });
-
-        // Add major provinces with no users if not present
-        const majorProvinces = [
-          { name: 'Distrito Nacional', population: 965040 },
-          { name: 'Santo Domingo', population: 2908607 },
-          { name: 'Santiago', population: 963422 }
-        ];
-
-        majorProvinces.forEach(majorProvince => {
-          if (!realProvinceData.find(p => p.name === majorProvince.name)) {
-            realProvinceData.push({
-              name: majorProvince.name,
-              votes: 0,
-              population: majorProvince.population,
-              participationRate: 0,
-              registeredUsers: 0
+        // Combine all election results for province mapping
+        const combinedResults = {};
+        for (const election of validElections) {
+          try {
+            const results = await getResults(election.electionId);
+            Object.entries(results || {}).forEach(([candidate, votes]) => {
+              combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
             });
+          } catch (error) {
+            console.error(`Error getting results for election ${election.electionId}:`, error);
           }
-        });
+        }
 
+        // Use the standardized function
+        realProvinceData = mapUsersToProvinces(usersData, combinedResults);
+
+        // Convert to the format expected by the Dashboard
+        realProvinceData = realProvinceData.map(item => ({
+          name: item.name || item.province,
+          votes: item.votes,
+          registered: item.registered || item.realUsers,
+          participationRate: item.participationRate || (item.registered > 0 ? (item.votes / item.registered * 100).toFixed(1) : 0)
+        }));
       } catch (error) {
         console.error('Error fetching real user data:', error);
-
-        // Fallback to real data only
+        // Fallback data
         realProvinceData = [
-          { name: 'San Pedro de Macorís', votes: 2, population: 290458, participationRate: 100, registeredUsers: 2 },
-          { name: 'Monte Plata', votes: 2, population: 185956, participationRate: 100, registeredUsers: 2 },
-          { name: 'Sánchez Ramírez', votes: 0, population: 151392, participationRate: 0, registeredUsers: 1 },
-          { name: 'María Trinidad Sánchez', votes: 0, population: 140925, participationRate: 0, registeredUsers: 1 }
+          { name: 'San Pedro de Macorís', votes: 2, registered: 2, participationRate: 100 },
+          { name: 'Monte Plata', votes: 2, registered: 2, participationRate: 100 },
+          { name: 'Sánchez Ramírez', votes: 1, registered: 1, participationRate: 100 },
+          { name: 'María Trinidad Sánchez', votes: 1, registered: 1, participationRate: 100 }
         ];
       }
 

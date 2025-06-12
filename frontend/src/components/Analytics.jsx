@@ -40,13 +40,14 @@ const Analytics = () => {
   useEffect(() => {
     loadAnalytics();
   }, [timeRange, selectedProvince]);
-
   const loadAnalytics = async () => {
     setLoading(true);
+    console.log('Analytics: Loading data...');
 
     try {
       // Get real election data and user data
       const elections = await getElections();
+      console.log('Analytics: Elections loaded:', elections);
 
       // Get real user data
       let users = {};
@@ -79,30 +80,20 @@ const Analytics = () => {
         } catch (error) {
           console.log(`No results for election ${election.electionId}`);
         }
-      }
-
-      // Map users to provinces
-      const provinceMapping = mapUsersToProvinces(users);
-
-      // Generate vote distribution by province
-      const votesByProvince = Object.entries(provinceMapping).map(([province, userCount]) => {
-        // Distribute total votes proportionally based on registered users
-        const percentage = userCount / totalRegistered;
-        const provincialVotes = Math.floor(totalVotes * percentage);
-
-        return {
-          province,
-          votes: provincialVotes,
-          registeredUsers: userCount,
-          participationRate: userCount > 0 ? ((provincialVotes / userCount) * 100).toFixed(1) : 0
-        };
-      });
+      }      // Map users to provinces with actual results
+      const combinedResults = {};
+      allResults.forEach(election => {
+        Object.entries(election.results).forEach(([candidate, votes]) => {
+          combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
+        });
+      });      // Use the corrected function that returns an array
+      const votesByProvince = mapUsersToProvinces(users, combinedResults);
 
       // Generate time-based analytics
-      const votesByTime = generateTimeBasedVotes(allResults);
+      const votesByTime = generateTimeBasedVotes(totalVotes);
 
       // Generate demographic breakdown
-      const demographicBreakdown = generateDemographicBreakdown(users, totalVotes);
+      const demographicBreakdown = generateDemographicBreakdown(users);
 
       // Calculate participation rate
       const participationRate = totalRegistered > 0 ? ((totalVotes / totalRegistered) * 100).toFixed(1) : 0;

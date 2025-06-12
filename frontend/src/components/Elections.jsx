@@ -105,6 +105,8 @@ const Elections = ({ user }) => {
       );
 
       setElections(electionsWithDetails);
+      console.log('Elections loaded:', electionsWithDetails);
+      console.log('Elections with details:', electionsWithDetails.length);
     } catch (error) {
       console.error('Error loading elections:', error);
       toast.error('Failed to load elections');
@@ -166,12 +168,10 @@ const Elections = ({ user }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const filteredElections = elections
+  }; const filteredElections = elections
     .filter(election => {
-      const matchesSearch = election.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        election.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        election.candidates?.some(candidate => candidate.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesFilter = filterStatus === 'all' || election.status === filterStatus;
       return matchesSearch && matchesFilter;
     })
@@ -185,6 +185,11 @@ const Elections = ({ user }) => {
       };
       return statusPriority[a.status] - statusPriority[b.status];
     });
+
+  console.log('Filtered elections:', filteredElections);
+  console.log('Elections:', elections);
+  console.log('Search term:', searchTerm);
+  console.log('Filter status:', filterStatus);
 
   if (loading) {
     return (
@@ -335,13 +340,12 @@ const Elections = ({ user }) => {
                 </div>
 
                 {/* Election Info */}
-                <div className="space-y-4 mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
-                    {election.title || election.name}
-                  </h3>
+                <div className="space-y-4 mb-6">                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
+                  {election.name}
+                </h3>
 
                   <p className="text-gray-600 leading-relaxed">
-                    {election.description || 'Sin descripción disponible'}
+                    {election.candidates ? `${election.candidates.length} candidatos: ${election.candidates.slice(0, 3).join(', ')}${election.candidates.length > 3 ? '...' : ''}` : 'Sin candidatos disponibles'}
                   </p>
 
                   {/* Election Dates */}
@@ -397,20 +401,18 @@ const Elections = ({ user }) => {
                     <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                       <Users className="w-4 h-4 mr-2" />
                       Candidatos
-                    </h4>
-                    <div className="space-y-2">
+                    </h4>                    <div className="space-y-2">
                       {election.candidates.slice(0, 3).map((candidate, idx) => {
-                        const votes = election.results[candidate.id] || 0;
+                        const votes = election.results?.[candidate] || 0;
                         const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
 
-                        return (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50/60 rounded-xl">
-                            <span className="font-medium text-gray-900">{candidate.name}</span>
-                            <div className="text-right">
-                              <span className="text-sm font-semibold text-gray-700">{votes} votos</span>
-                              <div className="text-xs text-gray-500">{percentage}%</div>
-                            </div>
+                        return (<div key={idx} className="flex items-center justify-between p-3 bg-gray-50/60 rounded-xl">
+                          <span className="font-medium text-gray-900">{candidate}</span>
+                          <div className="text-right">
+                            <span className="text-sm font-semibold text-gray-700">{votes} votos</span>
+                            <div className="text-xs text-gray-500">{percentage}%</div>
                           </div>
+                        </div>
                         );
                       })}
                       {election.candidates.length > 3 && (
