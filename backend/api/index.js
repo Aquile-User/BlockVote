@@ -972,14 +972,20 @@ app.post("/vote", async (req, res) => {
     const user = users[socialId];
     if (!user) return res.status(400).json({ error: "User not registered" });
 
-    const voterAddress = user.address;
-
-    // Build message hash exactly as contract expects
+    const voterAddress = user.address; // Build message hash exactly as contract expects
     const contractAddress = process.env.CONTRACT_ADDRESS;
     const messageHash = ethers.solidityPackedKeccak256(
       ["uint256", "string", "address", "address"],
       [electionId, selectedCandidate, voterAddress, contractAddress]
     );
+
+    console.log("Backend verification data:", {
+      electionId,
+      selectedCandidate,
+      voterAddress,
+      contractAddress,
+      messageHash,
+    });
 
     // Verify signature was signed by this user
     // Use getBytes() to match how the contract verifies (32-byte data, not string)
