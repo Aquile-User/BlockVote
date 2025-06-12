@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { CONFIG } from "../config";
 import {
   ShieldCheck,
   Settings,
@@ -252,8 +253,8 @@ const AdminPage = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado:</span>
                   <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.blockchain?.status === 'online'
-                      ? 'text-emerald-700 bg-emerald-100'
-                      : 'text-red-700 bg-red-100'
+                    ? 'text-emerald-700 bg-emerald-100'
+                    : 'text-red-700 bg-red-100'
                     }`}>
                     {systemHealth?.services?.blockchain?.message || 'Sin conexión'}
                   </span>
@@ -263,11 +264,10 @@ const AdminPage = () => {
                   <span className="font-medium text-gray-800">
                     #{systemHealth?.services?.blockchain?.currentBlock || 'N/A'}
                   </span>
-                </div>
-                <div className="pt-2">
+                </div>                <div className="pt-2">
                   <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
                   <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
-                    {systemHealth?.services?.blockchain?.contractAddress || 'No disponible'}
+                    {systemHealth?.services?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
                   </div>
                 </div>
               </div>
@@ -289,8 +289,8 @@ const AdminPage = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado API:</span>
                   <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.api?.status === 'online'
-                      ? 'text-emerald-700 bg-emerald-100'
-                      : 'text-red-700 bg-red-100'
+                    ? 'text-emerald-700 bg-emerald-100'
+                    : 'text-red-700 bg-red-100'
                     }`}>
                     {systemHealth?.services?.api?.message || 'Sin conexión'}
                   </span>
@@ -323,37 +323,42 @@ const AdminPage = () => {
       </div>
 
       {/* Header */}
-      <div className="relative backdrop-blur-sm bg-white/80 border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+      <div className="relative p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-4"
-            >              <div className="relative">
-                <div className="w-11 h-11 bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
-                  <ShieldCheck className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-300 to-primary-500 rounded-xl opacity-20 blur-sm -z-10"></div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">
-                  BlockVote Admin
-                </h1>
-                <p className="text-sm text-gray-500">Sistema de Administración</p>
-              </div>
-            </motion.div>            <motion.button
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center space-x-3"
+            >
+              <Settings className="w-7 h-7 text-primary-600" />
+              <h1 className="text-4xl font-bold text-primary-700">
+                Panel de Administración
+              </h1>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-gray-600 text-lg max-w-2xl"
+            >
+              Gestiona el sistema de votación y monitorea la seguridad de la plataforma
+            </motion.p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 lg:mt-0"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleLogout}
               className="flex items-center space-x-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors duration-300"
             >
               <LogOut className="w-5 h-5" />
               <span>Cerrar Sesión</span>
             </motion.button>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -368,7 +373,9 @@ const AdminPage = () => {
                   key={tab.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
+                  transition={{ delay: index * 0.1 }}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
                     ? 'text-primary-600 bg-primary-50/80'
                     : 'text-gray-600 hover:text-primary-600'
                     }`}
