@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { 
-  Vote, 
-  Clock, 
-  Users, 
-  CheckCircle,
+import {
+  Vote,
+  Clock,
+  Users,
+  CheckCircle2,
   Calendar,
   MapPin,
   ArrowRight,
@@ -16,8 +16,11 @@ import {
   Sparkles,
   Eye,
   TrendingUp,
-  AlertCircle,
-  Activity
+  AlertTriangle,
+  Activity,
+  Zap,
+  Globe,
+  Target
 } from 'lucide-react';
 import { getElections, getResults, getElectionById } from '../api';
 
@@ -46,17 +49,17 @@ const Elections = ({ user }) => {
   const loadElections = async () => {
     try {
       setLoading(true);
-      
+
       // Get elections from API
       const electionsList = await getElections();
-      
+
       // Get detailed data for each election
       const electionsWithDetails = await Promise.all(
         electionsList.map(async (election) => {
           try {
             // Get election details
             const details = await getElectionById(election.electionId);
-            
+
             // Get vote results
             let results = {};
             try {
@@ -64,14 +67,14 @@ const Elections = ({ user }) => {
             } catch (error) {
               console.log(`No results yet for election ${election.electionId}`);
             }
-            
+
             // Calculate total votes
             const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
-            
+
             // Determine status
             const now = Math.floor(Date.now() / 1000);
             let status = 'upcoming';
-            
+
             if (details.disabled) {
               status = 'disabled';
             } else if (now >= details.startTime && now <= details.endTime) {
@@ -79,7 +82,7 @@ const Elections = ({ user }) => {
             } else if (now > details.endTime) {
               status = 'expired';
             }
-            
+
             return {
               ...election,
               ...details,
@@ -132,9 +135,9 @@ const Elections = ({ user }) => {
       case 'upcoming':
         return <Clock className="w-4 h-4" />;
       case 'expired':
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle2 className="w-4 h-4" />;
       case 'disabled':
-        return <AlertCircle className="w-4 h-4" />;
+        return <AlertTriangle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
     }
@@ -168,7 +171,7 @@ const Elections = ({ user }) => {
   const filteredElections = elections
     .filter(election => {
       const matchesSearch = election.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           election.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        election.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilter = filterStatus === 'all' || election.status === filterStatus;
       return matchesSearch && matchesFilter;
     })
@@ -195,7 +198,7 @@ const Elections = ({ user }) => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -206,7 +209,7 @@ const Elections = ({ user }) => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-50 via-white to-secondary-50 rounded-3xl"></div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-200/30 to-secondary-200/30 rounded-full -translate-y-8 translate-x-8"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary-200/30 to-primary-200/30 rounded-full translate-y-4 -translate-x-4"></div>
-        
+
         <div className="relative p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
@@ -221,7 +224,7 @@ const Elections = ({ user }) => {
                   Elecciones
                 </h1>
               </motion.div>
-              
+
               <motion.p
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -231,7 +234,7 @@ const Elections = ({ user }) => {
                 Participa en votaciones seguras y transparentes utilizando tecnología blockchain
               </motion.p>
             </div>
-            
+
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -322,7 +325,7 @@ const Elections = ({ user }) => {
                     {getStatusIcon(election.status)}
                     <span>{getStatusText(election.status)}</span>
                   </div>
-                  
+
                   {election.status === 'active' && (
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -336,7 +339,7 @@ const Elections = ({ user }) => {
                   <h3 className="text-2xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
                     {election.title || election.name}
                   </h3>
-                  
+
                   <p className="text-gray-600 leading-relaxed">
                     {election.description || 'Sin descripción disponible'}
                   </p>
@@ -378,7 +381,7 @@ const Elections = ({ user }) => {
                     <p className="text-2xl font-bold text-primary-600">{election.totalVotes}</p>
                     <p className="text-sm text-primary-500">Votos</p>
                   </div>
-                  
+
                   <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl">
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -399,7 +402,7 @@ const Elections = ({ user }) => {
                       {election.candidates.slice(0, 3).map((candidate, idx) => {
                         const votes = election.results[candidate.id] || 0;
                         const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
-                        
+
                         return (
                           <div key={idx} className="flex items-center justify-between p-3 bg-gray-50/60 rounded-xl">
                             <span className="font-medium text-gray-900">{candidate.name}</span>
@@ -420,8 +423,8 @@ const Elections = ({ user }) => {
                 )}
 
                 {/* Action Button */}
-                <Link 
-                  to={`/elections/${election.electionId}`} 
+                <Link
+                  to={`/elections/${election.electionId}`}
                   className="block"
                 >
                   <motion.button
@@ -452,7 +455,7 @@ const Elections = ({ user }) => {
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-3">No hay elecciones disponibles</h3>
           <p className="text-gray-600 max-w-md mx-auto">
-            {searchTerm || filterStatus !== 'all' 
+            {searchTerm || filterStatus !== 'all'
               ? 'No se encontraron elecciones que coincidan con tu búsqueda.'
               : 'Las elecciones aparecerán aquí cuando estén disponibles.'
             }
