@@ -37,30 +37,44 @@ const AdminPage = () => {
       setIsAuthenticated(true);
       fetchSystemHealth();
     }
-  }, []);
-  const fetchSystemHealth = async () => {
+  }, []);  const fetchSystemHealth = async () => {
     try {
       setLoading(true);
-      console.log('Fetching system health...');
+      console.log('Obteniendo estado del sistema...');
       const response = await fetch('http://localhost:3000/health');
 
       if (!response.ok) {
-        throw new Error(`Health API responded with status: ${response.status}`);
+        throw new Error(`Error al obtener estado del sistema: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('System health data:', data);
-      setSystemHealth(data);
+      console.log('Estado del sistema:', data);      setSystemHealth(data);
     } catch (error) {
-      console.error('Failed to fetch system health:', error);
-      // Set a fallback health status
+      console.error('Error al obtener estado del sistema:', error);
       setSystemHealth({
         status: "error",
         timestamp: new Date().toISOString(),
-        services: {
-          api: { status: "unknown", message: "Health check failed" },
-          database: { status: "unknown", message: "Unknown" },
-          blockchain: { status: "unknown", message: "Unknown" }
+        api: { 
+          status: "error",
+          message: "Error al conectar con la API",
+          version: "N/A",
+          port: 3000
+        },
+        relayer: {
+          status: "unknown",
+          message: "No se pudo verificar el estado del relayer",
+          port: 3001
+        },
+        blockchain: {
+          network: "Desconocido",
+          chainId: 0,
+          blockNumber: 0,
+          connected: false,
+          contractAddress: null,
+          contractDeployed: false
+        },
+        users: {
+          registered: 0
         },
         error: error.message
       });
@@ -95,10 +109,12 @@ const AdminPage = () => {
               <Activity className="w-8 h-8 text-primary" />
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
             </div>
-            <div>              <h2 className="text-2xl font-bold text-gray-800">Monitor del Sistema</h2>
+            <div>              
+              <h2 className="text-2xl font-bold text-gray-800">Monitor del Sistema</h2>
               <p className="text-gray-600">Estado y rendimiento en tiempo real</p>
             </div>
-          </div>          <motion.button
+          </div>          
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={fetchSystemHealth}
@@ -119,50 +135,36 @@ const AdminPage = () => {
               transition={{ delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                  Activo
-                </span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              
+              <div className="relative">                
+                <div className="flex items-center justify-between mb-3">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                    {systemHealth.services.api.status}
+                  </span>
+                </div>
                 <h3 className="font-bold text-emerald-800 mb-1">Servicio API</h3>
-                <p className="text-emerald-600 text-sm capitalize">{systemHealth.status}</p>
+                <p className="text-emerald-600 text-sm capitalize">{systemHealth.services.api.message}</p>
               </div>
             </motion.div>
 
-            {/* Relayer Status */}
+            {/* Database Status */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className={`relative overflow-hidden rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${systemHealth.relayer?.status === 'running'
-                ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50'
-                : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/50'
-                }`}
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${systemHealth.relayer?.status === 'running'
-                ? 'from-emerald-400/5 to-emerald-600/5'
-                : 'from-red-400/5 to-red-600/5'
-                }`}></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">                {systemHealth.relayer?.status === 'running' ? (
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                ) : (
-                  <XCircle className="w-8 h-8 text-red-600" />
-                )}
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${systemHealth.relayer?.status === 'running'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-red-100 text-red-700'
-                    }`}>
-                    {systemHealth.relayer?.status === 'running' ? 'Ejecutándose' : 'Error'}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
+              <div className="relative">                
+                <div className="flex items-center justify-between mb-3">
+                  <Database className="w-8 h-8 text-indigo-600" />
+                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                    {systemHealth.services.database.status}
                   </span>
                 </div>
-                <h3 className={`font-bold mb-1 ${systemHealth.relayer?.status === 'running' ? 'text-emerald-800' : 'text-red-800'
-                  }`}>Servicio Relayer</h3>
-                <p className={`text-sm capitalize ${systemHealth.relayer?.status === 'running' ? 'text-emerald-600' : 'text-red-600'
-                  }`}>
-                  {systemHealth.relayer?.status === 'running' ? 'Activo' : (systemHealth.relayer?.status || 'Desconocido')}
-                </p>
+                <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
+                <p className="text-indigo-600 text-sm">{systemHealth.services.database.userCount} usuarios</p>
               </div>
             </motion.div>
 
@@ -171,41 +173,45 @@ const AdminPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                <Database className="w-8 h-8 text-indigo-600" />
-                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                  Sincronizado
-                </span>
-              </div>
-                <h3 className="font-bold text-indigo-800 mb-1">Blockchain</h3>
-                <p className="text-indigo-600 text-sm">Bloque #{systemHealth.blockchain?.blockNumber || 'N/A'}</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <ShieldCheck className="w-8 h-8 text-blue-600" />
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                    {systemHealth.services.blockchain.status}
+                  </span>
+                </div>
+                <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
+                <p className="text-blue-600 text-sm">Bloque #{systemHealth.services.blockchain.currentBlock || 'N/A'}</p>
               </div>
             </motion.div>
 
-            {/* Users Count */}
+            {/* System Status */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 border border-violet-200/50 p-6 hover:shadow-lg transition-all duration-300"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-400/5 to-violet-600/5"></div>
-              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                <Users className="w-8 h-8 text-violet-600" />
-                <TrendingUp className="w-5 h-5 text-violet-600" />
-              </div>
-                <h3 className="font-bold text-violet-800 mb-1">Usuarios Registrados</h3>
-                <p className="text-violet-600 text-sm font-semibold">{systemHealth.users?.registered || 0}</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <Monitor className="w-8 h-8 text-amber-600" />
+                  <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                    {systemHealth.status}
+                  </span>
+                </div>
+                <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
+                <p className="text-amber-600 text-sm capitalize">Sistema {systemHealth.status}</p>
               </div>
             </motion.div>
           </div>
         ) : (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading system health...</p>
+            <p className="text-slate-600">Cargando estado del sistema...</p>
           </div>
         )}
       </motion.div>
