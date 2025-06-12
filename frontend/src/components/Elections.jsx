@@ -244,12 +244,12 @@ const Elections = ({ user }) => {
               transition={{ delay: 0.3 }}
               className="mt-6 lg:mt-0"
             >              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={loadElections}
-                disabled={loading}
-                className="flex items-center space-x-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium disabled:opacity-50"
-              >
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={loadElections}
+              disabled={loading}
+              className="flex items-center space-x-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium disabled:opacity-50"
+            >
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 <span className="font-semibold">Actualizar</span>
               </motion.button>
@@ -423,10 +423,10 @@ const Elections = ({ user }) => {
                   to={`/elections/${election.electionId}`}
                   className="block"
                 >                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-3 group"
-                  >
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-3 group"
+                >
                     <Eye className="w-5 h-5" />
                     <span>Ver Detalles</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />

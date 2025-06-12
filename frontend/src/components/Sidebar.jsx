@@ -27,8 +27,7 @@ const Sidebar = ({ user }) => {
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     window.location.reload();
-  };
-  const navItems = [
+  }; const navItems = [
     {
       path: '/dashboard',
       icon: LayoutGrid,
@@ -42,13 +41,6 @@ const Sidebar = ({ user }) => {
       label: 'Elecciones',
       description: 'Elecciones activas y pasadas',
       color: 'emerald'
-    },
-    {
-      path: '/analytics',
-      icon: PieChart,
-      label: 'Analíticas',
-      description: 'Gráficos y análisis de votos',
-      color: 'violet'
     },
     {
       path: '/admin',
