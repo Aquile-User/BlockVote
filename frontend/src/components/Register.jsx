@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Zap,
   Key,
-  Download
+  Download,
+  AlertCircle
 } from "lucide-react";
 import { registerUser } from "../api";
 import { DOMINICAN_PROVINCES, validateDominicanID } from "../utils/dominican";
@@ -211,8 +212,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
             {[1, 2, 3].map((stepNum) => (
               <div key={stepNum} className="flex items-center">
                 <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${step >= stepNum
-                    ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-soft'
-                    : 'bg-slate-100 text-slate-400 border border-slate-200'
+                  ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-soft'
+                  : 'bg-slate-100 text-slate-400 border border-slate-200'
                   }`}>
                   {step > stepNum ? (
                     <Check className="w-5 h-5" />
@@ -225,8 +226,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 </div>
                 {stepNum < 3 && (
                   <div className={`w-12 h-1 rounded-full transition-all duration-500 ${step > stepNum
-                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                      : 'bg-slate-200'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                    : 'bg-slate-200'
                     }`} />
                 )}
               </div>
@@ -374,8 +375,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                     className={`group relative overflow-hidden ${metamaskAvailable
-                        ? 'cursor-pointer hover:scale-[1.02]'
-                        : 'opacity-50 cursor-not-allowed'
+                      ? 'cursor-pointer hover:scale-[1.02]'
+                      : 'opacity-50 cursor-not-allowed'
                       } transition-all duration-300`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-3xl"></div>
@@ -412,8 +413,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                               onClick={connectMetaMask}
                               disabled={!metamaskAvailable || loading}
                               className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${metamaskAvailable
-                                  ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-soft hover:shadow-glow'
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-soft hover:shadow-glow'
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                 }`}
                             >
                               {loading ? (
