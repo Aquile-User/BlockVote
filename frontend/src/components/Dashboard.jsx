@@ -61,45 +61,33 @@ const Dashboard = ({ user }) => {
   };
   // Función para contar los votos del usuario actual
   const countUserVotes = async (userAddress, resultsMap, validElections, timeframeCutoff) => {
-    if (!userAddress) return 0;
-
-    try {
-      // Obtener el historial de votos del backend
-      const voteHistoryResponse = await fetch('http://localhost:3000/votes');
-      const voteHistory = await voteHistoryResponse.json();
-
-      // Filtrar por la dirección del usuario actual
-      let userVotes = Object.values(voteHistory || {}).filter(
-        vote => vote.voter?.toLowerCase() === userAddress?.toLowerCase()
-      );
-
-      // Aplicar filtro de timeframe si es necesario
-      if (timeframeCutoff > 0) {
-        userVotes = userVotes.filter(vote => {
-          const voteTimestamp = vote.timestamp || 0;
-          return voteTimestamp >= timeframeCutoff;
-        });
-      }
-
-      return userVotes.length;
-    } catch (error) {
-      console.error('Error al obtener historial de votos:', error);
-
-      // Plan B: Estimación basada en resultados actuales (menos preciso)
-      // Solo usar si el endpoint de votos no está disponible
+    if (!userAddress) return 0; try {
+      // Estimación basada en resultados actuales
+      // Como no tenemos endpoint de historial de votos, estimamos basándonos en las elecciones
       if (userAddress && resultsMap && validElections) {
         let count = 0;
-        // Verificar si el usuario aparece como votante en alguna elección
+
+        // Para cada elección válida, verificar si hay votos registrados
         for (const election of validElections) {
           const electionId = election.electionId;
           const results = resultsMap[electionId] || {};
-          // Si hay al menos un voto en esta elección, contarlo como 1 posible voto del usuario
-          if (Object.values(results).some(votes => votes > 0)) {
+
+          // Si hay votos en esta elección, asumir que el usuario puede haber votado
+          const totalVotes = Object.values(results).reduce((sum, votes) => sum + votes, 0);
+          if (totalVotes > 0) {
+            // Estimar probabilidad de que el usuario haya votado (máximo 1 voto por elección)
             count += 1;
           }
         }
+
+        // Limitar el conteo al número de elecciones válidas
         return Math.min(count, validElections.length);
-      } return 0;
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('Error al estimar votos del usuario:', error);
+      return 0;
     }
   };
 
