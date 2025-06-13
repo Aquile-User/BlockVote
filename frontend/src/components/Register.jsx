@@ -11,7 +11,6 @@ import {
   Eye,
   EyeOff,
   CheckCircle2 as Check,
-  ArrowRight,
   AlertTriangle,
   Zap,
   Key,
@@ -180,26 +179,13 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-primary-500 to-coral-500"></div>
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-emerald-100 to-primary-100 rounded-full blur-3xl opacity-30"></div>
-        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-coral-100 to-violet-100 rounded-full blur-2xl opacity-40"></div>
-
-        {/* Header */}
+        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-coral-100 to-violet-100 rounded-full blur-2xl opacity-40"></div>        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-center mb-8 relative z-10"
         >
-          <div className="flex justify-center mb-6">
-            <div className="relative">              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 via-emerald-600 to-primary-600 rounded-2xl flex items-center justify-center shadow-button">
-              <ShieldCheck className="w-8 h-8 text-white" />
-            </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-primary-500 rounded-2xl opacity-20 blur-sm animate-pulse-soft"></div>
-              {/* Floating mini elements */}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-coral-400 rounded-full animate-bounce-soft"></div>
-              <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-primary-400 rounded-full animate-float"></div>
-            </div>
-          </div>
-
           <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-emerald-700 to-slate-800 bg-clip-text text-transparent mb-3">
             Crear Cuenta
           </h1>
@@ -320,16 +306,13 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     </select>
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-coral-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                   </div>
-                </div>
-
-                <motion.button
+                </div>                <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNext}
                   className="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-semibold text-lg py-4 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center space-x-3 group"
                 >
                   <span>Continuar</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </motion.button>
               </motion.div>
             )}          {/* Step 2: Enhanced Authentication Method */}
@@ -501,11 +484,10 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
                   className="pt-8 border-t border-white/10"
-                >
-                  <button
+                >                  <button
                     onClick={() => setStep(1)}
                     className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors duration-200"
-                  >                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  >
                     <span>Volver a información personal</span>
                   </button>
                 </motion.div>
@@ -663,8 +645,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 }}
                   className="pt-4"
-                >
-                  <motion.button
+                >                  <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={completeRegistration}
@@ -672,14 +653,11 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   >
                     <Check className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                     <span>Completar Registro</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                   </motion.button>
                 </motion.div>            </motion.div>
             )}
           </div>
-        </div>
-
-        {/* Login Link */}
+        </div>        {/* Login Link */}
         {switchToLogin && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -687,15 +665,18 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-center mt-6"
           >
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <button
-                onClick={switchToLogin}
-                className="text-primary hover:text-primary-dark font-medium transition-colors"
-              >
-                Sign in here
-              </button>
-            </p>
+            <div className="relative">
+              <p className="text-slate-600 text-base">
+                ¿Ya tienes una cuenta?{' '}
+                <button
+                  onClick={switchToLogin}
+                  className="text-primary-600 hover:text-primary-700 font-semibold transition-all duration-300 hover:underline decoration-2 underline-offset-2 relative group"
+                >
+                  Inicia sesión aquí
+                  <span className="absolute inset-0 bg-primary-100 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300 -m-1"></span>
+                </button>
+              </p>
+            </div>
           </motion.div>
         )}
 
