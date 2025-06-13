@@ -252,52 +252,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
         <p className="text-slate-600 text-base font-medium">
           Únete a <span className="text-emerald-600 font-semibold">BlockVote</span> y participa
         </p>
-        {/* Indicador de paso dinámico */}
-        <motion.div
-          className="flex justify-center mt-4 space-x-3"
-          layout
-        >
-          {[1, 2, 3].map((stepNumber) => (
-            <motion.div
-              key={stepNumber}
-              className={`relative flex items-center justify-center transition-all duration-500 ${stepNumber === step
-                  ? 'w-10 h-4 bg-gradient-to-r from-emerald-500 to-primary-600 rounded-full'
-                  : stepNumber < step
-                    ? 'w-4 h-4 bg-emerald-400 rounded-full'
-                    : 'w-3 h-3 bg-slate-300 rounded-full'
-                }`}
-              layout
-              whileHover={{ scale: 1.1 }}
-            >
-              {stepNumber === step && (
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-primary-500 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              )}
-              {stepNumber < step && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-2 h-2 bg-white rounded-full"
-                />
-              )}
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Texto de paso dinámico */}
-        <motion.p
-          className="text-xs text-slate-500 mt-2 font-medium"
-          key={step}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          Paso {step} de 3 - {step === 1 ? 'Información Personal' : step === 2 ? 'Método de Autenticación' : 'Finalización'}
-        </motion.p>
-      </motion.div>      <motion.div
+      </motion.div><motion.div
         className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-soft transition-all duration-700"
         style={getInnerContainerStyles()}
         layout
