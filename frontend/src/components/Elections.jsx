@@ -94,9 +94,7 @@ const Elections = ({ user }) => {
         };
       });
 
-      setElections(electionsWithDetails);
-      console.log('Elections loaded:', electionsWithDetails);
-      console.log('Elections with details:', electionsWithDetails.length);
+      setElections(electionsWithDetails);      // Elections loaded and processed
     } catch (error) {
       console.error('Error loading elections:', error);
       toast.error('Failed to load elections');
@@ -175,11 +173,7 @@ const Elections = ({ user }) => {
       };
       return statusPriority[a.status] - statusPriority[b.status];
     });
-
-  console.log('Filtered elections:', filteredElections);
-  console.log('Elections:', elections);
-  console.log('Search term:', searchTerm);
-  console.log('Filter status:', filterStatus);
+  // Filtered elections processing
 
   if (loading) {
     return (

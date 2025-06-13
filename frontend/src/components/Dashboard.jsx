@@ -61,13 +61,13 @@ const Dashboard = ({ user }) => {
   };  // Función para contar los votos reales del usuario actual
   const countUserVotes = async (userSocialId, validElections) => {
     if (!userSocialId) {
-      console.log('Dashboard: No user socialId provided for vote counting');
+      // Dashboard: No user socialId provided for vote counting
       return 0;
     }
 
     try {
       let realVoteCount = 0;
-      console.log(`Dashboard: Counting real votes for user ${userSocialId} across ${validElections.length} elections`);
+      // Dashboard: Counting real votes for user across elections
 
       // Para cada elección válida, verificar si el usuario realmente ha votado
       for (const election of validElections) {
@@ -75,7 +75,7 @@ const Dashboard = ({ user }) => {
 
         try {
           // Usar la API hasVoted para verificar si el usuario votó en esta elección
-          console.log(`Dashboard: Checking if user voted in election ${electionId}`);
+          // Dashboard: Checking if user voted in election
           const votingStatus = await hasVoted(electionId, userSocialId);
           if (votingStatus.hasVoted) {
             console.log(`Dashboard: ✅ User voted in election ${electionId}`);
@@ -231,7 +231,7 @@ const Dashboard = ({ user }) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('Dashboard: Loading data...');
+      // Dashboard: Loading data...
 
       // Get elections and find the one with oldest end time
       const elections = await getElections();
