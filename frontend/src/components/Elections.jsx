@@ -333,35 +333,54 @@ const Elections = ({ user }) => {
                       <p className="text-gray-600 leading-relaxed">
                         {election.candidates ? `${election.candidates.length} candidatos disponibles` : 'Sin candidatos disponibles'}
                       </p>
-                    </div>                    {/* Election Timeline - Style inspired by ElectionManagement */}
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
-                      <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
-                        <Clock className="w-5 h-5 mr-2 text-blue-500" />
-                        Cronograma
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="bg-white p-3 rounded-lg border border-blue-200">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <label className="text-sm font-medium text-gray-600">Inicio de Votación</label>
-                          </div>
-                          <p className="text-gray-900 font-semibold text-sm">
-                            {formatDate(election.startTime)}
-                          </p>
-                        </div>
+                    </div>
 
-                        <div className="bg-white p-3 rounded-lg border border-blue-200">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <label className="text-sm font-medium text-gray-600">Fin de Votación</label>
-                          </div>
-                          <p className="text-gray-900 font-semibold text-sm">
-                            {formatDate(election.endTime)}
-                          </p>
+                    {/* Top Candidates - Moved to left section */}
+                    {election.candidates && election.candidates.length > 0 && (
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-100 rounded-xl p-4 border border-purple-200">
+                        <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                          <Users className="w-5 h-5 mr-2 text-purple-500" />
+                          Top Candidatos
+                        </h4>
+                        <div className="space-y-2">
+                          {election.candidates.slice(0, 3).map((candidate, idx) => {
+                            const votes = election.results?.[candidate] || 0;
+                            const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
+
+                            return (
+                              <div key={idx} className="bg-white p-3 rounded-lg border border-purple-200 hover:shadow-sm transition-all duration-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : 'bg-orange-600'}`}>
+                                      {idx + 1}
+                                    </div>
+                                    <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <div className="text-sm font-semibold text-gray-700">{votes}</div>
+                                    <div className="text-xs text-gray-500">{percentage}%</div>
+                                  </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                  <div
+                                    className={`h-1.5 rounded-full transition-all duration-500 ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : idx === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-400' : 'bg-gradient-to-r from-orange-400 to-orange-600'}`}
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {election.candidates.length > 3 && (
+                            <div className="text-center p-2 bg-white rounded-lg border border-purple-200">
+                              <div className="text-gray-400 text-xs mb-1">📊</div>
+                              <div className="text-gray-600 font-medium text-xs">+{election.candidates.length - 3} candidatos más</div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </div>                  {/* Right Section - Enhanced Stats and Metrics */}
+                    )}                  </div>{/* Right Section - Enhanced Stats and Metrics */}
                   <div className="lg:w-80 p-6 lg:p-8 bg-gradient-to-br from-teal-50 to-emerald-100 lg:border-l border-teal-200 rounded-r-3xl">
                     {/* Voting Summary Card */}
                     <div className="mb-6">
@@ -380,9 +399,7 @@ const Elections = ({ user }) => {
                           <div className="text-xl font-bold text-emerald-600">{election.totalVotes}</div>
                           <div className="text-sm text-gray-600">Votos Totales</div>
                         </div>
-                      </div>
-
-                      {/* Participation Metrics */}
+                      </div>                      {/* Participation Metrics */}
                       <div className="bg-white p-3 rounded-lg border border-teal-200 mb-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-600">Participación</span>
@@ -400,52 +417,35 @@ const Elections = ({ user }) => {
                           </span>
                         </div>
                       </div>
-                    </div>                    {/* Top Candidates - Enhanced styling */}
-                    {election.candidates && election.candidates.length > 0 && (
-                      <div className="mb-6">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                          <Users className="w-4 h-4 mr-2 text-purple-500" />
-                          Top Candidatos
-                        </h4>
-                        <div className="space-y-2">
-                          {election.candidates.slice(0, 2).map((candidate, idx) => {
-                            const votes = election.results?.[candidate] || 0;
-                            const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
+                    </div>
 
-                            return (
-                              <div key={idx} className="bg-white p-3 rounded-lg border border-purple-200 hover:shadow-sm transition-all duration-200">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center space-x-2 min-w-0 flex-1">
-                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${idx === 0 ? 'bg-yellow-500' : 'bg-purple-500'}`}>
-                                      {idx + 1}
-                                    </div>
-                                    <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div className="text-sm font-semibold text-gray-700">{votes}</div>
-                                    <div className="text-xs text-gray-500">{percentage}%</div>
-                                  </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full transition-all duration-500 ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-purple-400 to-purple-500'}`}
-                                    style={{ width: `${percentage}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          {election.candidates.length > 2 && (
-                            <div className="text-center p-2 bg-white rounded-lg border border-purple-200">
-                              <div className="text-gray-400 text-xs mb-1">📊</div>
-                              <div className="text-gray-600 font-medium text-xs">+{election.candidates.length - 2} candidatos más</div>
-                            </div>
-                          )}
+                    {/* Election Timeline - Moved to right section */}
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200 mb-6">
+                      <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                        <Clock className="w-5 h-5 mr-2 text-blue-500" />
+                        Cronograma
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <label className="text-sm font-medium text-gray-600">Inicio de Votación</label>
+                          </div>
+                          <p className="text-gray-900 font-semibold text-sm">
+                            {formatDate(election.startTime)}
+                          </p>
                         </div>
-                      </div>
-                    )}
+
+                        <div className="bg-white p-3 rounded-lg border border-blue-200">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <label className="text-sm font-medium text-gray-600">Fin de Votación</label>
+                          </div>
+                          <p className="text-gray-900 font-semibold text-sm">
+                            {formatDate(election.endTime)}
+                          </p>
+                        </div>                      </div>
+                    </div>
 
                     {/* Action Button */}
                     <Link to={`/elections/${election.electionId}`} className="block">
