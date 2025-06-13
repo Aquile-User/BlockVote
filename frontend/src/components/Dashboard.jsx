@@ -489,30 +489,42 @@ const Dashboard = ({ user }) => {
         }
       }
     ]
-  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="relative group h-full"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-      <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[200px] flex flex-col">
-        <div className="flex items-center justify-between mb-6 flex-1">
-          <div className="flex-1">
-            <p className="text-gray-500 text-sm font-medium mb-2">{title}</p>
-            <p className="text-4xl font-bold text-gray-900 mb-2">{value}</p>
-            {subtitle && (
-              <p className="text-gray-600 text-sm">{subtitle}</p>
-            )}
-          </div>
-          <div className={`w-16 h-16 bg-gradient-to-br from-${color}-500 to-${color}-600 rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
-            <Icon className="w-8 h-8 text-white" />
+  };  const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
+    // Define pastel background colors based on the original icon colors
+    const pastelColors = {
+      emerald: 'from-emerald-50 to-emerald-100',
+      amber: 'from-amber-50 to-amber-100', 
+      violet: 'from-violet-50 to-violet-100'
+    };
+
+    const borderColors = {
+      emerald: 'border-emerald-200',
+      amber: 'border-amber-200',
+      violet: 'border-violet-200'
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, duration: 0.4 }}
+        className="relative group h-full"
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
+        <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
+          <div className="flex items-center justify-between mb-3 flex-1">
+            <div className="flex-1">
+              <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+              {subtitle && (
+                <p className="text-gray-700 text-xs">{subtitle}</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   if (loading) {
     return (
