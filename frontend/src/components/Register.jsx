@@ -307,16 +307,13 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     </select>
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-coral-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                   </div>
-                </div>
-
-                <motion.button
+                </div>                <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNext}
                   className="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-semibold text-lg py-4 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center space-x-3 group"
                 >
                   <span>Continuar</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </motion.button>
               </motion.div>
             )}          {/* Step 2: Enhanced Authentication Method */}
