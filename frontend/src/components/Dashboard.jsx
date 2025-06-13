@@ -28,12 +28,12 @@ import ReactECharts from 'echarts-for-react';
 import { getElections, getResults, getElectionById } from '../api';
 import { mapUsersToProvinces } from '../utils/provinceUtils';
 
-const Dashboard = ({ user }) => {
-  const [stats, setStats] = useState({
+const Dashboard = ({ user }) => {  const [stats, setStats] = useState({
     totalVoters: 0,
     totalVotes: 0,
     activeElections: 0,
-    completedElections: 0
+    completedElections: 0,
+    disabledElections: 0
   });
   const [provinceData, setProvinceData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,12 +109,11 @@ const Dashboard = ({ user }) => {
       const resultsMap = {};
       validElections.forEach((election, index) => {
         resultsMap[election.electionId] = allResults[index] || {};
-      });
-
-      // Calculate actual stats from real data
+      });      // Calculate actual stats from real data
       let totalVotes = 0;
       let activeElections = 0;
       let completedElections = 0;
+      let disabledElections = 0;
 
       const currentTime = Math.floor(Date.now() / 1000);
       for (const election of validElections) {
@@ -126,6 +125,7 @@ const Dashboard = ({ user }) => {
 
           // Check election status based on time and disabled flag
           if (election.disabled) {
+            disabledElections++;
             completedElections++;
           } else if (currentTime >= election.startTime && currentTime <= election.endTime) {
             activeElections++;
@@ -149,12 +149,12 @@ const Dashboard = ({ user }) => {
       } catch (error) {
         console.log('Could not fetch user count, using estimate');
         // Fallback to estimate based on total votes
-        registeredUsers = Math.max(totalVotes * 2, 50);
-      } setStats({
+        registeredUsers = Math.max(totalVotes * 2, 50);      } setStats({
         totalVoters: registeredUsers,
         totalVotes,
         activeElections,
-        completedElections
+        completedElections,
+        disabledElections
       });
 
       // Contar los votos del usuario actual y actualizar el objeto user
@@ -519,20 +519,16 @@ const Dashboard = ({ user }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className="relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
+        >          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
           <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Award className="w-6 h-6 text-white" />
+                <AlertTriangle className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Participación</p>
+                <p className="text-lg font-semibold text-gray-900">Elecciones Deshabilitadas</p>
                 <p className="text-sm text-gray-600">
-                  {stats.totalVotes > 0 ?
-                    `${Math.round((stats.totalVotes / stats.totalVoters) * 100)}% de participación` :
-                    'Sin votos registrados'
-                  }
+                  {stats.disabledElections || stats.completedElections} elecciones finalizadas
                 </p>
               </div>
               <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
