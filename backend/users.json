@@ -38,5 +38,13 @@
     "province": "Barahona",
     "authMethod": "generated",
     "registeredAt": "2025-06-13T02:26:21.694Z"
+  },
+  "111-1111111-2": {
+    "address": "0x2CC2F40d1aCE18bf40446b4CE11cB918b5a903EC",
+    "privateKey": "0x4838ac355519b50b3fcbb4c6c5953694e8117914715f20f011ffd2fa7968563b",
+    "name": "Maria",
+    "province": "María Trinidad Sánchez",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:02:58.922Z"
   }
 }

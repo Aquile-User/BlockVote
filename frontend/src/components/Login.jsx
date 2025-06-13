@@ -123,7 +123,7 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
       setLoading(false);
     }
   }; return (
-    <div className="w-full">
+    <div className="w-full max-w-lg mx-auto">
       <motion.div
         className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-slate-200/50 p-8 relative overflow-hidden"
         initial={{ opacity: 0, y: 50, scale: 0.9 }}
