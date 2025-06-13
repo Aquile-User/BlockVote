@@ -410,11 +410,14 @@ app.get("/elections", async (req, res) => {
   try {
     const list = [];
     const nextIdBN = await votingContract.nextElectionId();
-    const nextId = Number(nextIdBN);    for (let i = 1; i < nextId; i++) {
+    const nextId = Number(nextIdBN);
+    for (let i = 1; i < nextId; i++) {
       const [name, _] = await votingContract.getElection(i);
       // Asegurar que el nombre se maneja correctamente y limpiar caracteres problemáticos
-      const cleanName = (typeof name === 'string' ? name : name.toString())
-        .replace(/�/g, 'ó').replace(/\u0000/g, '').trim();
+      const cleanName = (typeof name === "string" ? name : name.toString())
+        .replace(/�/g, "ó")
+        .replace(/\u0000/g, "")
+        .trim();
       list.push({ electionId: i, name: cleanName });
     }
     res.json(list);
@@ -577,17 +580,21 @@ app.get("/elections/:id", async (req, res) => {
     const nextId = Number(nextIdBN);
     if (electionId < 1 || electionId >= nextId) {
       return res.status(404).json({ error: "Election not found" });
-    }    let [name, candidates, startTime, endTime, disabled] =
-      await votingContract.getElection(electionId);    // Asegurar que el nombre y los candidatos se manejan correctamente
+    }
+    let [name, candidates, startTime, endTime, disabled] =
+      await votingContract.getElection(electionId); // Asegurar que el nombre y los candidatos se manejan correctamente
     // Función para limpiar strings que pueden tener problemas de codificación
     const cleanString = (str) => {
-      if (typeof str !== 'string') {
+      if (typeof str !== "string") {
         str = str.toString();
       }
       // Reemplazar caracteres problemáticos
-      return str.replace(/�/g, 'ó').replace(/\u0000/g, '').trim();
+      return str
+        .replace(/�/g, "ó")
+        .replace(/\u0000/g, "")
+        .trim();
     };
-    
+
     name = cleanString(name);
     if (Array.isArray(candidates)) {
       candidates = candidates.map((c) => cleanString(c));
