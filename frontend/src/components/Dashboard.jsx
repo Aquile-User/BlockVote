@@ -318,7 +318,6 @@ const Dashboard = ({ user }) => {
       }
     ]
   };
-
   const provinceVotesOption = {
     backgroundColor: 'transparent',
     title: {
@@ -326,85 +325,82 @@ const Dashboard = ({ user }) => {
       left: 'center'
     },
     tooltip: {
-      trigger: 'axis',
+      trigger: 'item',
       backgroundColor: '#ffffff',
       borderColor: '#e5e7eb',
+      borderRadius: 12,
+      padding: [12, 16],
       textStyle: {
         color: '#111827'
-      }, formatter: function (params) {
-        const data = provinceData.find(item => item.name === params[0].axisValue);
+      },
+      formatter: function (params) {
+        const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
+        const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
+        const data = provinceData.find(item => item.name === params.name);
         return `
-          <strong>${params[0].axisValue}</strong><br/>
-          Usuarios Registrados: <span style="color: #14b8a6">${params[0].value}</span><br/>
+          <strong>${params.name}</strong><br/>
+          Usuarios Registrados: <span style="color: #14b8a6">${params.value}</span><br/>
+          Porcentaje: <span style="color: #0891b2">${percentage}%</span><br/>
           Votos Emitidos: ${data?.votes || 0}<br/>
-          Participación: ${data?.participationRate || 0}%
-        `;
-      }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '15%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: provinceData.map(item => item.name),
-      axisLabel: {
-        color: '#6b7280',
-        rotate: 45,
-        fontSize: 12
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#d1d5db'
-        }
-      }
-    }, yAxis: {
-      type: 'value',
-      name: 'Usuarios Registrados',
-      nameLocation: 'middle',
-      nameGap: 50,
-      nameTextStyle: {
-        color: '#6b7280',
-        fontSize: 14,
-        fontWeight: 'bold'
-      },
-      axisLabel: {
-        color: '#6b7280',
-        fontSize: 12
-      },
-      axisLine: {
-        lineStyle: {
-          color: '#d1d5db'
-        }
-      },
-      splitLine: {
-        lineStyle: {
-          color: '#f3f4f6',
-          type: 'dashed'
-        }
+          Participación: ${data?.participationRate || 0}%        `;
       }
     },
     series: [
       {
-        data: provinceData.map((item, index) => ({
-          value: item.registered || 0,
-          itemStyle: {
-            color: `hsl(${170 + index * 20}, 70%, 55%)`
+        name: 'Usuarios por Provincia',
+        type: 'pie',
+        radius: ['35%', '75%'],
+        center: ['50%', '50%'],
+        data: provinceData
+          .filter(item => (item.registered || 0) > 0)
+          .map((item, index) => ({
+            value: item.registered || 0,
+            name: item.name,
+            itemStyle: {
+              color: `hsl(${170 + index * 25}, 70%, 55%)`,
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }
+          }))
+          .sort((a, b) => b.value - a.value),
+        avoidLabelOverlap: false,
+        label: {
+          show: true,
+          position: 'outside',
+          color: '#374151',
+          fontSize: 11,
+          fontWeight: 600,
+          formatter: function (params) {
+            const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
+            const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
+            return `${params.name}\n${percentage}%`;
           }
-        })),
-        type: 'bar',
-        barWidth: '60%',
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0]
+        },
+        labelLine: {
+          show: true,
+          length: 15,
+          length2: 8,
+          lineStyle: {
+            color: '#d1d5db',
+            width: 1
+          }
         },
         emphasis: {
           itemStyle: {
-            shadowBlur: 10,
+            shadowBlur: 15,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.1)'
+            shadowColor: 'rgba(0, 0, 0, 0.2)',
+            borderWidth: 3
+          },
+          label: {
+            fontSize: 12,
+            fontWeight: 700
           }
+        },
+        animationType: 'scale',
+        animationEasing: 'elasticOut',
+        animationDelay: function (idx) {
+          return idx * 100;
         }
       }
     ]
@@ -709,24 +705,34 @@ const Dashboard = ({ user }) => {
               option={provinceVotesOption}
               style={{ height: '320px' }}
               opts={{ renderer: 'svg' }}
-            />
+            />            {/* Province Stats - Enhanced for Ring Chart */}
+            <div className="mt-6 grid grid-cols-3 gap-4">
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50 text-center">
+                <p className="text-xs text-gray-500 mb-1">Total Usuarios</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {provinceData.reduce((sum, p) => sum + (p.registered || 0), 0)}
+                </p>
+                <div className="w-8 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full mx-auto mt-2"></div>
+              </div>
 
-            {/* Province Stats */}
-            <div className="mt-6 grid grid-cols-2 gap-4">              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-              <p className="text-xs text-gray-500 mb-1">Provincias con Usuarios</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {provinceData.filter(p => (p.registered || 0) > 0).length}
-              </p>
-            </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Provincia con Más Usuarios</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50 text-center">
+                <p className="text-xs text-gray-500 mb-1">Provincias Activas</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {provinceData.filter(p => (p.registered || 0) > 0).length}
+                </p>
+                <div className="w-8 h-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full mx-auto mt-2"></div>
+              </div>
+
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50 text-center">
+                <p className="text-xs text-gray-500 mb-1">Provincia Líder</p>
+                <p className="text-sm font-bold text-gray-900">
                   {provinceData.length > 0
                     ? provinceData.reduce((max, p) =>
                       (p.registered || 0) > (max.registered || 0) ? p : max,
                       provinceData[0]).name || 'Ninguna'
                     : 'Ninguna'}
                 </p>
-                <p className="text-xs text-cyan-600">
+                <p className="text-xs text-cyan-600 font-medium">
                   {provinceData.length > 0
                     ? `${provinceData.reduce((max, p) =>
                       (p.registered || 0) > (max.registered || 0) ? p : max,
