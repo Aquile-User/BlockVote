@@ -46,5 +46,61 @@
     "province": "María Trinidad Sánchez",
     "authMethod": "generated",
     "registeredAt": "2025-06-13T04:02:58.922Z"
+  },
+  "001-0000001-1": {
+    "address": "0x32c3BA6e51598eF576D2Bd59DA9B1420d5C4e78d",
+    "privateKey": "0x20580217cbe75d8df919f4470f8fc21b96e8d06e887cf7687473c63946a8d0ba",
+    "name": "Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:11:33.258Z"
+  },
+  "001-1234567-8": {
+    "address": "0x95c654cAc7669cd1D7548631215BFa7737b8Ec4A",
+    "privateKey": "0xfc61c88892b70c33f64fd18368f73d2d69cc176c54b2c6373746866bc3546f51",
+    "name": "Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:13:53.088Z"
+  },
+  "001-1111111-1": {
+    "address": "0xa8F9F0D1C93BC444c8E2961EBe19F63B0eC32743",
+    "privateKey": "0x99f744e8f14f97a8a058ee165704214f4fcedb1c1c0774341d24ca1312fad3f4",
+    "name": "Test Frontend User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:17:22.351Z"
+  },
+  "001-8888888-8": {
+    "address": "0x59E37dCD8c398767f378899C466D044d3B5d5c30",
+    "privateKey": "0x8e26e5daa2750351c4881e53da07c4fe29f71ea4f07b3cbdd74299d1567989c7",
+    "name": "Axios Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:21:17.721Z"
+  },
+  "488-8888888-8": {
+    "address": "0x5826817b1adc2beee5073972bd302c7604c39d13",
+    "privateKey": null,
+    "name": "Yascara",
+    "province": "Elías Piña",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:47:41.398Z"
+  },
+  "787-8989879-8": {
+    "address": "0xfeb3a46d30c403467c4919f60ee216e3747d0c40",
+    "privateKey": null,
+    "name": "Rafael",
+    "province": "Duarte",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:49:47.687Z"
+  },
+  "848-4654654-6": {
+    "address": "0x9e539a70285e311727dd5d5e39908aa8e5e943ce",
+    "privateKey": null,
+    "name": "Toño",
+    "province": "Azua",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:51:47.792Z"
   }
 }

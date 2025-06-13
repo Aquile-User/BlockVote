@@ -3,9 +3,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import firewallAqua from '../assets/firewallAqua.png';
 import {
-  LayoutGrid,
-  Vote,
-  Settings,
   Menu,
   X,
   ShieldCheck,
@@ -24,25 +21,21 @@ const Topbar = ({ user }) => {
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     window.location.reload();
-  };
-  const navItems = [
+  }; const navItems = [
     {
       path: '/dashboard',
-      icon: LayoutGrid,
       label: 'Dashboard',
       description: 'Resumen y estadísticas',
       color: 'primary'
     },
     {
       path: '/elections',
-      icon: Vote,
       label: 'Elecciones',
       description: 'Elecciones activas y pasadas',
       color: 'emerald'
     },
     {
       path: '/admin',
-      icon: Settings,
       label: 'Administración',
       description: 'Gestionar elecciones',
       color: 'amber'
@@ -133,26 +126,23 @@ const Topbar = ({ user }) => {
             </div>
 
             {/* Navigation */}            <nav>
-              <ul className="flex items-center space-x-2">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.path}>
-                      <NavLink
-                        to={item.path}
-                        className={({ isActive }) =>
-                          `flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isActive
-                            ? `bg-${item.color}-50 text-${item.color}-600 shadow-sm`
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                          }`
-                        }
-                      >
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium">{item.label}</span>
-                      </NavLink>
-                    </li>
-                  );
-                })}
+              <ul className="flex items-center space-x-2">                {navItems.map((item) => {
+                return (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 ${isActive
+                          ? `bg-${item.color}-50 text-${item.color}-600 shadow-sm`
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                        }`
+                      }
+                    >
+                      <span className="font-medium">{item.label}</span>
+                    </NavLink>
+                  </li>
+                );
+              })}
               </ul>
             </nav>
 
@@ -242,30 +232,27 @@ const Topbar = ({ user }) => {
             className="border-t border-gray-100 overflow-hidden"
           >
             <nav className="p-4">
-              <ul className="flex flex-col space-y-2">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.path}>
-                      <NavLink
-                        to={item.path}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={({ isActive }) =>
-                          `flex items-center space-x-3 p-3 rounded-lg ${isActive
-                            ? `bg-${item.color}-50 text-${item.color}-600`
-                            : 'text-gray-600 hover:bg-gray-50'
-                          }`
-                        }
-                      >
-                        <Icon className="w-5 h-5" />
-                        <div>
-                          <p className="font-medium">{item.label}</p>
-                          <p className="text-xs text-gray-500">{item.description}</p>
-                        </div>
-                      </NavLink>
-                    </li>
-                  );
-                })}
+              <ul className="flex flex-col space-y-2">                {navItems.map((item) => {
+                return (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-3 p-3 rounded-lg ${isActive
+                          ? `bg-${item.color}-50 text-${item.color}-600`
+                          : 'text-gray-600 hover:bg-gray-50'
+                        }`
+                      }
+                    >
+                      <div>
+                        <p className="font-medium">{item.label}</p>
+                        <p className="text-xs text-gray-500">{item.description}</p>
+                      </div>
+                    </NavLink>
+                  </li>
+                );
+              })}
                 <li>
                   <button
                     onClick={handleLogout}
