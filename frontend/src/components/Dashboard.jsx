@@ -23,7 +23,7 @@ import {
   Eye
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { getElections, getResults, getElectionById } from '../api';
+import { getElections, getResults, getElectionById, hasVoted } from '../api';
 import { mapUsersToProvinces } from '../utils/provinceUtils';
 
 const Dashboard = ({ user }) => {
@@ -58,35 +58,47 @@ const Dashboard = ({ user }) => {
     } finally {
       setRefreshing(false);
     }
-  };
-  // Función para contar los votos del usuario actual
-  const countUserVotes = async (userAddress, resultsMap, validElections, timeframeCutoff) => {
-    if (!userAddress) return 0; try {
-      // Estimación basada en resultados actuales
-      // Como no tenemos endpoint de historial de votos, estimamos basándonos en las elecciones
-      if (userAddress && resultsMap && validElections) {
-        let count = 0;
+  };  // Función para contar los votos reales del usuario actual
+  const countUserVotes = async (userSocialId, validElections) => {
+    if (!userSocialId) {
+      console.log('Dashboard: No user socialId provided for vote counting');
+      return 0;
+    }
 
-        // Para cada elección válida, verificar si hay votos registrados
-        for (const election of validElections) {
-          const electionId = election.electionId;
-          const results = resultsMap[electionId] || {};
+    try {
+      let realVoteCount = 0;
+      console.log(`Dashboard: Counting real votes for user ${userSocialId} across ${validElections.length} elections`);
 
-          // Si hay votos en esta elección, asumir que el usuario puede haber votado
-          const totalVotes = Object.values(results).reduce((sum, votes) => sum + votes, 0);
-          if (totalVotes > 0) {
-            // Estimar probabilidad de que el usuario haya votado (máximo 1 voto por elección)
-            count += 1;
+      // Para cada elección válida, verificar si el usuario realmente ha votado
+      for (const election of validElections) {
+        const electionId = election.electionId;
+
+        try {
+          // Usar la API hasVoted para verificar si el usuario votó en esta elección
+          console.log(`Dashboard: Checking if user voted in election ${electionId}`);
+          const votingStatus = await hasVoted(electionId, userSocialId);
+          if (votingStatus.hasVoted) {
+            console.log(`Dashboard: ✅ User voted in election ${electionId}`);
+            realVoteCount++;
+          } else {
+            console.log(`Dashboard: ❌ User did not vote in election ${electionId}`);
+          }
+        } catch (error) {
+          console.log(`Dashboard: Error checking vote status for election ${electionId}:`, error.message);
+          // Si hay error en la API, usar localStorage como fallback
+          const votedKey = `voted-${userSocialId}-${electionId}`;
+          const localVoted = localStorage.getItem(votedKey) === 'true';
+          if (localVoted) {
+            console.log(`Dashboard: ✅ User voted in election ${electionId} (from localStorage)`);
+            realVoteCount++;
           }
         }
-
-        // Limitar el conteo al número de elecciones válidas
-        return Math.min(count, validElections.length);
       }
 
-      return 0;
+      console.log(`Dashboard: Total real votes for user ${userSocialId}: ${realVoteCount}`);
+      return realVoteCount;
     } catch (error) {
-      console.error('Error al estimar votos del usuario:', error);
+      console.error('Dashboard: Error al contar votos reales del usuario:', error);
       return 0;
     }
   };
@@ -317,11 +329,15 @@ const Dashboard = ({ user }) => {
         activeElections,
         completedElections,
         disabledElections
-      });      // Contar los votos del usuario actual y actualizar el objeto user
-      if (user && user.address) {
-        const userVotesCount = await countUserVotes(user.address, resultsMap, validElections, timeframeCutoff);
-        // Actualizar el objeto user con el conteo de votos
+      });      // Contar los votos reales del usuario actual
+      if (user && user.socialId) {
+        console.log(`Dashboard: Starting vote count for user:`, user);
+        const userVotesCount = await countUserVotes(user.socialId, validElections);
+        console.log(`Dashboard: User ${user.socialId} has ${userVotesCount} real votes`);
+        // Actualizar el objeto user con el conteo de votos reales
         user.votesCount = userVotesCount;
+      } else {
+        console.log('Dashboard: No user or socialId available for vote counting');
       }
 
       // Real Dominican Republic province data based on actual registered users
