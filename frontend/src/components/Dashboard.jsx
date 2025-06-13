@@ -33,17 +33,28 @@ const Dashboard = ({ user }) => {
     activeElections: 0,
     completedElections: 0,
     disabledElections: 0
-  });
-  const [provinceData, setProvinceData] = useState([]);
+  }); const [provinceData, setProvinceData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('7d');
 
   useEffect(() => {
     loadDashboardData();
   }, [timeframe]);
 
+  // Función para refrescar manualmente todos los datos del dashboard
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadDashboardData();
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
   // Función para contar los votos del usuario actual
-  const countUserVotes = async (userAddress, resultsMap, validElections) => {
+  const countUserVotes = async (userAddress, resultsMap, validElections, timeframeCutoff) => {
     if (!userAddress) return 0;
 
     try {
@@ -52,9 +63,17 @@ const Dashboard = ({ user }) => {
       const voteHistory = await voteHistoryResponse.json();
 
       // Filtrar por la dirección del usuario actual
-      const userVotes = Object.values(voteHistory || {}).filter(
+      let userVotes = Object.values(voteHistory || {}).filter(
         vote => vote.voter?.toLowerCase() === userAddress?.toLowerCase()
       );
+
+      // Aplicar filtro de timeframe si es necesario
+      if (timeframeCutoff > 0) {
+        userVotes = userVotes.filter(vote => {
+          const voteTimestamp = vote.timestamp || 0;
+          return voteTimestamp >= timeframeCutoff;
+        });
+      }
 
       return userVotes.length;
     } catch (error) {
@@ -78,7 +97,6 @@ const Dashboard = ({ user }) => {
       return 0;
     }
   };
-
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -93,7 +111,32 @@ const Dashboard = ({ user }) => {
       const electionDetails = await Promise.all(electionPromises);
 
       // Find election with oldest end time
-      const validElections = electionDetails.filter(e => e !== null);
+      let validElections = electionDetails.filter(e => e !== null);      // Apply timeframe filtering
+      const now = Math.floor(Date.now() / 1000);
+      const getTimeframeCutoff = (timeframe) => {
+        switch (timeframe) {
+          case '24h':
+            return now - (24 * 60 * 60); // 24 horas atrás
+          case '7d':
+            return now - (7 * 24 * 60 * 60); // 7 días atrás
+          case '30d':
+            return now - (30 * 24 * 60 * 60); // 30 días atrás
+          case 'all':
+          default:
+            return 0; // Sin filtro de tiempo
+        }
+      };
+
+      const timeframeCutoff = getTimeframeCutoff(timeframe);
+      if (timeframe !== 'all') {
+        validElections = validElections.filter(election => {
+          // Incluir elecciones que han tenido actividad en el timeframe seleccionado
+          return election.endTime >= timeframeCutoff || election.startTime >= timeframeCutoff;
+        });
+      }
+
+      console.log(`Dashboard: Filtered elections for timeframe ${timeframe}:`, validElections.length);
+
       const oldestElection = validElections.length > 0
         ? validElections.reduce((oldest, current) =>
           (oldest.endTime < current.endTime) ? oldest : current
@@ -155,11 +198,9 @@ const Dashboard = ({ user }) => {
         activeElections,
         completedElections,
         disabledElections
-      });
-
-      // Contar los votos del usuario actual y actualizar el objeto user
+      });      // Contar los votos del usuario actual y actualizar el objeto user
       if (user && user.address) {
-        const userVotesCount = await countUserVotes(user.address, resultsMap, validElections);
+        const userVotesCount = await countUserVotes(user.address, resultsMap, validElections, timeframeCutoff);
         // Actualizar el objeto user con el conteo de votos
         user.votesCount = userVotesCount;
       }
@@ -294,7 +335,8 @@ const Dashboard = ({ user }) => {
         const data = provinceData.find(item => item.name === params[0].axisValue);
         return `
           <strong>${params[0].axisValue}</strong><br/>
-          Votos: <span style="color: #14b8a6">${params[0].value}</span><br/>
+          Usuarios Registrados: <span style="color: #14b8a6">${params[0].value}</span><br/>
+          Votos Emitidos: ${data?.votes || 0}<br/>
           Participación: ${data?.participationRate || 0}%
         `;
       }
@@ -318,9 +360,16 @@ const Dashboard = ({ user }) => {
           color: '#d1d5db'
         }
       }
-    },
-    yAxis: {
+    }, yAxis: {
       type: 'value',
+      name: 'Usuarios Registrados',
+      nameLocation: 'middle',
+      nameGap: 50,
+      nameTextStyle: {
+        color: '#6b7280',
+        fontSize: 14,
+        fontWeight: 'bold'
+      },
       axisLabel: {
         color: '#6b7280',
         fontSize: 12
@@ -340,7 +389,7 @@ const Dashboard = ({ user }) => {
     series: [
       {
         data: provinceData.map((item, index) => ({
-          value: item.votes,
+          value: item.registered || 0,
           itemStyle: {
             color: `hsl(${170 + index * 20}, 70%, 55%)`
           }
@@ -448,15 +497,17 @@ const Dashboard = ({ user }) => {
                   <div className="absolute inset-0 w-3 h-3 bg-emerald-500 rounded-full animate-ping opacity-40"></div>
                 </div>
                 <span className="text-emerald-700 font-semibold text-sm">Sistema Operativo</span>
-              </div>
-              {/* Quick Actions */}
+              </div>              {/* Quick Actions */}
               <div className="flex items-center space-x-3">
-                <button className="p-3 bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-soft hover:shadow-medium hover:scale-105 transition-all duration-200 group">
-                  <RefreshCw className="w-5 h-5 text-gray-600 group-hover:text-primary-600 group-hover:rotate-180 transition-all duration-300" />
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="p-3 bg-white/90 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-soft hover:shadow-medium hover:scale-105 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  title="Refrescar datos del dashboard"
+                >
+                  <RefreshCw className={`w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-all duration-300 ${refreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
                 </button>
-              </div>
-
-              {/* Timeframe Selector */}
+              </div>              {/* Timeframe Selector */}
               <select
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
@@ -638,14 +689,13 @@ const Dashboard = ({ user }) => {
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
           <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-cyan-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
             <div className="flex items-center justify-between mb-8">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-3">
-                  <h3 className="text-2xl font-bold text-gray-900">Participación Regional</h3>
-                  <div className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-medium">
-                    República Dominicana
-                  </div>
+              <div className="space-y-2">                <div className="flex items-center space-x-3">
+                <h3 className="text-2xl font-bold text-gray-900">Usuarios por Provincia</h3>
+                <div className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-medium">
+                  República Dominicana
                 </div>
-                <p className="text-gray-600">Distribución geográfica de votantes</p>
+              </div>
+                <p className="text-gray-600">Usuarios registrados por región</p>
               </div>
               <div className="relative">
                 <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -662,27 +712,26 @@ const Dashboard = ({ user }) => {
             />
 
             {/* Province Stats */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Provincias Activas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {provinceData.filter(p => p.votes > 0).length}
-                </p>
-              </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Provincia Destacada</p>
+            <div className="mt-6 grid grid-cols-2 gap-4">              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
+              <p className="text-xs text-gray-500 mb-1">Provincias con Usuarios</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {provinceData.filter(p => (p.registered || 0) > 0).length}
+              </p>
+            </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
+                <p className="text-xs text-gray-500 mb-1">Provincia con Más Usuarios</p>
                 <p className="text-lg font-bold text-gray-900">
                   {provinceData.length > 0
                     ? provinceData.reduce((max, p) =>
-                      (p.participationRate || 0) > (max.participationRate || 0) ? p : max,
+                      (p.registered || 0) > (max.registered || 0) ? p : max,
                       provinceData[0]).name || 'Ninguna'
                     : 'Ninguna'}
                 </p>
-                <p className="text-xs text-emerald-600">
+                <p className="text-xs text-cyan-600">
                   {provinceData.length > 0
                     ? `${provinceData.reduce((max, p) =>
-                      (p.participationRate || 0) > (max.participationRate || 0) ? p : max,
-                      provinceData[0]).participationRate || 0}% participación`
-                    : '0% participación'}
+                      (p.registered || 0) > (max.registered || 0) ? p : max,
+                      provinceData[0]).registered || 0} usuarios`
+                    : '0 usuarios'}
                 </p>
               </div>
             </div>
