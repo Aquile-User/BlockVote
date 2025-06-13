@@ -43,6 +43,43 @@ const Dashboard = ({ user }) => {
     loadDashboardData();
   }, [timeframe]);
 
+  // Función para contar los votos del usuario actual
+  const countUserVotes = async (userAddress, resultsMap, validElections) => {
+    if (!userAddress) return 0;
+
+    try {
+      // Obtener el historial de votos del backend
+      const voteHistoryResponse = await fetch('http://localhost:3000/votes');
+      const voteHistory = await voteHistoryResponse.json();
+
+      // Filtrar por la dirección del usuario actual
+      const userVotes = Object.values(voteHistory || {}).filter(
+        vote => vote.voter?.toLowerCase() === userAddress?.toLowerCase()
+      );
+
+      return userVotes.length;
+    } catch (error) {
+      console.error('Error al obtener historial de votos:', error);
+
+      // Plan B: Estimación basada en resultados actuales (menos preciso)
+      // Solo usar si el endpoint de votos no está disponible
+      if (userAddress && resultsMap && validElections) {
+        let count = 0;
+        // Verificar si el usuario aparece como votante en alguna elección
+        for (const election of validElections) {
+          const electionId = election.electionId;
+          const results = resultsMap[electionId] || {};
+          // Si hay al menos un voto en esta elección, contarlo como 1 posible voto del usuario
+          if (Object.values(results).some(votes => votes > 0)) {
+            count += 1;
+          }
+        }
+        return Math.min(count, validElections.length);
+      }
+      return 0;
+    }
+  };
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -119,6 +156,14 @@ const Dashboard = ({ user }) => {
         activeElections,
         completedElections
       });
+
+      // Contar los votos del usuario actual y actualizar el objeto user
+      if (user && user.address) {
+        const userVotesCount = await countUserVotes(user.address, resultsMap, validElections);
+        // Actualizar el objeto user con el conteo de votos
+        user.votesCount = userVotesCount;
+      }
+
       // Real Dominican Republic province data based on actual registered users
       let realProvinceData = [];
 
@@ -766,13 +811,12 @@ const Dashboard = ({ user }) => {
                       </div>
                       <p className="text-2xl font-bold text-gray-900 mb-1">2024</p>
                       <p className="text-xs text-gray-600 font-medium">Miembro desde</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 border border-purple-200/50 text-center hover:shadow-soft transition-all duration-200">
+                    </div>                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 border border-purple-200/50 text-center hover:shadow-soft transition-all duration-200">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <Vote className="w-6 h-6 text-white" />
-                      </div>                      <p className="text-2xl font-bold text-gray-900 mb-1">
-                        {stats.totalVotes > 0 ? Math.min(1, stats.totalVotes) : 0}
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">
+                        {user?.votesCount || 0}
                       </p>
                       <p className="text-xs text-gray-600 font-medium">Votos Emitidos</p>
                     </div>
