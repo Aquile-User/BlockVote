@@ -475,105 +475,210 @@ const ElectionManagement = ({ user }) => {
 
             // Within same status, sort by start time (newest first)
             return b.startTime - a.startTime;
-          })
-          .map((election) => (
+          }).map((election) => (
             <motion.div
               key={election.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card p-6 card-hover"
-            >
-              {/* Election Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div>                  <h3 className="text-xl font-semibold text-gray-800 mb-1">
-                  {election.name}
-                </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(election.status)}`}>
-                    {election.status.charAt(0).toUpperCase() + election.status.slice(1)}
-                  </span>
-                </div>                <div className="flex items-center space-x-2">                  <button
-                  onClick={() => setSelectedElection(election)}
-                  className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
-                  title="Ver Detalles"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-                  <button
-                    onClick={() => startEditElection(election)}
-                    className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
-                    title="Editar Elección"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>              {/* Election Info */}              <div className="space-y-3">
-                <div className="flex items-center text-gray-600 text-sm">
-                  <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>Inicio: {formatDate(election.startTime)}</span>
+              className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+            >              {/* Header with Gradient */}
+              <div className={`relative p-6 pb-4 ${election.status === 'active'
+                  ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                  : election.status === 'upcoming'
+                    ? 'bg-gradient-to-br from-blue-400 to-indigo-500'
+                    : election.status === 'expired'
+                      ? 'bg-gradient-to-br from-orange-400 to-amber-500'
+                      : 'bg-gradient-to-br from-gray-400 to-slate-500'
+                } text-white`}>
+                <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+                  <div className="absolute inset-0 transform rotate-45 bg-white rounded-full -mr-16 -mt-16"></div>
                 </div>
 
-                <div className="flex items-center text-gray-600 text-sm">
-                  <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                  <span>Fin: {formatDate(election.endTime)}</span>
-                </div>
+                <div className="relative flex items-start justify-between">
+                  <div className="flex-1 pr-4">
+                    <h3 className="text-xl font-bold mb-2 line-clamp-2 leading-tight">
+                      {election.name}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold border border-white/30">
+                        {election.status === 'active' ? '🟢 Activa' :
+                          election.status === 'upcoming' ? '🔵 Próxima' :
+                            election.status === 'expired' ? '🟠 Finalizada' :
+                              '🔴 Deshabilitada'}
+                      </span>
+                      <span className="text-xs opacity-80">ID: {election.id}</span>
+                    </div>
+                  </div>
 
-                <div className="flex items-center text-slate-600 text-sm">
-                  <Users className="w-4 h-4 mr-2 text-slate-500" />
-                  <span>{election.candidates.length} candidatos, {election.totalVotes} votos</span>
-                </div>
-              </div>              {/* Candidates */}
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-600 mb-2">Candidatos:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {election.candidates.map((candidate, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-full text-xs hover:bg-slate-100 transition-colors"
+                  <div className="flex items-center space-x-1">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setSelectedElection(election)}
+                      className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 border border-white/30"
+                      title="Ver Detalles"
                     >
-                      {candidate} ({election.results[candidate] || 0} votos)
-                    </span>
-                  ))}
+                      <Eye className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => startEditElection(election)}
+                      className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 border border-white/30"
+                      title="Editar"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </motion.button>
+                  </div>
                 </div>
-              </div>              {/* Quick Actions */}
-              <div className="mt-4 pt-4 border-t border-gray-600 flex items-center justify-between">
-                <div className="text-sm text-slate-600">
-                  ID: {election.id}
+              </div>
+
+              {/* Content Body */}
+              <div className="p-6 pt-4">
+                {/* Metrics Row */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-2xl font-bold text-blue-700">{election.candidates.length}</div>
+                    <div className="text-xs text-blue-600 font-medium">Candidatos</div>
+                  </div>
+
+                  <div className="text-center p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
+                    <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <BarChart3 className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-700">{election.totalVotes}</div>
+                    <div className="text-xs text-emerald-600 font-medium">Votos</div>
+                  </div>
+
+                  <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <TrendingUp className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-2xl font-bold text-purple-700">
+                      {election.totalVotes > 0 ?
+                        Math.max(...election.candidates.map(c => election.results[c] || 0)) :
+                        '0'
+                      }
+                    </div>
+                    <div className="text-xs text-purple-600 font-medium">Líder</div>
+                  </div>
                 </div>
 
-                <div className="flex items-center space-x-2">                  {!election.disabled && (
-                  <button
-                    className="flex items-center space-x-1 text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-rose-200 hover:border-rose-500 shadow-sm"
-                    onClick={() => handleToggleElectionStatus(election)}
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Deshabilitar</span>
-                  </button>
-                )}
-                  {election.disabled && (
-                    <button
-                      className="flex items-center space-x-1 text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-200 hover:border-emerald-500 shadow-sm"
+                {/* Timeline */}
+                <div className="mb-6">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="font-medium text-gray-700">Inicio</span>
+                      </div>
+                      <div className="flex-1 mx-4 h-px bg-gradient-to-r from-green-500 to-red-500"></div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-700">Fin</span>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-600">
+                      <span>{formatDate(election.startTime)}</span>
+                      <span>{formatDate(election.endTime)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Candidates */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Award className="w-4 h-4 mr-2 text-amber-500" />
+                    Top Candidatos
+                  </h4>
+                  <div className="space-y-2">
+                    {election.candidates
+                      .map(candidate => ({
+                        name: candidate,
+                        votes: election.results[candidate] || 0,
+                        percentage: election.totalVotes > 0 ?
+                          ((election.results[candidate] || 0) / election.totalVotes * 100).toFixed(1) :
+                          '0'
+                      }))
+                      .sort((a, b) => b.votes - a.votes)
+                      .slice(0, 2)
+                      .map((candidate, index) => (
+                        <div key={candidate.name} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 hover:shadow-sm transition-all">
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                              }`}>
+                              {index + 1}
+                            </div>
+                            <span className="font-medium text-gray-800 text-sm">{candidate.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-gray-900 text-sm">{candidate.votes}</span>
+                            <span className="text-xs text-gray-500">({candidate.percentage}%)</span>
+                          </div>
+                        </div>
+                      ))}
+
+                    {election.candidates.length > 2 && (
+                      <div className="text-center">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                          +{election.candidates.length - 2} candidatos más
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>                {/* Action Buttons */}
+                <div className="flex justify-center">
+                  {!election.disabled ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleToggleElectionStatus(election)}
+                      className="bg-gradient-to-r from-red-400 to-rose-400 hover:from-red-500 hover:to-rose-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Deshabilitar</span>
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleToggleElectionStatus(election)}
+                      className="bg-gradient-to-r from-emerald-400 to-green-400 hover:from-emerald-500 hover:to-green-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg"
                     >
                       <CheckCircle className="w-4 h-4" />
                       <span>Habilitar</span>
-                    </button>
-                  )}
+                    </motion.button>)}
                 </div>
-              </div></motion.div>
+              </div>
+            </motion.div>
           ))}
       </div>      {elections.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gray-300" />
-          </div>          <h3 className="text-xl font-semibold text-slate-800 mb-2">No se encontraron elecciones</h3>
-          <p className="text-slate-600 mb-4">Crea tu primera elección para comenzar.</p>
-          <button
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
+          <div className="bg-gradient-to-br from-teal-400 to-emerald-500 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Calendar className="w-12 h-12 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-3">¡Comienza tu primera elección!</h3>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+            Crea elecciones seguras y transparentes usando la tecnología blockchain.
+            Tu primera elección está a solo un clic de distancia.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreateModal(true)}
-            className="btn-primary"
+            className="bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-500 hover:to-emerald-500 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 flex items-center space-x-3 mx-auto shadow-lg hover:shadow-xl"
           >
-            Crear Elección
-          </button>
-        </div>
+            <Plus className="w-5 h-5" />
+            <span>Crear Mi Primera Elección</span>
+          </motion.button>
+        </motion.div>
       )}
 
       {/* Modals */}

@@ -201,19 +201,9 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
                 onChange={handleIdChange}
                 maxLength={13}
                 required
-              />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-500/5 to-emerald-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              />              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-500/5 to-emerald-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-xs text-slate-500 mt-3 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100"
-            >
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse-soft"></span>
-              Formato requerido: 000-0000000-0
-            </motion.p>
-          </motion.div>          {/* Submit Button */}
+          </motion.div>{/* Submit Button */}
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

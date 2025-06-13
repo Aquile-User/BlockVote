@@ -168,8 +168,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
     } else {
       return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10, 11)}`;
     }
-  };
-  // Función para obtener las clases dinámicas del contenedor según el paso
+  };  // Función para obtener las clases dinámicas del contenedor según el paso
   const getContainerClasses = () => {
     const baseClasses = "w-full mx-auto transition-all duration-700 ease-in-out transform";
 
@@ -177,7 +176,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
       case 1:
         return `${baseClasses} max-w-2xl`; // Más estrecho para formulario
       case 2:
-        return `${baseClasses} max-w-6xl`; // Muy ancho para las cards de autenticación
+        return `${baseClasses} max-w-lg`; // Mismo tamaño que login para consistencia
       case 3:
         return `${baseClasses} max-w-4xl`; // Ancho medio para información de billetera
       default:
@@ -353,15 +352,14 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 <span>Continuar</span>
               </motion.button>
             </motion.div>
-          )}            {/* Step 2: Enhanced Authentication Method */}
-          {step === 2 && (
+          )}          {/* Step 2: Enhanced Authentication Method */}          {step === 2 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className="space-y-4"
+              className="w-full space-y-6"
             >
-              <div className="text-center mb-4">
+              <div className="text-center mb-6">
                 <motion.h2
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -378,192 +376,140 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 >
                   Selecciona cómo quieres proteger tu billetera y votos
                 </motion.p>
-              </div>              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
-                {/* Enhanced MetaMask Option */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className={`group relative overflow-hidden ${metamaskAvailable
-                    ? 'cursor-pointer hover:scale-[1.02]'
-                    : 'opacity-50 cursor-not-allowed'
-                    } transition-all duration-500`}
-                >
-                  {/* Multiple Background Layers for Depth */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 rounded-3xl"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/95 via-white/90 to-white/80 backdrop-blur-sm rounded-3xl"></div>
-                  <div className="absolute inset-0 border-2 border-orange-200/60 rounded-3xl group-hover:border-orange-300/80 transition-all duration-300"></div>                  {/* Floating Decoration Elements */}
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-orange-200/30 rounded-full"></div>
-                  <div className="absolute bottom-6 left-6 w-4 h-4 bg-amber-300/40 rounded-full blur-sm"></div>
+              </div>              {/* Enhanced Generated Wallet Option - Now Primary */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="group relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-500"
+              >
+                {/* Multiple Background Layers for Depth */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-emerald-50 to-teal-100 rounded-2xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/95 via-white/90 to-white/80 backdrop-blur-sm rounded-2xl"></div>
+                <div className="absolute inset-0 border-2 border-primary-200/60 rounded-2xl group-hover:border-primary-300/80 transition-all duration-300"></div>
 
-                  <div className="relative p-8">
-                    <div className="flex flex-col items-center text-center space-y-6">{/* Enhanced Icon Container */}
-                      <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                          <Wallet className="w-8 h-8 text-white" />
-                        </div>
-                        {metamaskAvailable && (
-                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                        {/* Pulsing Ring */}
-                        <div className="absolute inset-0 w-16 h-16 rounded-3xl border-2 border-orange-400/50 animate-ping"></div>
+                {/* Floating Decoration Elements */}
+                <div className="absolute top-3 right-3 w-6 h-6 bg-primary-200/30 rounded-full"></div>
+                <div className="absolute bottom-4 left-4 w-3 h-3 bg-emerald-300/40 rounded-full blur-sm"></div>                <div className="relative p-5">
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    {/* Enhanced Icon Container */}
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary-600 via-emerald-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                        <Key className="w-5 h-5 text-white" />
                       </div>
-
-                      <div className="flex-1 w-full space-y-4">
-                        {/* Enhanced Title */}
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-bold text-slate-900 mb-1 flex items-center justify-center flex-wrap gap-2">
-                            Conectar MetaMask
-                            {!metamaskAvailable ? (
-                              <span className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full border border-red-200 font-medium">
-                                No disponible
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full border border-emerald-200 font-medium">
-                                Detectado
-                              </span>
-                            )}
-                          </h3>
-                          <p className="text-slate-700 text-sm leading-relaxed">
-                            Usa tu billetera MetaMask existente para una experiencia segura y familiar.
-                          </p>
-                        </div>
-
-                        {/* Enhanced Button */}
-                        <div className="space-y-3">
-                          <motion.button
-                            whileHover={metamaskAvailable ? { scale: 1.05 } : {}}
-                            whileTap={metamaskAvailable ? { scale: 0.95 } : {}}
-                            onClick={connectMetaMask}
-                            disabled={!metamaskAvailable || loading}
-                            className={`w-full px-6 py-3 rounded-2xl font-semibold transition-all duration-300 relative overflow-hidden ${metamaskAvailable
-                              ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-lg hover:shadow-xl border-2 border-orange-600/20'
-                              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              }`}
-                          >
-                            {/* Button Shine Effect */}
-                            {metamaskAvailable && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                            )}
-                            <span className="relative z-10">
-                              {loading ? (
-                                <div className="flex items-center justify-center space-x-2">
-                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                  <span>Conectando...</span>
-                                </div>
-                              ) : (
-                                'Conectar MetaMask'
-                              )}
-                            </span>
-                          </motion.button>
-
-                          {/* Status Indicator */}
-                          {metamaskAvailable && (
-                            <div className="flex items-center justify-center space-x-2 text-emerald-700 text-xs bg-emerald-50 py-2 px-3 rounded-lg border border-emerald-200">
-                              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                              <span className="font-medium">MetaMask disponible</span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
+                        <Check className="w-2 h-2 text-white" />
                       </div>
+                      {/* Pulsing Ring */}
+                      <div className="absolute inset-0 w-10 h-10 rounded-xl border-2 border-primary-400/50 animate-ping"></div>
                     </div>
-                  </div>
-                </motion.div>
 
-                {/* Enhanced Generated Wallet Option */}                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="group relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-500"
-                >{/* Multiple Background Layers for Depth */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-emerald-50 to-teal-100 rounded-3xl"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/95 via-white/90 to-white/80 backdrop-blur-sm rounded-3xl"></div>
-                  <div className="absolute inset-0 border-2 border-primary-200/60 rounded-3xl group-hover:border-primary-300/80 transition-all duration-300"></div>
-
-                  {/* Floating Decoration Elements */}
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-primary-200/30 rounded-full"></div>
-                  <div className="absolute bottom-6 left-6 w-4 h-4 bg-emerald-300/40 rounded-full blur-sm"></div>                  <div className="relative p-8">
-                    <div className="flex flex-col items-center text-center space-y-6">{/* Enhanced Icon Container */}
-                      <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-primary-600 via-emerald-600 to-teal-700 rounded-3xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                          <Key className="w-8 h-8 text-white" />
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                        {/* Pulsing Ring */}
-                        <div className="absolute inset-0 w-16 h-16 rounded-3xl border-2 border-primary-400/50 animate-ping"></div>
-                      </div>
-
-                      <div className="flex-1 w-full space-y-4">
-                        {/* Enhanced Title */}
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-bold text-slate-900 mb-1 flex items-center justify-center flex-wrap gap-2">
-                            Generar Billetera Nueva
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full border border-emerald-200 font-medium animate-pulse">
-                              Recomendado
-                            </span>
-                          </h3>
-                          <p className="text-slate-700 text-sm leading-relaxed">
-                            Crea una nueva billetera segura automáticamente financiada para votar.
-                          </p>
-                        </div>
-
-                        {/* Enhanced Button */}
-                        <div className="space-y-3">                          <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={generateWallet}
-                          disabled={loading}
-                          className="w-full px-6 py-3 bg-gradient-to-r from-primary-600 to-emerald-700 hover:from-primary-700 hover:to-emerald-800 text-white font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 border-2 border-primary-700/30 relative overflow-hidden group"
-                        >
-                          {/* Button Shine Effect */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                          <span className="relative z-10">
-                            {loading ? (
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Generando...</span>
-                              </div>
-                            ) : (
-                              'Generar Billetera'
-                            )}
+                    <div className="flex-1 w-full space-y-2">
+                      {/* Enhanced Title */}
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center flex-wrap gap-2">
+                          Generar Billetera Nueva
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full border border-emerald-200 font-medium animate-pulse">
+                            Recomendado
                           </span>
-                        </motion.button>
+                        </h3>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                          Crea una nueva billetera segura automáticamente financiada para votar.
+                        </p>
+                      </div>
 
-                          {/* Enhanced Features List */}
-                          <div className="bg-emerald-50 py-3 px-4 rounded-xl border border-emerald-200">
-                            <div className="flex items-center justify-center space-x-2 text-emerald-700 text-xs mb-2">
-                              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                              <span className="font-semibold">Características incluidas:</span>
+                      {/* Enhanced Button */}
+                      <div className="space-y-2">                          <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={generateWallet}
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 bg-gradient-to-r from-primary-600 to-emerald-700 hover:from-primary-700 hover:to-emerald-800 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 border-2 border-primary-700/30 relative overflow-hidden group"
+                      >
+                        {/* Button Shine Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        <span className="relative z-10">
+                          {loading ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <span>Generando...</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs text-emerald-600">
-                              <div className="flex items-center space-x-1">
-                                <Check className="w-3 h-3" />
-                                <span>Financiado</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Check className="w-3 h-3" />
-                                <span>Seguro</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Check className="w-3 h-3" />
-                                <span>Automático</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Check className="w-3 h-3" />
-                                <span>Instantáneo</span>
-                              </div>
+                          ) : (
+                            'Generar Billetera'
+                          )}
+                        </span>
+                      </motion.button>
+
+                        {/* Enhanced Features List */}
+                        <div className="bg-emerald-50 py-2 px-3 rounded-lg border border-emerald-200">
+                          <div className="flex items-center justify-center space-x-2 text-emerald-700 text-xs mb-1.5">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span className="font-semibold">Características incluidas:</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5 text-xs text-emerald-600">
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Financiado</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Seguro</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Automático</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Instantáneo</span>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+                    </div>                    </div>
+                </div>
+              </motion.div>
+
+              {/* Divider */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="relative"
+              >
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500 font-medium">O conecta con</span>
+                </div>
+              </motion.div>              {/* MetaMask Button - Google Style */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                whileHover={metamaskAvailable ? { scale: 1.02 } : {}}
+                whileTap={metamaskAvailable ? { scale: 0.98 } : {}}
+                onClick={connectMetaMask}
+                disabled={!metamaskAvailable || loading}
+                className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${metamaskAvailable
+                  ? 'bg-white border-gray-300 hover:border-orange-500 hover:shadow-md text-gray-700'
+                  : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                <img
+                  src="/src/assets/MetaMask-icon-fox.svg"
+                  alt="MetaMask"
+                  className="w-5 h-5"
+                />
+                <span className="font-medium">
+                  {loading ? 'Conectando...' : 'Conectar con MetaMask'}
+                </span>
+                {!metamaskAvailable && (
+                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                    No disponible
+                  </span>
+                )}                </motion.button>
 
               {/* Enhanced Navigation */}
               <motion.div
