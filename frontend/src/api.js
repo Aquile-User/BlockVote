@@ -52,7 +52,7 @@ export async function registerUser(userData) {
 export async function getElections() {
   try {
     const resp = await axios.get(`${API_BASE}/elections`);
-    console.log("API getElections response:", resp.data);
+    // API getElections response processing
     return resp.data;
   } catch (error) {
     console.error("Error en getElections:", error);
@@ -63,7 +63,7 @@ export async function getElections() {
 export async function getElectionById(id) {
   try {
     const resp = await axios.get(`${API_BASE}/elections/${id}`);
-    console.log(`API getElectionById(${id}) response:`, resp.data);
+    // API getElectionById response processing
     return resp.data;
   } catch (error) {
     console.error(`Error en getElectionById(${id}):`, error);
