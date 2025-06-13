@@ -1,52 +1,4 @@
 {
-  "111-1111111-1": {
-    "address": "0x58f709ef64d5d6a7ac626c1fe6be8b122ff3ae86",
-    "privateKey": null,
-    "name": "Sebastian",
-    "province": "San Pedro de Macorís",
-    "authMethod": "metamask",
-    "registeredAt": "2025-06-09T04:45:10.263Z"
-  },
-  "000-0000000-0": {
-    "address": "0x8F8409FA08308FA90fe08afcE0cb3e398634f015",
-    "privateKey": "0x954dd3b70e27ee7704009735880ead257cfca45fe1601d8ab748ad48ee3948fa",
-    "name": "Sebastian",
-    "province": "San Pedro de Macorís",
-    "authMethod": "generated",
-    "registeredAt": "2025-06-09T06:31:42.425Z"
-  },
-  "333-3333333-3": {
-    "address": "0x47E9c8132d62834B0D00fa9FfF43C0618cc8588D",
-    "privateKey": "0xafabd87131e8138cbec7f55b7c8030bd5b9d34f2bf75bdce7163e2862b96d9e1",
-    "name": "q",
-    "province": "Monte Plata",
-    "authMethod": "generated",
-    "registeredAt": "2025-06-09T06:44:09.376Z"
-  },
-  "444-4444444-4": {
-    "address": "0xBC50780561Cd03248B43046f2F74205919dd918d",
-    "privateKey": "0x45a1322bf50052486e1b9a3d952de3d359aa1fbb7d179cfb4c7d2f2bb723b224",
-    "name": "mm",
-    "province": "Monte Plata",
-    "authMethod": "generated",
-    "registeredAt": "2025-06-09T06:52:46.145Z"
-  },
-  "555-5555555-5": {
-    "address": "0x8fc93E21DC6Cf2adBA78C44F83AB424396950b07",
-    "privateKey": "0xfafce802ba79cce2a67a9c5a88f534a3fe3bb50975717eef37006b79fd481cbe",
-    "name": "cc",
-    "province": "Sánchez Ramírez",
-    "authMethod": "generated",
-    "registeredAt": "2025-06-09T07:19:33.378Z"
-  },
-  "666-6666666-6": {
-    "address": "0x3D9E91023dE4d9D9ae6E07FA6f6e804D72f54f4F",
-    "privateKey": "0x8c1522a84d942a3474df171d56a601c9d0b8cb9850eaea22d7aa7afb2141715a",
-    "name": "pablo",
-    "province": "María Trinidad Sánchez",
-    "authMethod": "generated",
-    "registeredAt": "2025-06-10T02:30:30.909Z"
-  },
   "465-4654654-6": {
     "address": "0xe5a6d3a48904142d034885d0e72fcbaadf10ff97",
     "privateKey": null,
@@ -70,5 +22,85 @@
     "province": "La Vega",
     "authMethod": "generated",
     "registeredAt": "2025-06-11T17:55:19.966Z"
+  },
+  "777-7777777-1": {
+    "address": "0x4dB1524E4296262c0F8929C54F4ccdf9C82ab28c",
+    "privateKey": "0xd63a43d93f123231c2bcacd214312bd5004423bbc115faddfd7b23a60c7cddb3",
+    "name": "Karla",
+    "province": "Samaná",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T00:03:45.983Z"
+  },
+  "333-3333333-1": {
+    "address": "0x94AA0D54f30E330aA54Bba633F9eb0802aef550D",
+    "privateKey": "0x2ff8efdb623f755b818fd533cf53ee8ab4841cb8601cd189ce15447c86809b2c",
+    "name": "Ramon",
+    "province": "Barahona",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T02:26:21.694Z"
+  },
+  "111-1111111-2": {
+    "address": "0x2CC2F40d1aCE18bf40446b4CE11cB918b5a903EC",
+    "privateKey": "0x4838ac355519b50b3fcbb4c6c5953694e8117914715f20f011ffd2fa7968563b",
+    "name": "Maria",
+    "province": "María Trinidad Sánchez",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:02:58.922Z"
+  },
+  "001-0000001-1": {
+    "address": "0x32c3BA6e51598eF576D2Bd59DA9B1420d5C4e78d",
+    "privateKey": "0x20580217cbe75d8df919f4470f8fc21b96e8d06e887cf7687473c63946a8d0ba",
+    "name": "Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:11:33.258Z"
+  },
+  "001-1234567-8": {
+    "address": "0x95c654cAc7669cd1D7548631215BFa7737b8Ec4A",
+    "privateKey": "0xfc61c88892b70c33f64fd18368f73d2d69cc176c54b2c6373746866bc3546f51",
+    "name": "Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:13:53.088Z"
+  },
+  "001-1111111-1": {
+    "address": "0xa8F9F0D1C93BC444c8E2961EBe19F63B0eC32743",
+    "privateKey": "0x99f744e8f14f97a8a058ee165704214f4fcedb1c1c0774341d24ca1312fad3f4",
+    "name": "Test Frontend User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:17:22.351Z"
+  },
+  "001-8888888-8": {
+    "address": "0x59E37dCD8c398767f378899C466D044d3B5d5c30",
+    "privateKey": "0x8e26e5daa2750351c4881e53da07c4fe29f71ea4f07b3cbdd74299d1567989c7",
+    "name": "Axios Test User",
+    "province": "Santo Domingo",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T04:21:17.721Z"
+  },
+  "488-8888888-8": {
+    "address": "0x5826817b1adc2beee5073972bd302c7604c39d13",
+    "privateKey": null,
+    "name": "Yascara",
+    "province": "Elías Piña",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:47:41.398Z"
+  },
+  "787-8989879-8": {
+    "address": "0xfeb3a46d30c403467c4919f60ee216e3747d0c40",
+    "privateKey": null,
+    "name": "Rafael",
+    "province": "Duarte",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:49:47.687Z"
+  },
+  "848-4654654-6": {
+    "address": "0x9e539a70285e311727dd5d5e39908aa8e5e943ce",
+    "privateKey": null,
+    "name": "Toño",
+    "province": "Azua",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-13T04:51:47.792Z"
   }
 }

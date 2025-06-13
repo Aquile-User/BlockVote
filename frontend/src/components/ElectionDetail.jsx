@@ -53,9 +53,13 @@ const ElectionDetail = ({ user }) => {
     try {
       setLoading(true);
 
-      // Get real election data from API
-      const electionData = await getElectionById(electionId);
-      const resultsData = await getResults(electionId);
+      // Get real election data from API - aprovechando el caché para getResults
+      const [electionData, resultsData, totalRegisteredUsers] = await Promise.all([
+        getElectionById(electionId),
+        getResults(electionId),
+        getTotalRegisteredUsers()
+      ]);
+
       // Determine election status based on time and disabled flag
       const currentTime = Date.now() / 1000; // Current time in seconds
       let status;
@@ -74,17 +78,20 @@ const ElectionDetail = ({ user }) => {
         electionId: electionData.electionId,
         name: electionData.name,
         description: "Vote for the next leader of the Dominican Republic",
-        startDate: new Date(electionData.startTime * 1000).toISOString(), endDate: new Date(electionData.endTime * 1000).toISOString(),
+        startDate: new Date(electionData.startTime * 1000).toISOString(),
+        endDate: new Date(electionData.endTime * 1000).toISOString(),
         startTime: electionData.startTime,
         endTime: electionData.endTime,
         status: status,
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: await getTotalRegisteredUsers(),
+        totalVoters: totalRegisteredUsers,
         candidates: electionData.candidates
       };
+
       setElection(formattedElection);
       setResults(resultsData);
+
       // Check if user has already voted using blockchain data (priority)
       if (user?.socialId) {
         try {
@@ -115,7 +122,9 @@ const ElectionDetail = ({ user }) => {
 
     } catch (error) {
       console.error('Error loading election:', error);
-      toast.error('Failed to load election details');      // Fallback to mock data if API fails
+      toast.error('Failed to load election details');
+      // Fallback to mock data if API fails
+      const totalUsers = await getTotalRegisteredUsers();
       const mockElection = {
         electionId: 1,
         name: "Presidential Election 2024",
@@ -125,7 +134,7 @@ const ElectionDetail = ({ user }) => {
         status: "active",
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: await getTotalRegisteredUsers(),
+        totalVoters: totalUsers,
         candidates: ["Candidate A", "Candidate B"]
       };
 
@@ -365,9 +374,9 @@ const ElectionDetail = ({ user }) => {
     return (
       <div className="space-y-6">
         <div className="card p-6 animate-pulse">
-          <div className="h-8 bg-gray-700 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
         </div>
       </div>
     );
@@ -376,9 +385,9 @@ const ElectionDetail = ({ user }) => {
   if (!election) {
     return (
       <div className="card p-8 text-center">
-        <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Election Not Found</h2>
-        <p className="text-gray-400 mb-6">The election you're looking for doesn't exist.</p>
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Election Not Found</h2>
+        <p className="text-gray-600 mb-6">The election you're looking for doesn't exist.</p>
         <button onClick={() => navigate('/elections')} className="btn-primary">
           Back to Elections
         </button>
@@ -389,16 +398,30 @@ const ElectionDetail = ({ user }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={() => navigate('/elections')}
-          className="btn-secondary p-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-white">{election.name}</h1>
-          <p className="text-gray-400">Election #{election.electionId}</p>
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/elections')}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-lg transition-colors duration-200"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">{election.name}</h1>
+            <p className="text-gray-500">Election #{election.electionId} • {election.type.charAt(0).toUpperCase() + election.type.slice(1)}</p>
+          </div>
+        </div>
+
+        <div className={`
+          px-4 py-1.5 rounded-full font-medium
+          ${election.status === 'active' ? 'bg-green-100 text-green-600 border border-green-300' :
+            election.status === 'upcoming' ? 'bg-blue-100 text-blue-600 border border-blue-300' :
+              election.status === 'expired' ? 'bg-gray-100 text-gray-600 border border-gray-300' :
+                'bg-red-100 text-red-600 border border-red-300'}
+        `}>
+          {election.status === 'active' ? 'Active' :
+            election.status === 'upcoming' ? 'Upcoming' :
+              election.status === 'expired' ? 'Ended' : 'Disabled'}
         </div>
       </div>
 
@@ -406,42 +429,51 @@ const ElectionDetail = ({ user }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Details Card */}
-          <motion.div
+          {/* Details Card */}          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card p-6"
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
           >
-            <h2 className="text-xl font-bold text-white mb-4">Election Details</h2>
-            <p className="text-gray-300 mb-6">{election.description}</p>
+            <div className="border-b border-gray-200 pb-4 mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Vote for the next leader of the Dominican Republic</h2>
+              <p className="text-gray-600">{election.description}</p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3">
-                <Calendar className="w-5 h-5 text-blue-400" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl p-4 flex items-center space-x-4 border border-blue-200 shadow-sm">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
                 <div>
-                  <p className="text-white font-medium">Start Date</p>
-                  <p className="text-gray-400 text-sm">{formatDate(election.startDate)}</p>
+                  <p className="text-gray-500 text-sm uppercase tracking-wider font-medium">Start Date</p>
+                  <p className="text-gray-800 font-semibold">{formatDate(election.startDate)}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Clock className="w-5 h-5 text-yellow-400" />
+              <div className="bg-white rounded-xl p-4 flex items-center space-x-4 border border-yellow-200 shadow-sm">
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
                 <div>
-                  <p className="text-white font-medium">End Date</p>
-                  <p className="text-gray-400 text-sm">{formatDate(election.endDate)}</p>
+                  <p className="text-gray-500 text-sm uppercase tracking-wider font-medium">End Date</p>
+                  <p className="text-gray-800 font-semibold">{formatDate(election.endDate)}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="w-5 h-5 text-green-400" />
+              <div className="bg-white rounded-xl p-4 flex items-center space-x-4 border border-green-200 shadow-sm">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-green-600" />
+                </div>
                 <div>
-                  <p className="text-white font-medium">Location</p>
-                  <p className="text-gray-400 text-sm">{election.location}</p>
+                  <p className="text-gray-500 text-sm uppercase tracking-wider font-medium">Location</p>
+                  <p className="text-gray-800 font-semibold">{election.location}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Users className="w-5 h-5 text-purple-400" />
+              <div className="bg-white rounded-xl p-4 flex items-center space-x-4 border border-purple-200 shadow-sm">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-purple-600" />
+                </div>
                 <div>
-                  <p className="text-white font-medium">Registered Voters</p>
-                  <p className="text-gray-400 text-sm">{election.totalVoters.toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm uppercase tracking-wider font-medium">Registered Voters</p>
+                  <p className="text-gray-800 font-semibold">{election.totalVoters.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -452,25 +484,25 @@ const ElectionDetail = ({ user }) => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="card p-6"
+              className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
             >
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-                <Vote className="w-6 h-6" />
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                <Vote className="w-6 h-6 text-primary-600" />
                 <span>Cast Your Vote</span>
               </h2>
 
               <form onSubmit={handleVoteSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     Select a candidate:
                   </label>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {election.candidates.map((candidate) => (
                       <label
                         key={candidate}
                         className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedCandidate === candidate
-                            ? 'border-primary bg-primary/10'
-                            : 'border-gray-600 hover:border-gray-500'
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                           }`}
                       >
                         <input
@@ -481,18 +513,18 @@ const ElectionDetail = ({ user }) => {
                           onChange={(e) => setSelectedCandidate(e.target.value)}
                           className="sr-only"
                         />
-                        <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${selectedCandidate === candidate
-                            ? 'border-primary bg-primary'
-                            : 'border-gray-400'
+                        <div className={`w-5 h-5 rounded-full border-2 mr-3 flex items-center justify-center ${selectedCandidate === candidate
+                          ? 'border-primary-500 bg-primary-500'
+                          : 'border-gray-400'
                           }`}>
                           {selectedCandidate === candidate && (
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                           )}
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-white">{candidate}</p>
-                          <p className="text-gray-400 text-sm">
-                            Current votes: {results?.[candidate] || 0} ({getVotePercentage(candidate).toFixed(1)}%)
+                          <p className="font-semibold text-gray-800 text-lg">{candidate}</p>
+                          <p className="text-gray-600 text-sm">
+                            Current votes: <span className="text-primary-600 font-medium">{results?.[candidate] || 0}</span> (<span className="text-primary-600">{getVotePercentage(candidate).toFixed(1)}%</span>)
                           </p>
                         </div>
                       </label>
@@ -503,7 +535,7 @@ const ElectionDetail = ({ user }) => {
                 <button
                   type="submit"
                   disabled={voting || !selectedCandidate}
-                  className="btn-primary w-full flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg w-full flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {voting ? (
                     <>
@@ -525,21 +557,24 @@ const ElectionDetail = ({ user }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="card p-6 bg-green-500/10 border border-green-500/20"
+              className="bg-white rounded-2xl border-2 border-green-400 p-6 shadow-sm"
             >
               <div className="flex items-center space-x-3 mb-4">
-                <CheckCircle className="w-8 h-8 text-green-400" />
-                <h2 className="text-xl font-bold text-white">Vote Successfully Cast!</h2>
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">Vote Successfully Cast!</h2>
               </div>
-              <p className="text-green-300 mb-3">
+              <p className="text-gray-600 mb-4">
                 Your vote has been securely recorded on the blockchain. Thank you for participating in this election.
               </p>
+
               {localStorage.getItem(`txHash-${user?.socialId}-${electionId}`) && (
                 <a
                   href={`https://www.megaexplorer.xyz/tx/${localStorage.getItem(`txHash-${user?.socialId}-${electionId}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 text-green-400 hover:text-green-300 underline"
+                  className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 mt-3"
                 >
                   <ExternalLink className="w-4 h-4" />
                   <span>View transaction on MegaETH Explorer</span>
@@ -553,13 +588,15 @@ const ElectionDetail = ({ user }) => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-gray-500/10 border border-gray-500/20"
+              className="bg-white rounded-2xl border-2 border-gray-400 p-6 shadow-sm"
             >
               <div className="flex items-center space-x-3 mb-4">
-                <Clock className="w-8 h-8 text-gray-400" />
-                <h2 className="text-xl font-bold text-white">Election Has Ended</h2>
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-gray-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">Election Has Ended</h2>
               </div>
-              <p className="text-gray-300">
+              <p className="text-gray-600">
                 This election ended on {new Date(election.endTime * 1000).toLocaleString()}.
                 Voting is no longer available, but you can view the final results below.
               </p>
@@ -571,13 +608,15 @@ const ElectionDetail = ({ user }) => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-blue-500/10 border border-blue-500/20"
+              className="bg-white rounded-2xl border-2 border-blue-400 p-6 shadow-sm"
             >
               <div className="flex items-center space-x-3 mb-4">
-                <Calendar className="w-8 h-8 text-blue-400" />
-                <h2 className="text-xl font-bold text-white">Election Starts Soon</h2>
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">Election Starts Soon</h2>
               </div>
-              <p className="text-blue-300">
+              <p className="text-gray-600">
                 This election will begin on {new Date(election.startTime * 1000).toLocaleString()}.
                 Please check back when voting opens.
               </p>
@@ -589,13 +628,15 @@ const ElectionDetail = ({ user }) => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="card p-6 bg-red-500/10 border border-red-500/20"
+              className="bg-white rounded-2xl border-2 border-red-400 p-6 shadow-sm"
             >
               <div className="flex items-center space-x-3 mb-4">
-                <XCircle className="w-8 h-8 text-red-400" />
-                <h2 className="text-xl font-bold text-white">Election Disabled</h2>
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">Election Disabled</h2>
               </div>
-              <p className="text-red-300">
+              <p className="text-gray-600">
                 This election has been temporarily disabled by administrators.
                 Voting is currently not available.
               </p>
@@ -605,57 +646,87 @@ const ElectionDetail = ({ user }) => {
 
         {/* Results Sidebar */}
         <div className="space-y-6">
-          {/* Live Results Chart */}
-          <motion.div
+          {/* Live Results Chart */}          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="card p-6"
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">Live Results</h3>
-              <BarChart3 className="w-5 h-5 text-gray-400" />
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Election Statistics</h3>
+              <BarChart3 className="w-5 h-5 text-primary-600" />
             </div>
 
-            <div className="text-center mb-4">
-              <p className="text-3xl font-bold text-primary">{getTotalVotes()}</p>
-              <p className="text-gray-400 text-sm">Total Votes Cast</p>
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-primary-100 rounded-xl p-4 border border-primary-200 text-center">
+                <p className="text-4xl font-bold text-primary-700">{getTotalVotes()}</p>
+                <p className="text-primary-600 font-medium mt-1">Total Votes</p>
+              </div>
 
-            {results && getTotalVotes() > 0 && (
-              <ReactECharts
-                option={getChartOption()}
-                style={{ height: '250px' }}
-              />
-            )}
+              <div className="bg-green-100 rounded-xl p-4 border border-green-200 text-center">
+                <p className="text-4xl font-bold text-green-700">
+                  {election.totalVoters > 0 ? Math.round((getTotalVotes() / election.totalVoters) * 100) : 0}%
+                </p>
+                <p className="text-green-600 font-medium mt-1">Participation</p>
+              </div>
+
+              <div className="bg-amber-100 rounded-xl p-4 border border-amber-200 text-center">
+                <p className="text-4xl font-bold text-amber-700">{election.candidates.length}</p>
+                <p className="text-amber-600 font-medium mt-1">Candidates</p>
+              </div>
+
+              <div className="bg-purple-100 rounded-xl p-4 border border-purple-200 text-center">
+                <p className="text-4xl font-bold text-purple-700">
+                  {results && Object.values(results).length > 0 ?
+                    Math.max(...Object.values(results)) : 0}
+                </p>
+                <p className="text-purple-600 font-medium mt-1">Highest Votes</p>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Detailed Results */}
-          <motion.div
+          {/* Detailed Results */}          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="card p-6"
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
           >
-            <h3 className="text-lg font-bold text-white mb-4">Detailed Results</h3>
-            <div className="space-y-3">
+            <div className="flex items-center space-x-3 mb-6">
+              <Vote className="w-6 h-6 text-primary-600" />
+              <h3 className="text-xl font-bold text-gray-800">Detailed Results</h3>
+            </div>
+
+            <div className="space-y-5">
               {election.candidates.map((candidate, index) => {
                 const votes = results?.[candidate] || 0;
-                const percentage = getVotePercentage(candidate);
+                const percentage = getVotePercentage(candidate); const colorsClasses = [
+                  { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300', light: 'bg-blue-300' },
+                  { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300', light: 'bg-emerald-300' },
+                  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300', light: 'bg-amber-300' },
+                  { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300', light: 'bg-purple-300' },
+                  { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-300', light: 'bg-pink-300' }
+                ];
+                const colorClass = colorsClasses[index % colorsClasses.length];
+
                 return (
-                  <div key={candidate} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-white">{candidate}</span>
-                      <span className="text-gray-400">{votes} votes</span>
+                  <div key={candidate} className={`bg-white rounded-xl p-4 border ${colorClass.border}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-semibold text-lg text-gray-800">{candidate}</span>
+                      <span className={`${colorClass.text} font-medium ${colorClass.bg} px-3 py-1 rounded-full`}>
+                        {votes} votes
+                      </span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+
+                    <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${percentage}%` }}
                         transition={{ duration: 1, delay: index * 0.2 }}
-                        className="bg-gradient-to-r from-primary to-blue-500 h-2 rounded-full"
+                        className={`${colorClass.light} h-5 rounded-full`}
                       />
                     </div>
-                    <div className="text-right">
-                      <span className="text-primary font-medium">{percentage.toFixed(1)}%</span>
+
+                    <div className="flex justify-between mt-2">
+                      <span className="text-gray-600 text-sm">{Math.round(percentage)}% completed</span>
+                      <span className={`${colorClass.text} font-medium`}>{percentage.toFixed(1)}%</span>
                     </div>
                   </div>
                 );
@@ -667,32 +738,40 @@ const ElectionDetail = ({ user }) => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="card p-6"
+            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
           >
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
-              <Shield className="w-5 h-5" />
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center space-x-2">
+              <Shield className="w-5 h-5 text-primary-600" />
               <span>Blockchain Security</span>
             </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Network:</span>
-                <span className="text-white">MegaETH Testnet</span>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="text-gray-600">Network:</span>
+                <span className="text-gray-800 font-medium bg-blue-100 px-3 py-1 rounded-full text-sm">MegaETH Testnet</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Contract:</span>
-                <span className="text-white font-mono text-xs">
-                  {CONFIG.CONTRACT_ADDRESS.slice(0, 8)}...
+
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="text-gray-600">Contract:</span>
+                <span className="text-gray-800 font-mono text-xs bg-gray-100 px-3 py-1 rounded-full">
+                  {CONFIG.CONTRACT_ADDRESS.slice(0, 8)}...{CONFIG.CONTRACT_ADDRESS.slice(-6)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Security:</span>
-                <span className="text-green-400">Verified</span>
+
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <span className="text-gray-600">Security:</span>
+                <span className="text-gray-800 font-medium bg-green-100 px-3 py-1 rounded-full text-sm flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-1 text-green-600" />
+                  Verified
+                </span>
               </div>
-            </div>            <a
+            </div>
+
+            <a
               href={`https://www.megaexplorer.xyz/address/${CONFIG.CONTRACT_ADDRESS}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary w-full mt-4 flex items-center justify-center space-x-2 text-sm"
+              className="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 w-full mt-4 flex items-center justify-center space-x-2 text-sm"
             >
               <ExternalLink className="w-4 h-4" />
               <span>View on Explorer</span>
@@ -703,72 +782,73 @@ const ElectionDetail = ({ user }) => {
 
       {/* Vote Confirmation Modal */}
       <AnimatePresence>
-        {showConfirmVote && (
+        {showConfirmVote && (<motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-gray-500/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowConfirmVote(false)}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowConfirmVote(false)}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white rounded-2xl border border-gray-200 p-6 max-w-md w-full shadow-lg"
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="card p-6 max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center space-x-3 mb-4">
-                <Vote className="w-8 h-8 text-primary" />
-                <h3 className="text-xl font-bold text-white">Confirm Your Vote</h3>
+            <div className="flex items-center space-x-3 mb-6 border-b border-gray-200 pb-4">
+              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                <Vote className="w-6 h-6 text-primary-600" />
               </div>
+              <h3 className="text-xl font-bold text-gray-800">Confirm Your Vote</h3>
+            </div>
 
-              <div className="mb-6">
-                <p className="text-gray-300 mb-2">You are about to vote for:</p>
-                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-primary font-semibold text-lg">{selectedCandidate}</p>
+            <div className="mb-6">
+              <p className="text-gray-700 mb-3 font-medium">You are about to vote for:</p>
+              <div className="p-4 bg-primary-50 border border-primary-200 rounded-lg shadow-inner">
+                <p className="text-gray-800 font-semibold text-lg">{selectedCandidate}</p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-5 mb-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="text-yellow-700 font-medium">Important Notice</h4>
+                  <p className="text-gray-700 mt-1">
+                    Your vote will be permanently recorded on the blockchain and cannot be changed.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-yellow-400 font-medium text-sm">Important Notice</h4>
-                    <p className="text-gray-300 text-sm mt-1">
-                      Your vote will be permanently recorded on the blockchain and cannot be changed.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowConfirmVote(false)}
-                  className="btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleVote}
-                  disabled={voting}
-                  className="btn-primary flex-1 flex items-center justify-center space-x-2"
-                >
-                  {voting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Voting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-4 h-4" />
-                      <span>Confirm Vote</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowConfirmVote(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex-1 border border-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVote}
+                disabled={voting}
+                className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg flex-1 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {voting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Voting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4" />
+                    <span>Confirm Vote</span>
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
+        </motion.div>
         )}
       </AnimatePresence>
     </div>
