@@ -118,9 +118,6 @@ const Topbar = ({ user }) => {
                 <h1 className="text-xl font-bold text-gray-800">
                   BlockVote
                 </h1>
-                <p className="text-xs text-gray-500 font-medium tracking-wide">
-                  Votación Blockchain
-                </p>
               </div>
             </div>
             </div>
