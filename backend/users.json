@@ -102,5 +102,13 @@
     "province": "Azua",
     "authMethod": "metamask",
     "registeredAt": "2025-06-13T04:51:47.792Z"
+  },
+  "444-4444444-8": {
+    "address": "0xe88841E9c2CedfdaB3714F7CF5086b39D69ddf32",
+    "privateKey": "0xd22a7e12a470bb097a6cb000563053cddffefcee8f58edf7ca2575c12f6acffd",
+    "name": "Gonzalo",
+    "province": "Hermanas Mirabal",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T16:03:25.842Z"
   }
 }

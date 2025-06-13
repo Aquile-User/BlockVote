@@ -13,17 +13,17 @@ import {
   CreditCard,
   Activity, ChevronUp,
   BarChart4,
-  Zap,
-  Globe,
   Calendar,
   RefreshCw,
   TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Award
+  Award,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Eye
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { getElections, getResults, getElectionById } from '../api';
+import { getElections, getResults, getElectionById, hasVoted } from '../api';
 import { mapUsersToProvinces } from '../utils/provinceUtils';
 
 const Dashboard = ({ user }) => {
@@ -37,6 +37,12 @@ const Dashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('7d');
+
+  // Estados para la lista de elecciones
+  const [elections, setElections] = useState([]);
+  const [selectedElection, setSelectedElection] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [electionsPerPage] = useState(3);
 
   useEffect(() => {
     loadDashboardData();
@@ -52,51 +58,176 @@ const Dashboard = ({ user }) => {
     } finally {
       setRefreshing(false);
     }
-  };
-  // Función para contar los votos del usuario actual
-  const countUserVotes = async (userAddress, resultsMap, validElections, timeframeCutoff) => {
-    if (!userAddress) return 0;
+  };  // Función para contar los votos reales del usuario actual
+  const countUserVotes = async (userSocialId, validElections) => {
+    if (!userSocialId) {
+      console.log('Dashboard: No user socialId provided for vote counting');
+      return 0;
+    }
 
     try {
-      // Obtener el historial de votos del backend
-      const voteHistoryResponse = await fetch('http://localhost:3000/votes');
-      const voteHistory = await voteHistoryResponse.json();
+      let realVoteCount = 0;
+      console.log(`Dashboard: Counting real votes for user ${userSocialId} across ${validElections.length} elections`);
 
-      // Filtrar por la dirección del usuario actual
-      let userVotes = Object.values(voteHistory || {}).filter(
-        vote => vote.voter?.toLowerCase() === userAddress?.toLowerCase()
-      );
+      // Para cada elección válida, verificar si el usuario realmente ha votado
+      for (const election of validElections) {
+        const electionId = election.electionId;
 
-      // Aplicar filtro de timeframe si es necesario
-      if (timeframeCutoff > 0) {
-        userVotes = userVotes.filter(vote => {
-          const voteTimestamp = vote.timestamp || 0;
-          return voteTimestamp >= timeframeCutoff;
-        });
-      }
-
-      return userVotes.length;
-    } catch (error) {
-      console.error('Error al obtener historial de votos:', error);
-
-      // Plan B: Estimación basada en resultados actuales (menos preciso)
-      // Solo usar si el endpoint de votos no está disponible
-      if (userAddress && resultsMap && validElections) {
-        let count = 0;
-        // Verificar si el usuario aparece como votante en alguna elección
-        for (const election of validElections) {
-          const electionId = election.electionId;
-          const results = resultsMap[electionId] || {};
-          // Si hay al menos un voto en esta elección, contarlo como 1 posible voto del usuario
-          if (Object.values(results).some(votes => votes > 0)) {
-            count += 1;
+        try {
+          // Usar la API hasVoted para verificar si el usuario votó en esta elección
+          console.log(`Dashboard: Checking if user voted in election ${electionId}`);
+          const votingStatus = await hasVoted(electionId, userSocialId);
+          if (votingStatus.hasVoted) {
+            console.log(`Dashboard: ✅ User voted in election ${electionId}`);
+            realVoteCount++;
+          } else {
+            console.log(`Dashboard: ❌ User did not vote in election ${electionId}`);
+          }
+        } catch (error) {
+          console.log(`Dashboard: Error checking vote status for election ${electionId}:`, error.message);
+          // Si hay error en la API, usar localStorage como fallback
+          const votedKey = `voted-${userSocialId}-${electionId}`;
+          const localVoted = localStorage.getItem(votedKey) === 'true';
+          if (localVoted) {
+            console.log(`Dashboard: ✅ User voted in election ${electionId} (from localStorage)`);
+            realVoteCount++;
           }
         }
-        return Math.min(count, validElections.length);
       }
+
+      console.log(`Dashboard: Total real votes for user ${userSocialId}: ${realVoteCount}`);
+      return realVoteCount;
+    } catch (error) {
+      console.error('Dashboard: Error al contar votos reales del usuario:', error);
       return 0;
     }
   };
+
+  // Función para cargar elecciones para la lista
+  const loadElectionsForList = async (validElections, resultsMap) => {
+    try {
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      // Obtener usuarios totales para calcular participación
+      let totalUsers = 1;
+      try {
+        const usersResponse = await fetch('http://localhost:3000/users');
+        const usersData = await usersResponse.json();
+        totalUsers = Object.keys(usersData).length;
+      } catch (error) {
+        console.log('Could not fetch user count for elections list');
+      }
+
+      const electionsWithDetails = validElections.map(election => {
+        const results = resultsMap[election.electionId] || {};
+        const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
+
+        // Determinar estado
+        let status = 'upcoming';
+        if (election.disabled) {
+          status = 'disabled';
+        } else if (currentTime >= election.startTime && currentTime <= election.endTime) {
+          status = 'active';
+        } else if (currentTime > election.endTime) {
+          status = 'expired';
+        }
+
+        return {
+          ...election,
+          results,
+          totalVotes,
+          status,
+          participation: totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0
+        };
+      });
+
+      // Ordenar por prioridad: activas -> próximas -> deshabilitadas -> finalizadas
+      const statusPriority = {
+        'active': 1,
+        'upcoming': 2,
+        'disabled': 3,
+        'expired': 4
+      };
+
+      electionsWithDetails.sort((a, b) => statusPriority[a.status] - statusPriority[b.status]);
+
+      setElections(electionsWithDetails);
+
+      // Seleccionar la primera elección por defecto si hay alguna
+      if (electionsWithDetails.length > 0 && !selectedElection) {
+        setSelectedElection(electionsWithDetails[0]);
+      }
+    } catch (error) {
+      console.error('Error loading elections for list:', error);
+    }
+  };
+
+  // Funciones de utilidad para la lista de elecciones
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active':
+        return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+      case 'upcoming':
+        return 'text-primary-600 bg-primary-50 border-primary-200';
+      case 'expired':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'disabled':
+        return 'text-amber-600 bg-amber-50 border-amber-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'active':
+        return <Vote className="w-4 h-4" />;
+      case 'upcoming':
+        return <Clock className="w-4 h-4" />;
+      case 'expired':
+        return <CheckCircle2 className="w-4 h-4" />;
+      case 'disabled':
+        return <AlertTriangle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Activa';
+      case 'upcoming':
+        return 'Próxima';
+      case 'expired':
+        return 'Finalizada';
+      case 'disabled':
+        return 'Deshabilitada';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const formatDate = (timestamp) => {
+    return new Date(timestamp * 1000).toLocaleDateString('es-DO', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Paginación
+  const indexOfLastElection = currentPage * electionsPerPage;
+  const indexOfFirstElection = indexOfLastElection - electionsPerPage;
+  const currentElections = elections.slice(indexOfFirstElection, indexOfLastElection);
+  const totalPages = Math.ceil(elections.length / electionsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -198,11 +329,15 @@ const Dashboard = ({ user }) => {
         activeElections,
         completedElections,
         disabledElections
-      });      // Contar los votos del usuario actual y actualizar el objeto user
-      if (user && user.address) {
-        const userVotesCount = await countUserVotes(user.address, resultsMap, validElections, timeframeCutoff);
-        // Actualizar el objeto user con el conteo de votos
+      });      // Contar los votos reales del usuario actual
+      if (user && user.socialId) {
+        console.log(`Dashboard: Starting vote count for user:`, user);
+        const userVotesCount = await countUserVotes(user.socialId, validElections);
+        console.log(`Dashboard: User ${user.socialId} has ${userVotesCount} real votes`);
+        // Actualizar el objeto user con el conteo de votos reales
         user.votesCount = userVotesCount;
+      } else {
+        console.log('Dashboard: No user or socialId available for vote counting');
       }
 
       // Real Dominican Republic province data based on actual registered users
@@ -241,11 +376,12 @@ const Dashboard = ({ user }) => {
           { name: 'Sánchez Ramírez', votes: 1, registered: 1, participationRate: 100 },
           { name: 'María Trinidad Sánchez', votes: 1, registered: 1, participationRate: 100 }
         ];
-      }
+      } setProvinceData(realProvinceData);
 
-      setProvinceData(realProvinceData);
+      // Cargar datos de elecciones para la lista
+      await loadElectionsForList(validElections, resultsMap);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);      // Fallback to real data from oldest election if APIs fail
+      console.error('Error loading dashboard data:', error);// Fallback to real data from oldest election if APIs fail
       setStats({
         totalVoters: 6, // Real registered users count
         totalVotes: 4, // Real votes from election 1: q=1, w=1, e=2
@@ -266,58 +402,7 @@ const Dashboard = ({ user }) => {
       setLoading(false);
     }
   };
-  const voteDistributionOption = {
-    backgroundColor: 'transparent',
-    title: {
-      text: '',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: '#ffffff',
-      borderColor: '#e5e7eb',
-      textStyle: {
-        color: '#111827'
-      },
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      orient: 'horizontal',
-      bottom: '5%',
-      textStyle: {
-        color: '#6b7280',
-        fontSize: 12
-      }
-    },
-    series: [
-      {
-        name: 'Votos',
-        type: 'pie',
-        radius: ['45%', '75%'],
-        center: ['50%', '50%'],
-        data: [
-          { value: 1, name: 'Sin votos aún', itemStyle: { color: '#d1d5db' } }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.1)'
-          }
-        },
-        label: {
-          color: '#374151',
-          fontSize: 12,
-          fontWeight: 600
-        },
-        labelLine: {
-          lineStyle: {
-            color: '#d1d5db'
-          }
-        }
-      }
-    ]
-  };
+
   const provinceVotesOption = {
     backgroundColor: 'transparent',
     title: {
@@ -517,16 +602,7 @@ const Dashboard = ({ user }) => {
             </motion.div>
           </div>
         </div>
-      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          icon={Users}
-          title="Votantes Registrados"
-          value={stats.totalVoters.toLocaleString()}
-          subtitle="Ciudadanos verificados"
-          color="primary"
-          bgColor="primary"
-          delay={0.1}
-        />
+      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         <StatCard
           icon={Vote}
           title="Votos Emitidos"
@@ -534,15 +610,15 @@ const Dashboard = ({ user }) => {
           subtitle="Confirmados en blockchain"
           color="emerald"
           bgColor="emerald"
-          delay={0.2}
+          delay={0.1}
         />        <StatCard
-          icon={Clock}
-          title="Elecciones Activas"
-          value={stats.activeElections}
-          subtitle="En curso actualmente"
+          icon={AlertTriangle}
+          title="Elecciones Deshabilitadas"
+          value={stats.disabledElections || stats.completedElections}
+          subtitle="Finalizadas o desactivadas"
           color="amber"
           bgColor="amber"
-          delay={0.3}
+          delay={0.2}
         />
         <StatCard
           icon={CheckCircle2}
@@ -551,80 +627,12 @@ const Dashboard = ({ user }) => {
           subtitle="Finalizadas exitosamente"
           color="violet"
           bgColor="violet"
-          delay={0.4}
-        />
-      </div>
+          delay={0.3}
+        />      </div>
 
-      {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="relative group cursor-pointer"
-        >          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Elecciones Deshabilitadas</p>
-                <p className="text-sm text-gray-600">
-                  {stats.disabledElections || stats.completedElections} elecciones finalizadas
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-green-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Globe className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Cobertura</p>
-                <p className="text-sm text-gray-600">
-                  {provinceData.length} provincia{provinceData.length !== 1 ? 's' : ''} registrada{provinceData.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Seguridad</p>
-                <p className="text-sm text-gray-600">
-                  Sistema blockchain activo
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>
-      </div>      {/* Advanced Analytics Section */}
+      {/* Advanced Analytics Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Vote Distribution Chart */}
+        {/* Elections List */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -636,39 +644,129 @@ const Dashboard = ({ user }) => {
             <div className="flex items-center justify-between mb-8">
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
-                  <h3 className="text-2xl font-bold text-gray-900">Distribución de Votos</h3>
+                  <h3 className="text-2xl font-bold text-gray-900">Elecciones Disponibles</h3>
                   <div className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">
-                    Tiempo Real
+                    Lista Completa
                   </div>
                 </div>
-                <p className="text-gray-600">Análisis por candidato y participación</p>
+                <p className="text-gray-600">Selecciona una elección para ver detalles</p>
               </div>
               <div className="relative">
                 <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <BarChart4 className="w-7 h-7 text-white" />
+                  <List className="w-7 h-7 text-white" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
               </div>
             </div>
 
-            <ReactECharts
-              option={voteDistributionOption}
-              style={{ height: '320px' }}
-              opts={{ renderer: 'svg' }}
-            />
+            {/* Elections List */}
+            <div className="space-y-4 mb-6">
+              {currentElections.length > 0 ? (
+                currentElections.map((election, index) => (
+                  <motion.div
+                    key={election.electionId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => setSelectedElection(election)}
+                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${selectedElection?.electionId === election.electionId
+                      ? 'border-violet-300 bg-violet-50/50 shadow-lg'
+                      : 'border-gray-200 bg-white/60 hover:border-violet-200 hover:bg-violet-50/30'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">
+                            {election.name || `Elección ${election.electionId}`}
+                          </h4>
+                          <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(election.status)}`}>
+                            {getStatusIcon(election.status)}
+                            <span>{getStatusText(election.status)}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-xs">
+                          <div className="text-center">
+                            <p className="text-gray-500">Votos</p>
+                            <p className="font-semibold text-violet-700">{election.totalVotes}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-500">Candidatos</p>
+                            <p className="font-semibold text-violet-700">{election.candidates?.length || 0}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-500">Participación</p>
+                            <p className="font-semibold text-violet-700">{election.participation}%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <Eye className={`w-5 h-5 ${selectedElection?.electionId === election.electionId
+                          ? 'text-violet-600'
+                          : 'text-gray-400'
+                          }`} />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Vote className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500">No hay elecciones disponibles</p>
+                </div>
+              )}
+            </div>
 
-            {/* Chart Stats */}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Anterior</span>
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-8 h-8 text-sm font-medium rounded-lg ${currentPage === page
+                        ? 'bg-violet-600 text-white'
+                        : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Elections Stats */}
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Total de Votos</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalVotes}</p>
-              </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Candidatos Activos</p>
+                <p className="text-xs text-gray-500 mb-1">Total Elecciones</p>
+                <p className="text-2xl font-bold text-gray-900">{elections.length}</p>
+              </div>
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
+                <p className="text-xs text-gray-500 mb-1">Elecciones Activas</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {/* Cálculo basado en el resultado de las elecciones */}
-                  {Object.keys(voteDistributionOption?.series?.[0]?.data || [])
-                    .filter(item => item?.name !== 'Sin votos aún')
-                    .length || 0}
+                  {elections.filter(e => e.status === 'active').length}
                 </p>
               </div>
             </div>
@@ -741,9 +839,163 @@ const Dashboard = ({ user }) => {
                 </p>
               </div>
             </div>
+          </div>        </motion.div>
+      </div>
+
+      {/* Election Summary Section */}
+      {selectedElection && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0 }}
+          className="relative group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl transform group-hover:scale-[1.005] transition-transform duration-300"></div>
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-emerald-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3">
+                  <h3 className="text-2xl font-bold text-gray-900">Resumen de Elección</h3>
+                  <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(selectedElection.status)}`}>
+                    {getStatusIcon(selectedElection.status)}
+                    <span>{getStatusText(selectedElection.status)}</span>
+                  </div>
+                </div>
+                <p className="text-gray-600">{selectedElection.name || `Elección ${selectedElection.electionId}`}</p>
+              </div>
+              <div className="relative">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Vote className="w-7 h-7 text-white" />
+                </div>
+                {selectedElection.status === 'active' && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
+                )}
+              </div>
+            </div>
+
+            {/* Election Details Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+              {/* Left Column - Basic Info */}
+              <div className="space-y-6">
+
+                {/* Election Times */}
+                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
+                    Cronograma de Votación
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-emerald-50 rounded-xl">
+                      <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">Inicio</p>
+                      <p className="text-sm font-medium text-gray-900">{formatDate(selectedElection.startTime)}</p>
+                    </div>
+                    <div className="text-center p-4 bg-teal-50 rounded-xl">
+                      <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-2">Fin</p>
+                      <p className="text-sm font-medium text-gray-900">{formatDate(selectedElection.endTime)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Election Stats */}
+                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
+                    Estadísticas
+                  </h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center mx-auto mb-2">
+                        <Vote className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-700">{selectedElection.totalVotes}</p>
+                      <p className="text-xs text-gray-600">Votos Emitidos</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl flex items-center justify-center mx-auto mb-2">
+                        <Users className="w-6 h-6 text-teal-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-teal-700">{selectedElection.candidates?.length || 0}</p>
+                      <p className="text-xs text-gray-600">Candidatos</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-100 to-cyan-200 rounded-xl flex items-center justify-center mx-auto mb-2">
+                        <TrendingUp className="w-6 h-6 text-cyan-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-cyan-700">{selectedElection.participation}%</p>
+                      <p className="text-xs text-gray-600">Participación</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Candidates Results */}
+              <div className="space-y-6">
+
+                {/* Candidates List */}
+                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Award className="w-5 h-5 mr-2 text-emerald-600" />
+                    Resultados por Candidato
+                  </h4>
+
+                  {selectedElection.candidates && selectedElection.candidates.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedElection.candidates.map((candidate, idx) => {
+                        const votes = selectedElection.results?.[candidate] || 0;
+                        const percentage = selectedElection.totalVotes > 0
+                          ? ((votes / selectedElection.totalVotes) * 100).toFixed(1)
+                          : 0;
+                        const isWinner = votes > 0 && votes === Math.max(...Object.values(selectedElection.results || {}));
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${isWinner
+                              ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200'
+                              : 'bg-gray-50'
+                              }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isWinner
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-gray-300 text-gray-600'
+                                }`}>
+                                {idx + 1}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{candidate}</p>
+                                {isWinner && votes > 0 && (
+                                  <p className="text-xs text-emerald-600 font-medium">Líder actual</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-gray-900">{votes}</p>
+                              <p className="text-sm text-gray-600">{percentage}%</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500">No hay candidatos registrados</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
-      </div>      {/* Enhanced User Profile - Full Width Horizontal Layout */}
+      )}
+
+      {/* Enhanced User Profile - Full Width Horizontal Layout */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -793,9 +1045,8 @@ const Dashboard = ({ user }) => {
                     <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
                       Verificado
-                    </div>
-                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                      <Zap className="w-3 h-3 mr-2" />
+                    </div>                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                      <ShieldCheck className="w-3 h-3 mr-2" />
                       Activo
                     </div>
                   </div>
