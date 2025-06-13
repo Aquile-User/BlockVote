@@ -489,30 +489,42 @@ const Dashboard = ({ user }) => {
         }
       }
     ]
-  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="relative group h-full"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-white rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-      <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[200px] flex flex-col">
-        <div className="flex items-center justify-between mb-6 flex-1">
-          <div className="flex-1">
-            <p className="text-gray-500 text-sm font-medium mb-2">{title}</p>
-            <p className="text-4xl font-bold text-gray-900 mb-2">{value}</p>
-            {subtitle && (
-              <p className="text-gray-600 text-sm">{subtitle}</p>
-            )}
-          </div>
-          <div className={`w-16 h-16 bg-gradient-to-br from-${color}-500 to-${color}-600 rounded-3xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
-            <Icon className="w-8 h-8 text-white" />
+  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
+    // Define pastel background colors based on the original icon colors
+    const pastelColors = {
+      emerald: 'from-emerald-50 to-emerald-100',
+      amber: 'from-amber-50 to-amber-100',
+      violet: 'from-violet-50 to-violet-100'
+    };
+
+    const borderColors = {
+      emerald: 'border-emerald-200',
+      amber: 'border-amber-200',
+      violet: 'border-violet-200'
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, duration: 0.4 }}
+        className="relative group h-full"
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
+        <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
+          <div className="flex items-center justify-between mb-3 flex-1">
+            <div className="flex-1">
+              <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+              {subtitle && (
+                <p className="text-gray-700 text-xs">{subtitle}</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   if (loading) {
     return (
@@ -840,9 +852,7 @@ const Dashboard = ({ user }) => {
               </div>
             </div>
           </div>        </motion.div>
-      </div>
-
-      {/* Election Summary Section */}
+      </div>      {/* Election Summary Section - Updated with compact pastel design */}
       {selectedElection && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -850,81 +860,70 @@ const Dashboard = ({ user }) => {
           transition={{ delay: 1.0 }}
           className="relative group"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl transform group-hover:scale-[1.005] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-emerald-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl transform group-hover:scale-[1.005] transition-transform duration-300"></div>
+          <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl border border-emerald-200 p-6 shadow-soft hover:shadow-medium transition-all duration-300">
 
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="space-y-2">
+            {/* Header - Compact */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="space-y-1">
                 <div className="flex items-center space-x-3">
-                  <h3 className="text-2xl font-bold text-gray-900">Resumen de Elección</h3>
-                  <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(selectedElection.status)}`}>
+                  <h3 className="text-xl font-bold text-gray-900">Resumen de Elección</h3>
+                  <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(selectedElection.status)}`}>
                     {getStatusIcon(selectedElection.status)}
                     <span>{getStatusText(selectedElection.status)}</span>
                   </div>
                 </div>
-                <p className="text-gray-600">{selectedElection.name || `Elección ${selectedElection.electionId}`}</p>
+                <p className="text-gray-700 text-sm">{selectedElection.name || `Elección ${selectedElection.electionId}`}</p>
               </div>
-              <div className="relative">
-                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Vote className="w-7 h-7 text-white" />
+              {selectedElection.status === 'active' && (
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span className="text-emerald-600 text-sm font-medium">En vivo</span>
                 </div>
-                {selectedElection.status === 'active' && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
-                )}
-              </div>
+              )}
             </div>
 
-            {/* Election Details Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Election Details Grid - Compact */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Left Column - Basic Info */}
-              <div className="space-y-6">
+              <div className="space-y-4">
 
-                {/* Election Times */}
-                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-emerald-600" />
-                    Cronograma de Votación
+                {/* Election Times - Compact */}
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2 text-blue-600" />
+                    Cronograma
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-emerald-50 rounded-xl">
-                      <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">Inicio</p>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(selectedElection.startTime)}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Inicio</p>
+                      <p className="text-xs font-medium text-gray-900">{formatDate(selectedElection.startTime)}</p>
                     </div>
-                    <div className="text-center p-4 bg-teal-50 rounded-xl">
-                      <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-2">Fin</p>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(selectedElection.endTime)}</p>
+                    <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Fin</p>
+                      <p className="text-xs font-medium text-gray-900">{formatDate(selectedElection.endTime)}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Election Stats */}
-                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <TrendingUp className="w-5 h-5 mr-2 text-emerald-600" />
+                {/* Election Stats - Compact */}
+                <div className="bg-teal-50 rounded-xl p-4 border border-teal-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <TrendingUp className="w-4 h-4 mr-2 text-teal-600" />
                     Estadísticas
                   </h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center mx-auto mb-2">
-                        <Vote className="w-6 h-6 text-emerald-600" />
-                      </div>
-                      <p className="text-2xl font-bold text-emerald-700">{selectedElection.totalVotes}</p>
-                      <p className="text-xs text-gray-600">Votos Emitidos</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-2 bg-white rounded-lg border border-teal-200">
+                      <p className="text-lg font-bold text-teal-700">{selectedElection.totalVotes}</p>
+                      <p className="text-xs text-gray-600">Votos</p>
                     </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl flex items-center justify-center mx-auto mb-2">
-                        <Users className="w-6 h-6 text-teal-600" />
-                      </div>
-                      <p className="text-2xl font-bold text-teal-700">{selectedElection.candidates?.length || 0}</p>
+                    <div className="text-center p-2 bg-white rounded-lg border border-teal-200">
+                      <p className="text-lg font-bold text-teal-700">{selectedElection.candidates?.length || 0}</p>
                       <p className="text-xs text-gray-600">Candidatos</p>
                     </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-100 to-cyan-200 rounded-xl flex items-center justify-center mx-auto mb-2">
-                        <TrendingUp className="w-6 h-6 text-cyan-600" />
-                      </div>
-                      <p className="text-2xl font-bold text-cyan-700">{selectedElection.participation}%</p>
+                    <div className="text-center p-2 bg-white rounded-lg border border-teal-200">
+                      <p className="text-lg font-bold text-teal-700">{selectedElection.participation}%</p>
                       <p className="text-xs text-gray-600">Participación</p>
                     </div>
                   </div>
@@ -932,18 +931,18 @@ const Dashboard = ({ user }) => {
               </div>
 
               {/* Right Column - Candidates Results */}
-              <div className="space-y-6">
+              <div className="space-y-4">
 
-                {/* Candidates List */}
-                <div className="bg-white/60 rounded-2xl p-6 border border-gray-200/50">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <Award className="w-5 h-5 mr-2 text-emerald-600" />
-                    Resultados por Candidato
+                {/* Candidates List - Compact */}
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <Award className="w-4 h-4 mr-2 text-purple-600" />
+                    Top Candidatos
                   </h4>
 
                   {selectedElection.candidates && selectedElection.candidates.length > 0 ? (
-                    <div className="space-y-3">
-                      {selectedElection.candidates.map((candidate, idx) => {
+                    <div className="space-y-2">
+                      {selectedElection.candidates.slice(0, 3).map((candidate, idx) => {
                         const votes = selectedElection.results?.[candidate] || 0;
                         const percentage = selectedElection.totalVotes > 0
                           ? ((votes / selectedElection.totalVotes) * 100).toFixed(1)
@@ -953,39 +952,48 @@ const Dashboard = ({ user }) => {
                         return (
                           <div
                             key={idx}
-                            className={`flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${isWinner
-                              ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200'
-                              : 'bg-gray-50'
-                              }`}
+                            className="bg-white p-3 rounded-lg border border-purple-200 hover:shadow-sm transition-all duration-200"
                           >
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isWinner
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-gray-300 text-gray-600'
-                                }`}>
-                                {idx + 1}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${idx === 0 ? 'bg-yellow-500' :
+                                  idx === 1 ? 'bg-gray-400' :
+                                    'bg-orange-600'
+                                  }`}>
+                                  {idx + 1}
+                                </div>
+                                <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
                               </div>
-                              <div>
-                                <p className="font-medium text-gray-900">{candidate}</p>
-                                {isWinner && votes > 0 && (
-                                  <p className="text-xs text-emerald-600 font-medium">Líder actual</p>
-                                )}
+                              <div className="text-right flex-shrink-0">
+                                <div className="text-sm font-semibold text-gray-700">{votes}</div>
+                                <div className="text-xs text-gray-500">{percentage}%</div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-gray-900">{votes}</p>
-                              <p className="text-sm text-gray-600">{percentage}%</p>
+
+                            {/* Progress Bar */}
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full transition-all duration-500 ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+                                  idx === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-400' :
+                                    'bg-gradient-to-r from-orange-400 to-orange-600'
+                                  }`}
+                                style={{ width: `${percentage}%` }}
+                              ></div>
                             </div>
                           </div>
                         );
                       })}
+                      {selectedElection.candidates.length > 3 && (
+                        <div className="text-center p-2 bg-white rounded-lg border border-purple-200">
+                          <div className="text-gray-400 text-xs mb-1">📊</div>
+                          <div className="text-gray-600 font-medium text-xs">+{selectedElection.candidates.length - 3} candidatos más</div>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Users className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500">No hay candidatos registrados</p>
+                    <div className="text-center p-4 bg-white rounded-lg border border-purple-200">
+                      <div className="text-gray-400 text-sm mb-1">👥</div>
+                      <p className="text-gray-500 text-xs">No hay candidatos registrados</p>
                     </div>
                   )}
                 </div>
@@ -1037,19 +1045,7 @@ const Dashboard = ({ user }) => {
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </div>
-                    <div className="absolute -top-1 -left-1 w-6 h-6 bg-amber-400 rounded-full border-2 border-white animate-pulse"></div>
-                  </div>
-
-                  {/* Status Badges - Compact */}
-                  <div className="flex flex-col space-y-2 w-full max-w-xs">
-                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-                      Verificado
-                    </div>                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                      <ShieldCheck className="w-3 h-3 mr-2" />
-                      Activo
-                    </div>
-                  </div>
+                    <div className="absolute -top-1 -left-1 w-6 h-6 bg-amber-400 rounded-full border-2 border-white animate-pulse"></div>                  </div>
                 </div>
 
                 {/* User Information Section - Enhanced */}
