@@ -53,9 +53,13 @@ const ElectionDetail = ({ user }) => {
     try {
       setLoading(true);
 
-      // Get real election data from API
-      const electionData = await getElectionById(electionId);
-      const resultsData = await getResults(electionId);
+      // Get real election data from API - aprovechando el caché para getResults
+      const [electionData, resultsData, totalRegisteredUsers] = await Promise.all([
+        getElectionById(electionId),
+        getResults(electionId),
+        getTotalRegisteredUsers()
+      ]);
+
       // Determine election status based on time and disabled flag
       const currentTime = Date.now() / 1000; // Current time in seconds
       let status;
@@ -74,17 +78,20 @@ const ElectionDetail = ({ user }) => {
         electionId: electionData.electionId,
         name: electionData.name,
         description: "Vote for the next leader of the Dominican Republic",
-        startDate: new Date(electionData.startTime * 1000).toISOString(), endDate: new Date(electionData.endTime * 1000).toISOString(),
+        startDate: new Date(electionData.startTime * 1000).toISOString(),
+        endDate: new Date(electionData.endTime * 1000).toISOString(),
         startTime: electionData.startTime,
         endTime: electionData.endTime,
         status: status,
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: await getTotalRegisteredUsers(),
+        totalVoters: totalRegisteredUsers,
         candidates: electionData.candidates
       };
+
       setElection(formattedElection);
       setResults(resultsData);
+
       // Check if user has already voted using blockchain data (priority)
       if (user?.socialId) {
         try {
@@ -115,7 +122,9 @@ const ElectionDetail = ({ user }) => {
 
     } catch (error) {
       console.error('Error loading election:', error);
-      toast.error('Failed to load election details');      // Fallback to mock data if API fails
+      toast.error('Failed to load election details');
+      // Fallback to mock data if API fails
+      const totalUsers = await getTotalRegisteredUsers();
       const mockElection = {
         electionId: 1,
         name: "Presidential Election 2024",
@@ -125,7 +134,7 @@ const ElectionDetail = ({ user }) => {
         status: "active",
         location: "Dominican Republic",
         type: "presidential",
-        totalVoters: await getTotalRegisteredUsers(),
+        totalVoters: totalUsers,
         candidates: ["Candidate A", "Candidate B"]
       };
 

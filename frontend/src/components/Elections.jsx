@@ -53,56 +53,46 @@ const Elections = ({ user }) => {
       // Get elections from API
       const electionsList = await getElections();
 
-      // Get detailed data for each election
-      const electionsWithDetails = await Promise.all(
-        electionsList.map(async (election) => {
-          try {
-            // Get election details
-            const details = await getElectionById(election.electionId);
+      // Optimización: Obtener todos los detalles y resultados en paralelo
+      const detailsPromises = electionsList.map(election => getElectionById(election.electionId));
+      const resultsPromises = electionsList.map(election => getResults(election.electionId));
 
-            // Get vote results
-            let results = {};
-            try {
-              results = await getResults(election.electionId);
-            } catch (error) {
-              console.log(`No results yet for election ${election.electionId}`);
-            }
+      // Ejecutar todas las promesas en paralelo
+      const [detailsArray, resultsArray, totalUsers] = await Promise.all([
+        Promise.all(detailsPromises),
+        Promise.all(resultsPromises),
+        getTotalRegisteredUsers()
+      ]);
 
-            // Calculate total votes
-            const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
+      // Combinar los resultados
+      const electionsWithDetails = electionsList.map((election, index) => {
+        const details = detailsArray[index];
+        const results = resultsArray[index] || {};
 
-            // Determine status
-            const now = Math.floor(Date.now() / 1000);
-            let status = 'upcoming';
+        // Calculate total votes
+        const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
 
-            if (details.disabled) {
-              status = 'disabled';
-            } else if (now >= details.startTime && now <= details.endTime) {
-              status = 'active';
-            } else if (now > details.endTime) {
-              status = 'expired';
-            }
+        // Determine status
+        const now = Math.floor(Date.now() / 1000);
+        let status = 'upcoming';
 
-            return {
-              ...election,
-              ...details,
-              results,
-              totalVotes,
-              status,
-              participation: totalVotes > 0 ? ((totalVotes / await getTotalRegisteredUsers()) * 100).toFixed(1) : 0
-            };
-          } catch (error) {
-            console.error(`Error loading election ${election.electionId}:`, error);
-            return {
-              ...election,
-              status: 'error',
-              totalVotes: 0,
-              participation: 0,
-              results: {}
-            };
-          }
-        })
-      );
+        if (details.disabled) {
+          status = 'disabled';
+        } else if (now >= details.startTime && now <= details.endTime) {
+          status = 'active';
+        } else if (now > details.endTime) {
+          status = 'expired';
+        }
+
+        return {
+          ...election,
+          ...details,
+          results,
+          totalVotes,
+          status,
+          participation: totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0
+        };
+      });
 
       setElections(electionsWithDetails);
       console.log('Elections loaded:', electionsWithDetails);
