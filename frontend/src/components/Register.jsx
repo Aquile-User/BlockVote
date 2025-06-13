@@ -625,9 +625,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Enhanced Security Warning */}
+                </div>                {/* Simplified Security Warning */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -636,25 +634,15 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl"></div>
                   <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl border border-amber-200"></div>
-                  <div className="relative p-3">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="relative p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         <AlertCircle className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-base font-bold text-amber-700 mb-1">Aviso de Seguridad Importante</h4>
-                        <div className="space-y-1 text-amber-800 text-sm">
-                          <p className="leading-relaxed">
-                            Tu clave privada ha sido guardada de forma segura en tu dispositivo.
-                          </p>
-                          <p className="leading-relaxed">
-                            <strong className="text-amber-900">¡NUNCA compartas esta clave con nadie!</strong>
-                            Se muestra aquí únicamente para propósitos de demostración.
-                          </p>
-                          <p className="text-xs text-amber-700">
-                            Tip: Guarda esta información en un lugar seguro antes de continuar.
-                          </p>
-                        </div>
+                        <p className="text-amber-800 text-sm font-medium">
+                          <strong className="text-amber-900">¡NUNCA compartas tu clave privada!</strong> Guárdala en un lugar seguro.
+                        </p>
                       </div>
                     </div>
                   </div>
