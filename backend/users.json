@@ -30,5 +30,13 @@
     "province": "Samaná",
     "authMethod": "generated",
     "registeredAt": "2025-06-13T00:03:45.983Z"
+  },
+  "333-3333333-1": {
+    "address": "0x94AA0D54f30E330aA54Bba633F9eb0802aef550D",
+    "privateKey": "0x2ff8efdb623f755b818fd533cf53ee8ab4841cb8601cd189ce15447c86809b2c",
+    "name": "Ramon",
+    "province": "Barahona",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T02:26:21.694Z"
   }
 }

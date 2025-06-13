@@ -219,9 +219,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
               </div>
             ))}
           </div>
-        </motion.div>
-
-        <div className="card p-6">
+        </motion.div>        <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200 p-6 shadow-soft">
           <div className="relative z-10">
             {/* Step 1: Personal Information */}
             {step === 1 && (
@@ -332,12 +330,11 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   >                  <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-glow">
                       <ShieldCheck className="w-10 h-10 text-white" />
                     </div>
-                  </motion.div>
-                  <motion.h2
+                  </motion.div>                  <motion.h2
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="text-3xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-3"
+                    className="text-3xl font-bold text-slate-900 mb-3"
                   >
                     Elige tu Método de Autenticación
                   </motion.h2>
@@ -345,7 +342,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="text-gray-300 text-lg"
+                    className="text-slate-600 text-lg"
                   >
                     Selecciona cómo quieres proteger tu billetera y votos
                   </motion.p>
@@ -361,9 +358,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                       ? 'cursor-pointer hover:scale-[1.02]'
                       : 'opacity-50 cursor-not-allowed'
                       } transition-all duration-300`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-3xl"></div>
-                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-3xl border border-orange-500/20"></div>
+                  >                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl"></div>
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl border border-orange-200"></div>
                     <div className="relative p-8">
                       <div className="flex items-start space-x-6">
                         <div className="relative">
@@ -376,16 +372,15 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
+                        <div className="flex-1">                          <h3 className="text-2xl font-bold text-slate-900 mb-2 flex items-center">
                             Conectar MetaMask
                             {!metamaskAvailable && (
-                              <span className="ml-3 px-3 py-1 bg-red-500/20 text-red-400 text-sm rounded-full border border-red-500/30">
+                              <span className="ml-3 px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full border border-red-200">
                                 No disponible
                               </span>
                             )}
                           </h3>
-                          <p className="text-gray-300 text-base leading-relaxed mb-6">
+                          <p className="text-slate-700 text-base leading-relaxed mb-6">
                             Usa tu billetera MetaMask existente para una experiencia segura y familiar.
                             Ideal si ya tienes experiencia con blockchain.
                           </p>
@@ -408,9 +403,8 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                               ) : (
                                 'Conectar MetaMask'
                               )}
-                            </motion.button>
-                            {metamaskAvailable && (
-                              <div className="flex items-center space-x-2 text-emerald-400 text-sm">
+                            </motion.button>                            {metamaskAvailable && (
+                              <div className="flex items-center space-x-2 text-emerald-700 text-sm">
                                 <Check className="w-4 h-4" />
                                 <span>Disponible</span>
                               </div>
@@ -419,17 +413,15 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-
-                  {/* Enhanced Generated Wallet Option */}
+                  </motion.div>                  {/* Enhanced Generated Wallet Option */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                     className="group relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-300"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 rounded-3xl"></div>
-                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-3xl border border-primary-500/20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-3xl"></div>
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl border border-primary-200"></div>
                     <div className="relative p-8">
                       <div className="flex items-start space-x-6">
                         <div className="relative">                        <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-3xl flex items-center justify-center shadow-lg">
@@ -439,14 +431,13 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                             <Check className="w-3 h-3 text-white" />
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
+                        <div className="flex-1">                          <h3 className="text-2xl font-bold text-slate-900 mb-2 flex items-center">
                             Generar Billetera Nueva
-                            <span className="ml-3 px-3 py-1 bg-emerald-500/20 text-emerald-400 text-sm rounded-full border border-emerald-500/30">
+                            <span className="ml-3 px-3 py-1 bg-emerald-100 text-emerald-700 text-sm rounded-full border border-emerald-200">
                               Recomendado
                             </span>
                           </h3>
-                          <p className="text-gray-300 text-base leading-relaxed mb-6">
+                          <p className="text-slate-700 text-base leading-relaxed mb-6">
                             Crea una nueva billetera segura automáticamente financiada para votar.
                             Perfecto para usuarios nuevos en blockchain.
                           </p>
@@ -466,8 +457,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                               ) : (
                                 'Generar Billetera'
                               )}
-                            </motion.button>
-                            <div className="flex items-center space-x-2 text-emerald-400 text-sm">
+                            </motion.button>                            <div className="flex items-center space-x-2 text-emerald-700 text-sm">
                               <Check className="w-4 h-4" />
                               <span>Financiamiento automático incluido</span>
                             </div>
@@ -483,10 +473,10 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="pt-8 border-t border-white/10"
+                  className="pt-8 border-t border-slate-200"
                 >                  <button
                     onClick={() => setStep(1)}
-                    className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors duration-200"
+                    className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors duration-200"
                   >
                     <span>Volver a información personal</span>
                   </button>
@@ -510,12 +500,11 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-glow"
                   >
                     <Check className="w-12 h-12 text-white" />
-                  </motion.div>
-                  <motion.h2
+                  </motion.div>                  <motion.h2
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="text-3xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-3"
+                    className="text-3xl font-bold text-slate-900 mb-3"
                   >
                     ¡Billetera Creada Exitosamente!
                   </motion.h2>
@@ -523,7 +512,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="text-gray-300 text-lg"
+                    className="text-slate-600 text-lg"
                   >
                     Tu billetera ha sido financiada y está lista para usar
                   </motion.p>
@@ -535,101 +524,95 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                   className="space-y-6"
-                >
-                  <div className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 rounded-3xl"></div>
-                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-3xl border border-primary-500/20"></div>
+                >                  <div className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-3xl"></div>
+                    <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl border border-primary-200"></div>
                     <div className="relative p-8">
-                      <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-                        <Wallet className="w-6 h-6 mr-3 text-primary-400" />
+                      <h3 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                        <Wallet className="w-6 h-6 mr-3 text-primary-600" />
                         Información de tu Billetera
                       </h3>
 
                       <div className="space-y-6">
-                        {/* Address */}
-                        <div className="group">
-                          <label className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3 block">
+                        {/* Address */}                        <div className="group">
+                          <label className="text-sm font-medium text-slate-600 uppercase tracking-wider mb-3 block">
                             Dirección de Billetera
                           </label>
                           <div className="relative">
-                            <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 group-hover:border-primary-500/30 transition-all duration-300">
-                              <p className="font-mono text-gray-200 break-all text-sm leading-relaxed">
+                            <div className="bg-slate-100 backdrop-blur-sm rounded-2xl p-4 border border-slate-200 group-hover:border-primary-300 transition-all duration-300">
+                              <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                                 {walletInfo.address}
                               </p>
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
                           </div>
-                        </div>
-
-                        {/* Private Key */}
+                        </div>                        {/* Private Key */}
                         <div className="group">
                           <div className="flex items-center justify-between mb-3">
-                            <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+                            <label className="text-sm font-medium text-slate-600 uppercase tracking-wider">
                               Clave Privada
                             </label>
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => setShowPrivateKey(!showPrivateKey)}
-                              className="flex items-center space-x-2 px-3 py-1.5 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl transition-all duration-200 border border-primary-500/30"
+                              className="flex items-center space-x-2 px-3 py-1.5 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-xl transition-all duration-200 border border-primary-200"
                             >
                               {showPrivateKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               <span className="text-sm font-medium">{showPrivateKey ? 'Ocultar' : 'Mostrar'}</span>
                             </motion.button>
                           </div>
                           <div className="relative">
-                            <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 group-hover:border-amber-500/30 transition-all duration-300">
-                              <p className="font-mono text-gray-200 break-all text-sm leading-relaxed">
+                            <div className="bg-slate-100 backdrop-blur-sm rounded-2xl p-4 border border-slate-200 group-hover:border-amber-300 transition-all duration-300">
+                              <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                                 {showPrivateKey ? walletInfo.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
                               </p>
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
                           </div>
                         </div>
 
                         {/* Funding Transaction */}
                         <div className="group">
-                          <label className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3 block">
+                          <label className="text-sm font-medium text-slate-600 uppercase tracking-wider mb-3 block">
                             Transacción de Financiamiento
-                          </label>
-                          <div className="relative">
-                            <div className="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 group-hover:border-emerald-500/30 transition-all duration-300">
-                              <p className="font-mono text-gray-200 break-all text-sm leading-relaxed">
+                          </label>                          <div className="relative">
+                            <div className="bg-slate-100 backdrop-blur-sm rounded-2xl p-4 border border-slate-200 group-hover:border-emerald-300 transition-all duration-300">
+                              <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                                 {walletInfo.fundTxHash}
                               </p>
                             </div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Enhanced Security Warning */}
-                  <motion.div
+                  {/* Enhanced Security Warning */}                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
                     className="relative overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-3xl"></div>
-                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm rounded-3xl border border-amber-500/20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl"></div>
+                    <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-3xl border border-amber-200"></div>
                     <div className="relative p-6">
                       <div className="flex items-start space-x-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center flex-shrink-0">
                           <AlertCircle className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-xl font-bold text-amber-400 mb-3">Aviso de Seguridad Importante</h4>
-                          <div className="space-y-2 text-amber-200">
+                          <h4 className="text-xl font-bold text-amber-700 mb-3">Aviso de Seguridad Importante</h4>
+                          <div className="space-y-2 text-amber-800">
                             <p className="leading-relaxed">
                               Tu clave privada ha sido guardada de forma segura en tu dispositivo.
                             </p>
                             <p className="leading-relaxed">
-                              <strong className="text-amber-300">¡NUNCA compartas esta clave con nadie!</strong>
+                              <strong className="text-amber-900">¡NUNCA compartas esta clave con nadie!</strong>
                               Se muestra aquí únicamente para propósitos de demostración.
                             </p>
-                            <p className="text-sm text-amber-300">
+                            <p className="text-sm text-amber-700">
                               Tip: Guarda esta información en un lugar seguro antes de continuar.
                             </p>
                           </div>
