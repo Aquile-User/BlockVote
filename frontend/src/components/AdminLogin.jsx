@@ -64,7 +64,7 @@ const AdminLogin = ({ onLogin }) => {
     // Simulación de proceso de autenticación con delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    if (credentials.username === "admin" && credentials.password === "admin") {
+    if (credentials.username === "eljefe" && credentials.password === "123456") {
       localStorage.setItem('adminSession', 'true');
       localStorage.setItem('adminAuthenticated', 'true');
       toast.success("🔐 Access Granted - Administrator Portal Activated");
