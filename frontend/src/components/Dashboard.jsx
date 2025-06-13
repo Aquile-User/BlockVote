@@ -738,8 +738,8 @@ const Dashboard = ({ user }) => {
                     transition={{ delay: index * 0.1 }}
                     onClick={() => setSelectedElection(election)}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${selectedElection?.electionId === election.electionId
-                        ? 'border-violet-300 bg-violet-50/50 shadow-lg'
-                        : 'border-gray-200 bg-white/60 hover:border-violet-200 hover:bg-violet-50/30'
+                      ? 'border-violet-300 bg-violet-50/50 shadow-lg'
+                      : 'border-gray-200 bg-white/60 hover:border-violet-200 hover:bg-violet-50/30'
                       }`}
                   >
                     <div className="flex items-center justify-between">
@@ -770,8 +770,8 @@ const Dashboard = ({ user }) => {
                       </div>
                       <div className="ml-4">
                         <Eye className={`w-5 h-5 ${selectedElection?.electionId === election.electionId
-                            ? 'text-violet-600'
-                            : 'text-gray-400'
+                          ? 'text-violet-600'
+                          : 'text-gray-400'
                           }`} />
                       </div>
                     </div>
@@ -805,8 +805,8 @@ const Dashboard = ({ user }) => {
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`w-8 h-8 text-sm font-medium rounded-lg ${currentPage === page
-                          ? 'bg-violet-600 text-white'
-                          : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-violet-600 text-white'
+                        : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
                         }`}
                     >
                       {page}
@@ -1022,14 +1022,14 @@ const Dashboard = ({ user }) => {
                           <div
                             key={idx}
                             className={`flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${isWinner
-                                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200'
-                                : 'bg-gray-50'
+                              ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200'
+                              : 'bg-gray-50'
                               }`}
                           >
                             <div className="flex items-center space-x-3">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isWinner
-                                  ? 'bg-emerald-500 text-white'
-                                  : 'bg-gray-300 text-gray-600'
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-gray-300 text-gray-600'
                                 }`}>
                                 {idx + 1}
                               </div>
