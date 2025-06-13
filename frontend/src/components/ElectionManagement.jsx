@@ -108,9 +108,9 @@ const ElectionManagement = ({ user }) => {
         const startDateTime = new Date(`${createForm.startDate}T${createForm.startTime}`);
         const endDateTime = new Date(`${createForm.endDate}T${createForm.endTime}`);
         const now = new Date();
-        valid = createForm.startDate && createForm.startTime && 
-                createForm.endDate && createForm.endTime &&
-                startDateTime > now && endDateTime > startDateTime;
+        valid = createForm.startDate && createForm.startTime &&
+          createForm.endDate && createForm.endTime &&
+          startDateTime > now && endDateTime > startDateTime;
         break;
       case 4:
         valid = true;
@@ -119,7 +119,7 @@ const ElectionManagement = ({ user }) => {
         valid = false;
     }
 
-  setIsFormValid(valid);
+    setIsFormValid(valid);
   };
 
   // Wizard navigation functions
@@ -619,7 +619,7 @@ const ElectionManagement = ({ user }) => {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                
+
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                     <Sparkles className="w-6 h-6" />
@@ -636,17 +636,17 @@ const ElectionManagement = ({ user }) => {
                     const isActive = step.id === currentStep;
                     const isCompleted = step.id < currentStep;
                     const StepIcon = step.icon;
-                    
+
                     return (
                       <div key={step.id} className="flex items-center">
                         {/* Step Circle */}
                         <div className="flex flex-col items-center">
                           <div className={`
                             w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300
-                            ${isCompleted 
-                              ? 'bg-emerald-500 border-emerald-500 text-white' 
-                              : isActive 
-                                ? 'bg-white border-white text-teal-600' 
+                            ${isCompleted
+                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              : isActive
+                                ? 'bg-white border-white text-teal-600'
                                 : 'bg-white/20 border-white/40 text-white/70'
                             }
                           `}>
@@ -656,7 +656,7 @@ const ElectionManagement = ({ user }) => {
                               <StepIcon className="w-6 h-6" />
                             )}
                           </div>
-                          
+
                           {/* Step Info */}
                           <div className="mt-2 text-center">
                             <div className={`text-xs font-medium ${isActive ? 'text-white' : 'text-teal-100'}`}>
@@ -667,7 +667,7 @@ const ElectionManagement = ({ user }) => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Connector Line */}
                         {index < steps.length - 1 && (
                           <div className={`
@@ -840,7 +840,7 @@ const ElectionManagement = ({ user }) => {
                               Inicio de Votación
                             </label>
                           </div>
-                          
+
                           <div className="space-y-3">
                             <div>
                               <label className="block text-xs text-gray-500 mb-1">Fecha</label>
@@ -873,7 +873,7 @@ const ElectionManagement = ({ user }) => {
                               Fin de Votación
                             </label>
                           </div>
-                          
+
                           <div className="space-y-3">
                             <div>
                               <label className="block text-xs text-gray-500 mb-1">Fecha</label>
@@ -913,7 +913,7 @@ const ElectionManagement = ({ user }) => {
                               const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                               const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                               const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                              
+
                               return `${diffDays > 0 ? `${diffDays} días, ` : ''}${diffHours} horas y ${diffMinutes} minutos`;
                             })()}
                           </div>
@@ -1020,7 +1020,7 @@ const ElectionManagement = ({ user }) => {
                           <div>
                             <h5 className="font-medium text-amber-800">Importante</h5>
                             <p className="text-amber-700 text-sm mt-1">
-                              Una vez creada, la elección no se puede eliminar, solo desactivar. 
+                              Una vez creada, la elección no se puede eliminar, solo desactivar.
                               Asegúrate de que todos los datos sean correctos antes de continuar.
                             </p>
                           </div>
@@ -1037,7 +1037,7 @@ const ElectionManagement = ({ user }) => {
                   <div className="text-sm text-gray-500">
                     Paso {currentStep} de {steps.length}
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     {currentStep > 1 && (
                       <motion.button
@@ -1051,14 +1051,14 @@ const ElectionManagement = ({ user }) => {
                         <span>Anterior</span>
                       </motion.button>
                     )}
-                    
+
                     {currentStep < steps.length ? (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="button"
                         onClick={goToNextStep}
-                        disabled={!isFormValid}                        className={`
+                        disabled={!isFormValid} className={`
                           px-6 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2
                           ${isFormValid
                             ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg'
@@ -1075,7 +1075,7 @@ const ElectionManagement = ({ user }) => {
                         whileTap={{ scale: 0.98 }}
                         type="button"
                         onClick={handleCreateElection}
-                        disabled={!isFormValid}                        className={`
+                        disabled={!isFormValid} className={`
                           px-8 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg
                           ${isFormValid
                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700'
