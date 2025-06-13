@@ -517,16 +517,7 @@ const Dashboard = ({ user }) => {
             </motion.div>
           </div>
         </div>
-      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          icon={Users}
-          title="Votantes Registrados"
-          value={stats.totalVoters.toLocaleString()}
-          subtitle="Ciudadanos verificados"
-          color="primary"
-          bgColor="primary"
-          delay={0.1}
-        />
+      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         <StatCard
           icon={Vote}
           title="Votos Emitidos"
@@ -534,7 +525,7 @@ const Dashboard = ({ user }) => {
           subtitle="Confirmados en blockchain"
           color="emerald"
           bgColor="emerald"
-          delay={0.2}
+          delay={0.1}
         />        <StatCard
           icon={Clock}
           title="Elecciones Activas"
@@ -542,7 +533,7 @@ const Dashboard = ({ user }) => {
           subtitle="En curso actualmente"
           color="amber"
           bgColor="amber"
-          delay={0.3}
+          delay={0.2}
         />
         <StatCard
           icon={CheckCircle2}
@@ -551,7 +542,7 @@ const Dashboard = ({ user }) => {
           subtitle="Finalizadas exitosamente"
           color="violet"
           bgColor="violet"
-          delay={0.4}
+          delay={0.3}
         />
       </div>
 
