@@ -35,39 +35,9 @@ const Dashboard = ({ user }) => {
     activeElections: 0,
     completedElections: 0
   });
-  const [recentActivity, setRecentActivity] = useState([]);
   const [provinceData, setProvinceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('7d');
-  const [now, setNow] = useState(new Date());
-
-  const formatTimeAgo = (timestamp) => {
-    const minutes = Math.floor((now - new Date(timestamp)) / 60000);
-    if (minutes < 1) return 'Justo ahora';
-    if (minutes < 60) return `Hace ${minutes} minutos`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Hace ${hours} horas`;
-    const days = Math.floor(hours / 24);
-    return `Hace ${days} días`;
-  };
-
-  const getRecentActivitiesCount = (minutes = 60) => {
-    return recentActivity.filter(a => {
-      const activityTime = new Date(a.timestamp);
-      const diffInMinutes = Math.floor((now - activityTime) / 60000);
-      return diffInMinutes <= minutes;
-    }).length;
-  };
-  useEffect(() => {
-    // Actualizar tiempo cada minuto
-    const timeInterval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
-
-    return () => {
-      clearInterval(timeInterval);
-    };
-  }, []);
 
   useEffect(() => {
     loadDashboardData();
@@ -83,16 +53,10 @@ const Dashboard = ({ user }) => {
       console.log('Dashboard: Elections loaded:', elections);
 
       // Get detailed election data to find oldest
-      const electionDetails = await Promise.all(
-        elections.map(async (election) => {
-          try {
-            const response = await fetch(`http://localhost:3000/elections/${election.electionId}`);
-            return await response.json();
-          } catch (error) {
-            return null;
-          }
-        })
-      );      // Find election with oldest end time
+      const electionPromises = elections.map(election => getElectionById(election.electionId));
+      const electionDetails = await Promise.all(electionPromises);
+
+      // Find election with oldest end time
       const validElections = electionDetails.filter(e => e !== null);
       const oldestElection = validElections.length > 0
         ? validElections.reduce((oldest, current) =>
@@ -100,14 +64,26 @@ const Dashboard = ({ user }) => {
         )
         : null;
 
+      // Cargar resultados de todas las elecciones de una vez para evitar múltiples llamadas
+      const resultsPromises = validElections.map(election => getResults(election.electionId));
+      const allResults = await Promise.all(resultsPromises);
+
+      // Crear un mapa de resultados para acceso rápido
+      const resultsMap = {};
+      validElections.forEach((election, index) => {
+        resultsMap[election.electionId] = allResults[index] || {};
+      });
+
       // Calculate actual stats from real data
       let totalVotes = 0;
       let activeElections = 0;
       let completedElections = 0;
 
-      const currentTime = Math.floor(Date.now() / 1000); for (const election of validElections) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      for (const election of validElections) {
         try {
-          const results = await getResults(election.electionId);
+          // Usar el mapa de resultados en lugar de llamar a getResults nuevamente
+          const results = resultsMap[election.electionId];
           const electionVotes = Object.values(results || {}).reduce((sum, count) => sum + count, 0);
           totalVotes += electionVotes;
 
@@ -137,85 +113,27 @@ const Dashboard = ({ user }) => {
         console.log('Could not fetch user count, using estimate');
         // Fallback to estimate based on total votes
         registeredUsers = Math.max(totalVotes * 2, 50);
-      }
-
-      setStats({
+      } setStats({
         totalVoters: registeredUsers,
         totalVotes,
         activeElections,
         completedElections
       });
-
-      // Generate recent activity based on real election data
-      const activity = [];
-      let activityId = 1;
-
-      // Try to use oldest election first, but fall back to any election with votes
-      let electionForActivity = oldestElection;
-
-      if (oldestElection) {
-        try {
-          const oldestResults = await getResults(oldestElection.electionId);
-          const oldestVotes = Object.values(oldestResults || {}).reduce((sum, count) => sum + count, 0);
-
-          // If oldest election has no votes, find an election with votes for more meaningful activity
-          if (oldestVotes === 0) {
-            for (const election of validElections) {
-              try {
-                const results = await getResults(election.electionId);
-                const votes = Object.values(results || {}).reduce((sum, count) => sum + count, 0);
-                if (votes > 0) {
-                  electionForActivity = election;
-                  break;
-                }
-              } catch (error) {
-                console.error(`Error checking votes for election ${election.electionId}:`, error);
-              }
-            }
-          }
-
-          const results = await getResults(electionForActivity.electionId);
-
-          // Real activity from the selected election
-          for (const [candidate, votes] of Object.entries(results || {})) {
-            if (votes > 0) {
-              // Create realistic activity entries based on actual votes
-              for (let i = 0; i < Math.min(votes, 3); i++) {
-                activity.push({
-                  id: activityId++,
-                  type: 'vote',
-                  description: `Vote cast for ${candidate} in ${electionForActivity.name}`,
-                  timestamp: new Date(Date.now() - Math.floor(Math.random() * 1800000)).toISOString(), // Actividad en los últimos 30 minutos
-                  user: `User from ${['Santo Domingo', 'Santiago', 'La Vega', 'Puerto Plata', 'San Cristóbal'][Math.floor(Math.random() * 5)]}`
-                });
-              }
-            }
-          }
-        } catch (error) {
-          console.error(`Error loading activity for elections:`, error);
-        }
-      }
-
-      // Ordenar actividades por tiempo y mostrar las 8 más recientes
-      activity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      setRecentActivity(activity.slice(0, 8));      // Real Dominican Republic province data based on actual registered users
+      // Real Dominican Republic province data based on actual registered users
       let realProvinceData = [];
 
       try {
         const usersResponse = await fetch('http://localhost:3000/users');
         const usersData = await usersResponse.json();
 
-        // Combine all election results for province mapping
+        // Combine all election results for province mapping using el resultsMap
         const combinedResults = {};
         for (const election of validElections) {
-          try {
-            const results = await getResults(election.electionId);
-            Object.entries(results || {}).forEach(([candidate, votes]) => {
-              combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
-            });
-          } catch (error) {
-            console.error(`Error getting results for election ${election.electionId}:`, error);
-          }
+          // Usar el mapa de resultados en lugar de llamar a getResults nuevamente
+          const results = resultsMap[election.electionId];
+          Object.entries(results || {}).forEach(([candidate, votes]) => {
+            combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
+          });
         }
 
         // Use the standardized function
@@ -241,46 +159,13 @@ const Dashboard = ({ user }) => {
 
       setProvinceData(realProvinceData);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
-
-      // Fallback to real data from oldest election if APIs fail
+      console.error('Error loading dashboard data:', error);      // Fallback to real data from oldest election if APIs fail
       setStats({
         totalVoters: 6, // Real registered users count
         totalVotes: 4, // Real votes from election 1: q=1, w=1, e=2
         activeElections: 1,
         completedElections: 2
       });
-
-      setRecentActivity([
-        {
-          id: 1,
-          type: 'vote',
-          description: 'Vote cast for "e" in qwertyuj election',
-          timestamp: '2 minutes ago',
-          user: 'User from Santo Domingo'
-        },
-        {
-          id: 2,
-          type: 'vote',
-          description: 'Vote cast for "e" in qwertyuj election',
-          timestamp: '5 minutes ago',
-          user: 'User from Santiago'
-        },
-        {
-          id: 3,
-          type: 'vote',
-          description: 'Vote cast for "q" in qwertyuj election',
-          timestamp: '8 minutes ago',
-          user: 'User from La Vega'
-        },
-        {
-          id: 4,
-          type: 'vote',
-          description: 'Vote cast for "w" in qwertyuj election',
-          timestamp: '12 minutes ago',
-          user: 'User from Puerto Plata'
-        }
-      ]);
 
       // Real Dominican Republic province data
       setProvinceData([
@@ -295,7 +180,6 @@ const Dashboard = ({ user }) => {
       setLoading(false);
     }
   };
-
   const voteDistributionOption = {
     backgroundColor: 'transparent',
     title: {
@@ -325,26 +209,9 @@ const Dashboard = ({ user }) => {
         type: 'pie',
         radius: ['45%', '75%'],
         center: ['50%', '50%'],
-        data: recentActivity.length > 0 ?
-          recentActivity.reduce((acc, activity) => {
-            const candidateName = activity.description.match(/Vote cast for "(.+)" in/)?.[1];
-            if (candidateName) {
-              const existing = acc.find(item => item.name === candidateName);
-              if (existing) {
-                existing.value += 1;
-              } else {
-                const colors = ['#14b8a6', '#ff5722', '#8b5cf6', '#f59e0b', '#ef4444'];
-                acc.push({
-                  value: 1,
-                  name: candidateName.toUpperCase(),
-                  itemStyle: { color: colors[acc.length % colors.length] }
-                });
-              }
-            }
-            return acc;
-          }, []) : [
-            { value: 1, name: 'Sin votos aún', itemStyle: { color: '#d1d5db' } }
-          ],
+        data: [
+          { value: 1, name: 'Sin votos aún', itemStyle: { color: '#d1d5db' } }
+        ],
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
@@ -378,13 +245,11 @@ const Dashboard = ({ user }) => {
       borderColor: '#e5e7eb',
       textStyle: {
         color: '#111827'
-      },
-      formatter: function (params) {
+      }, formatter: function (params) {
         const data = provinceData.find(item => item.name === params[0].axisValue);
         return `
           <strong>${params[0].axisValue}</strong><br/>
           Votos: <span style="color: #14b8a6">${params[0].value}</span><br/>
-          Población: ${data?.population?.toLocaleString() || 'N/A'}<br/>
           Participación: ${data?.participationRate || 0}%
         `;
       }
@@ -449,8 +314,7 @@ const Dashboard = ({ user }) => {
         }
       }
     ]
-  };
-  const StatCard = ({ icon: Icon, title, value, subtitle, trend, color = 'primary', bgColor = 'primary', delay = 0 }) => (
+  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -471,15 +335,6 @@ const Dashboard = ({ user }) => {
             <Icon className="w-8 h-8 text-white" />
           </div>
         </div>
-        {trend && (
-          <div className="flex items-center pt-4 border-t border-gray-100 mt-auto">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span className="text-emerald-600 text-sm font-semibold">{trend}</span>
-            </div>
-            <span className="text-gray-500 text-sm ml-2">vs período anterior</span>
-          </div>
-        )}
       </div>
     </motion.div>
   );
@@ -574,14 +429,12 @@ const Dashboard = ({ user }) => {
             </motion.div>
           </div>
         </div>
-      </div>      {/* Enhanced Stats Grid with New Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard
           icon={Users}
           title="Votantes Registrados"
           value={stats.totalVoters.toLocaleString()}
           subtitle="Ciudadanos verificados"
-          trend="+12%"
           color="primary"
           bgColor="primary"
           delay={0.1}
@@ -591,7 +444,6 @@ const Dashboard = ({ user }) => {
           title="Votos Emitidos"
           value={stats.totalVotes.toLocaleString()}
           subtitle="Confirmados en blockchain"
-          trend="+100%"
           color="emerald"
           bgColor="emerald"
           delay={0.2}
@@ -600,7 +452,6 @@ const Dashboard = ({ user }) => {
           title="Elecciones Activas"
           value={stats.activeElections}
           subtitle="En curso actualmente"
-          trend={stats.activeElections > 0 ? "+Activo" : "Pausado"}
           color="amber"
           bgColor="amber"
           delay={0.3}
@@ -610,7 +461,6 @@ const Dashboard = ({ user }) => {
           title="Elecciones Completadas"
           value={stats.completedElections}
           subtitle="Finalizadas exitosamente"
-          trend="Completo"
           color="violet"
           bgColor="violet"
           delay={0.4}
@@ -666,9 +516,7 @@ const Dashboard = ({ user }) => {
               <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors duration-200" />
             </div>
           </div>
-        </motion.div>
-
-        <motion.div
+        </motion.div>        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
@@ -681,9 +529,9 @@ const Dashboard = ({ user }) => {
                 <Zap className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Actividad</p>
+                <p className="text-lg font-semibold text-gray-900">Seguridad</p>
                 <p className="text-sm text-gray-600">
-                  {recentActivity.length} evento{recentActivity.length !== 1 ? 's' : ''} reciente{recentActivity.length !== 1 ? 's' : ''}
+                  Sistema blockchain activo
                 </p>
               </div>
               <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors duration-200" />
@@ -730,17 +578,13 @@ const Dashboard = ({ user }) => {
               <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
                 <p className="text-xs text-gray-500 mb-1">Total de Votos</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalVotes}</p>
-              </div>
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
+              </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
                 <p className="text-xs text-gray-500 mb-1">Candidatos Activos</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {recentActivity.reduce((acc, activity) => {
-                    const candidateName = activity.description.match(/Vote cast for "(.+)" in/)?.[1];
-                    if (candidateName && !acc.includes(candidateName)) {
-                      acc.push(candidateName);
-                    }
-                    return acc;
-                  }, []).length || 0}
+                  {/* Cálculo basado en el resultado de las elecciones */}
+                  {Object.keys(voteDistributionOption?.series?.[0]?.data || [])
+                    .filter(item => item?.name !== 'Sin votos aún')
+                    .length || 0}
                 </p>
               </div>
             </div>
@@ -787,12 +631,21 @@ const Dashboard = ({ user }) => {
                 <p className="text-2xl font-bold text-gray-900">
                   {provinceData.filter(p => p.votes > 0).length}
                 </p>
-              </div>
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
-                <p className="text-xs text-gray-500 mb-1">Participación Prom.</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {provinceData.length > 0 ?
-                    Math.round(provinceData.reduce((sum, p) => sum + (p.participationRate || 0), 0) / provinceData.length) : 0}%
+              </div>              <div className="bg-white/60 rounded-xl p-4 border border-gray-200/50">
+                <p className="text-xs text-gray-500 mb-1">Provincia Destacada</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {provinceData.length > 0
+                    ? provinceData.reduce((max, p) =>
+                      (p.participationRate || 0) > (max.participationRate || 0) ? p : max,
+                      provinceData[0]).name || 'Ninguna'
+                    : 'Ninguna'}
+                </p>
+                <p className="text-xs text-emerald-600">
+                  {provinceData.length > 0
+                    ? `${provinceData.reduce((max, p) =>
+                      (p.participationRate || 0) > (max.participationRate || 0) ? p : max,
+                      provinceData[0]).participationRate || 0}% participación`
+                    : '0% participación'}
                 </p>
               </div>
             </div>
@@ -918,9 +771,8 @@ const Dashboard = ({ user }) => {
                     <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 border border-purple-200/50 text-center hover:shadow-soft transition-all duration-200">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <Vote className="w-6 h-6 text-white" />
-                      </div>
-                      <p className="text-2xl font-bold text-gray-900 mb-1">
-                        {recentActivity.filter(a => a.user?.includes(user?.province || 'Unknown')).length || 0}
+                      </div>                      <p className="text-2xl font-bold text-gray-900 mb-1">
+                        {stats.totalVotes > 0 ? Math.min(1, stats.totalVotes) : 0}
                       </p>
                       <p className="text-xs text-gray-600 font-medium">Votos Emitidos</p>
                     </div>
@@ -1035,150 +887,7 @@ const Dashboard = ({ user }) => {
             </motion.div>
           </div>
         </div>
-      </motion.div>      {/* System Activity Section - Enhanced Full Width */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1 }}
-        className="relative group"
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-emerald-50 to-cyan-50 rounded-3xl"></div>
-        <div className="absolute top-6 right-6 w-20 h-20 bg-primary-200/20 rounded-full"></div>
-        <div className="absolute bottom-6 left-6 w-16 h-16 bg-emerald-200/20 rounded-full"></div>
-
-        <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl border border-primary-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 min-h-[450px] flex flex-col">
-          {/* Enhanced Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3">
-                <h3 className="text-2xl font-bold text-gray-900">Sistema de Actividad</h3>
-                <div className="px-3 py-1 bg-gradient-to-r from-primary-100 to-emerald-100 text-primary-700 rounded-full text-xs font-bold border border-primary-200">
-                  🔴 EN VIVO
-                </div>
-              </div>
-              <p className="text-gray-600">Monitoreo de transacciones y eventos en tiempo real</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-500 via-emerald-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Activity className="w-8 h-8 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full border-2 border-white animate-bounce">
-                  <div className="w-full h-full bg-orange-400 rounded-full animate-ping"></div>
-                </div>
-              </div>
-              <button className="p-3 bg-white backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-soft hover:shadow-medium hover:scale-105 transition-all duration-300 group">
-                <RefreshCw className="w-5 h-5 text-gray-600 group-hover:text-primary-600 group-hover:rotate-180 transition-all duration-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Activity Feed - Enhanced */}
-          <div className="flex-1 space-y-4 overflow-y-auto pr-2 max-h-80">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((activity, index) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.2 + (index * 0.1) }}
-                  className="relative group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-50/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                  <div className="relative flex items-start space-x-4 p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 hover:border-primary-300/50 hover:shadow-soft transition-all duration-300 group-hover:transform group-hover:-translate-y-1">
-                    <div className="flex-shrink-0 mt-1">
-                      <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
-                          <Vote className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-gray-900 font-semibold text-sm leading-relaxed mb-3">
-                            {activity.description}
-                          </p>
-                          <div className="flex items-center space-x-6">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-5 h-5 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <MapPin className="w-3 h-3 text-blue-600" />
-                              </div>
-                              <p className="text-gray-600 text-xs font-medium">{activity.user}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-5 h-5 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <Clock className="w-3 h-3 text-gray-600" />
-                              </div>
-                              <p className="text-gray-500 text-xs">{formatTimeAgo(activity.timestamp)}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 ml-6 flex flex-col items-center space-y-2">
-                          <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-lg"></div>
-                          <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-transparent rounded-full"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center py-20 flex-1 flex flex-col justify-center">
-                <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-soft">
-                  <Activity className="w-12 h-12 text-gray-400" />
-                </div>
-                <p className="text-gray-500 font-semibold text-xl mb-3">Sin actividad reciente</p>
-                <p className="text-gray-400 text-sm max-w-md mx-auto leading-relaxed">
-                  Los eventos del sistema aparecerán aquí cuando los usuarios interactúen con las elecciones.
-                  El monitoreo está activo y funcionando correctamente.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Enhanced Activity Summary */}
-          {recentActivity.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200/50">
-              <div className="grid grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl border border-primary-200/50">
-                  <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <BarChart4 className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-primary-700">{recentActivity.length}</p>
-                  <p className="text-xs text-primary-600 font-medium">Eventos Totales</p>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl border border-emerald-200/50">
-                  <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Clock className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-emerald-700">
-                    {getRecentActivitiesCount(60)}
-                  </p>
-                  <p className="text-xs text-emerald-600 font-medium">Última Hora</p>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200/50">
-                  <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-amber-700">100%</p>
-                  <p className="text-xs text-amber-600 font-medium">Tasa de Éxito</p>
-                </div>
-                <div className="text-center p-4 bg-gradient-to-br from-violet-50 to-violet-100 rounded-2xl border border-violet-200/50">
-                  <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <Globe className="w-4 h-4 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-violet-700">
-                    {[...new Set(recentActivity.map(a => a.user?.split(' ').pop()))].length}
-                  </p>
-                  <p className="text-xs text-violet-600 font-medium">Provincias Activas</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
+      </motion.div>      {/* Fin del contenido del Dashboard */}
     </motion.div>
   );
 };
