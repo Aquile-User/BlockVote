@@ -957,8 +957,8 @@ const Dashboard = ({ user }) => {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center space-x-2 min-w-0 flex-1">
                                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${idx === 0 ? 'bg-yellow-500' :
-                                    idx === 1 ? 'bg-gray-400' :
-                                      'bg-orange-600'
+                                  idx === 1 ? 'bg-gray-400' :
+                                    'bg-orange-600'
                                   }`}>
                                   {idx + 1}
                                 </div>
@@ -974,8 +974,8 @@ const Dashboard = ({ user }) => {
                             <div className="w-full bg-gray-200 rounded-full h-1.5">
                               <div
                                 className={`h-1.5 rounded-full transition-all duration-500 ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
-                                    idx === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-400' :
-                                      'bg-gradient-to-r from-orange-400 to-orange-600'
+                                  idx === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-400' :
+                                    'bg-gradient-to-r from-orange-400 to-orange-600'
                                   }`}
                                 style={{ width: `${percentage}%` }}
                               ></div>
@@ -1045,19 +1045,7 @@ const Dashboard = ({ user }) => {
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </div>
-                    <div className="absolute -top-1 -left-1 w-6 h-6 bg-amber-400 rounded-full border-2 border-white animate-pulse"></div>
-                  </div>
-
-                  {/* Status Badges - Compact */}
-                  <div className="flex flex-col space-y-2 w-full max-w-xs">
-                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
-                      Verificado
-                    </div>                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                      <ShieldCheck className="w-3 h-3 mr-2" />
-                      Activo
-                    </div>
-                  </div>
+                    <div className="absolute -top-1 -left-1 w-6 h-6 bg-amber-400 rounded-full border-2 border-white animate-pulse"></div>                  </div>
                 </div>
 
                 {/* User Information Section - Enhanced */}
