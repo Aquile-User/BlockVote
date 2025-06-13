@@ -11,9 +11,7 @@ import {
   PieChart,
   MapPin,
   CreditCard,
-  Activity,
-  ChevronUp,
-  Sparkles,
+  Activity, ChevronUp,
   BarChart4,
   Zap,
   Globe,
@@ -28,7 +26,8 @@ import ReactECharts from 'echarts-for-react';
 import { getElections, getResults, getElectionById } from '../api';
 import { mapUsersToProvinces } from '../utils/provinceUtils';
 
-const Dashboard = ({ user }) => {  const [stats, setStats] = useState({
+const Dashboard = ({ user }) => {
+  const [stats, setStats] = useState({
     totalVoters: 0,
     totalVotes: 0,
     activeElections: 0,
@@ -149,7 +148,8 @@ const Dashboard = ({ user }) => {  const [stats, setStats] = useState({
       } catch (error) {
         console.log('Could not fetch user count, using estimate');
         // Fallback to estimate based on total votes
-        registeredUsers = Math.max(totalVotes * 2, 50);      } setStats({
+        registeredUsers = Math.max(totalVotes * 2, 50);
+      } setStats({
         totalVoters: registeredUsers,
         totalVotes,
         activeElections,
@@ -417,10 +417,7 @@ const Dashboard = ({ user }) => {  const [stats, setStats] = useState({
                 transition={{ delay: 0.1 }}
                 className="flex items-center space-x-3"
               >                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-600 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold text-gray-900">
                     Centro de Control
                   </h1>
                 </div>
@@ -433,8 +430,7 @@ const Dashboard = ({ user }) => {  const [stats, setStats] = useState({
               >
                 <p className="text-2xl font-semibold text-gray-800">
                   ¡Hola, <span className="text-primary-600">{user?.name || 'Usuario'}</span>! 👋
-                </p>
-                <p className="text-gray-600 max-w-2xl">
+                </p>                <p className="text-gray-800 max-w-2xl">
                   Tu hub central para monitorear elecciones, analizar participación y gestionar el ecosistema democrático digital.
                 </p>
               </motion.div>
