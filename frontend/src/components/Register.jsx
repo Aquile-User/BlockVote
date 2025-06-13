@@ -534,16 +534,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               className="space-y-4"
-            >
-              <div className="text-center mb-4">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                  className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg"
-                >
-                  <Check className="w-8 h-8 text-white" />
-                </motion.div>
+            >              <div className="text-center mb-4">
                 <motion.h2
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -568,25 +559,23 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
                 className="space-y-3"
-              >
-                <div className="relative overflow-hidden">
+              >                <div className="relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-2xl"></div>
                   <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200"></div>
-                  <div className="relative p-4">
-                    <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center">
+                  <div className="relative p-5">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center">
                       <Wallet className="w-5 h-5 mr-2 text-primary-600" />
                       Información de tu Billetera
                     </h3>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                    <div className="space-y-4">
                       {/* Address */}
-                      <div className="group">
-                        <label className="text-xs font-medium text-slate-600 uppercase tracking-wider mb-1 block">
-                          Dirección de Billetera
-                        </label>
+                      <div className="group">                        <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                        Dirección de Billetera
+                      </label>
                         <div className="relative">
-                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-2.5 border border-slate-200 group-hover:border-primary-300 transition-all duration-300">
-                            <p className="font-mono text-slate-800 break-all text-xs leading-relaxed">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-primary-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                               {walletInfo.address}
                             </p>
                           </div>
@@ -596,23 +585,23 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
 
                       {/* Private Key */}
                       <div className="group">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-slate-700">
                             Clave Privada
                           </label>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setShowPrivateKey(!showPrivateKey)}
-                            className="flex items-center space-x-1 px-2 py-1 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg transition-all duration-200 border border-primary-200"
+                            className="flex items-center space-x-1 px-3 py-1.5 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg transition-all duration-200 border border-primary-200"
                           >
-                            {showPrivateKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            <span className="text-xs font-medium">{showPrivateKey ? 'Ocultar' : 'Mostrar'}</span>
+                            {showPrivateKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            <span className="text-sm font-medium">{showPrivateKey ? 'Ocultar' : 'Mostrar'}</span>
                           </motion.button>
                         </div>
                         <div className="relative">
-                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-2.5 border border-slate-200 group-hover:border-amber-300 transition-all duration-300">
-                            <p className="font-mono text-slate-800 break-all text-xs leading-relaxed">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-amber-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                               {showPrivateKey ? walletInfo.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
                             </p>
                           </div>
@@ -622,12 +611,12 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
 
                       {/* Funding Transaction */}
                       <div className="group">
-                        <label className="text-xs font-medium text-slate-600 uppercase tracking-wider mb-1 block">
+                        <label className="text-sm font-semibold text-slate-700 mb-2 block">
                           Transacción de Financiamiento
                         </label>
                         <div className="relative">
-                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-2.5 border border-slate-200 group-hover:border-emerald-300 transition-all duration-300">
-                            <p className="font-mono text-slate-800 break-all text-xs leading-relaxed">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-emerald-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
                               {walletInfo.fundTxHash}
                             </p>
                           </div>
@@ -672,22 +661,20 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 </motion.div>
               </motion.div>
 
-              {/* Enhanced Complete Button */}
-              <motion.div
+              {/* Enhanced Complete Button */}              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="pt-2"
+                className="pt-2 flex justify-center"
               >
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={completeRegistration}
-                  className="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-bold text-lg py-3.5 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center space-x-3 group"
+                  className="w-64 bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-bold text-lg py-3.5 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center group"
                 >
-                  <Check className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                   <span>Completar Registro</span>
-                </motion.button>              </motion.div>
+                </motion.button></motion.div>
             </motion.div>
           )}
         </div>
