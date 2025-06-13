@@ -651,9 +651,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
                 </motion.div>            </motion.div>
             )}
           </div>
-        </div>
-
-        {/* Login Link */}
+        </div>        {/* Login Link */}
         {switchToLogin && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -661,15 +659,18 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-center mt-6"
           >
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <button
-                onClick={switchToLogin}
-                className="text-primary hover:text-primary-dark font-medium transition-colors"
-              >
-                Sign in here
-              </button>
-            </p>
+            <div className="relative">
+              <p className="text-slate-600 text-base">
+                ¿Ya tienes una cuenta?{' '}
+                <button
+                  onClick={switchToLogin}
+                  className="text-primary-600 hover:text-primary-700 font-semibold transition-all duration-300 hover:underline decoration-2 underline-offset-2 relative group"
+                >
+                  Inicia sesión aquí
+                  <span className="absolute inset-0 bg-primary-100 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300 -m-1"></span>
+                </button>
+              </p>
+            </div>
           </motion.div>
         )}
 
