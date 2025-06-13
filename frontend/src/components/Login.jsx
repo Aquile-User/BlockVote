@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
-  LogIn,
   User,
   CreditCard,
-  ArrowRight,
   UserCheck,
   Zap,
   Shield
@@ -125,7 +123,7 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
       setLoading(false);
     }
   }; return (
-    <div className="w-full">
+    <div className="w-full max-w-lg mx-auto">
       <motion.div
         className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-slate-200/50 p-8 relative overflow-hidden"
         initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -135,27 +133,13 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-emerald-400 to-violet-500"></div>
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-primary-100 to-emerald-100 rounded-full blur-3xl opacity-30"></div>
-        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-violet-100 to-rose-100 rounded-full blur-2xl opacity-40"></div>
-
-        {/* Header */}
+        <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-violet-100 to-rose-100 rounded-full blur-2xl opacity-40"></div>        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-center mb-8 relative z-10"
         >
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl flex items-center justify-center shadow-button">
-                <LogIn className="w-8 h-8 text-white" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl opacity-20 blur-sm animate-pulse-soft"></div>
-              {/* Floating mini elements */}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-bounce-soft"></div>
-              <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-violet-400 rounded-full animate-float"></div>
-            </div>
-          </div>
-
           <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-primary-700 to-slate-800 bg-clip-text text-transparent mb-3">
             Iniciar Sesión
           </h1>
@@ -239,20 +223,14 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
             className="w-full bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 hover:from-primary-600 hover:via-primary-700 hover:to-primary-800 text-white font-semibold text-lg py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-button-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
           >
             {/* Button background animation */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-
-            <div className="flex items-center justify-center space-x-3 relative z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-emerald-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>            <div className="flex items-center justify-center space-x-3 relative z-10">
               {loading ? (
                 <>
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Verificando credenciales...</span>
                 </>
               ) : (
-                <>
-                  <UserCheck className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-                  <span>Iniciar Sesión</span>
-                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
-                </>
+                <span>Iniciar Sesión</span>
               )}
             </div>
 

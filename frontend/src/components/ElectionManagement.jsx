@@ -234,15 +234,15 @@ const ElectionManagement = ({ user }) => {
   }; const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'text-green-300 bg-green-500/25 border border-green-500/30';
+        return 'text-green-700 bg-green-100 border border-green-300';
       case 'upcoming':
-        return 'text-blue-300 bg-blue-500/25 border border-blue-500/30';
+        return 'text-blue-700 bg-blue-100 border border-blue-300';
       case 'expired':
-        return 'text-orange-300 bg-orange-500/25 border border-orange-500/30';
+        return 'text-orange-700 bg-orange-100 border border-orange-300';
       case 'disabled':
-        return 'text-red-300 bg-red-500/25 border border-red-500/30';
+        return 'text-red-700 bg-red-100 border border-red-300';
       default:
-        return 'text-gray-300 bg-gray-500/25 border border-gray-500/30';
+        return 'text-gray-700 bg-gray-100 border border-gray-300';
     }
   };
   const formatDate = (timestamp) => {
@@ -266,9 +266,8 @@ const ElectionManagement = ({ user }) => {
   return (
     <div className="space-y-6">      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">Gestión de Elecciones</h1>
-          <p className="text-slate-600 mt-2">Crear y administrar elecciones de votación</p>
+        <div>          <h1 className="text-3xl font-bold text-gray-800">Gestión de Elecciones</h1>
+          <p className="text-gray-600 mt-2">Crear y administrar elecciones de votación</p>
         </div>
 
         <motion.button
@@ -311,38 +310,35 @@ const ElectionManagement = ({ user }) => {
             >
               {/* Election Header */}
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-1">
-                    {election.name}
-                  </h3>
+                <div>                  <h3 className="text-xl font-semibold text-gray-800 mb-1">
+                  {election.name}
+                </h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(election.status)}`}>
                     {election.status.charAt(0).toUpperCase() + election.status.slice(1)}
                   </span>
-                </div>                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setSelectedElection(election)}
-                    className="p-2 hover:bg-gray-600 text-gray-100 hover:text-white rounded-lg transition-all duration-200"
-                    title="Ver Detalles"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
+                </div>                <div className="flex items-center space-x-2">                  <button
+                  onClick={() => setSelectedElection(election)}
+                  className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
+                  title="Ver Detalles"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
                   <button
                     onClick={() => startEditElection(election)}
-                    className="p-2 hover:bg-gray-600 text-gray-100 hover:text-white rounded-lg transition-all duration-200"
+                    className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
                     title="Editar Elección"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                 </div>
-              </div>              {/* Election Info */}
-              <div className="space-y-3">
-                <div className="flex items-center text-slate-600 text-sm">
-                  <Calendar className="w-4 h-4 mr-2 text-slate-500" />
+              </div>              {/* Election Info */}              <div className="space-y-3">
+                <div className="flex items-center text-gray-600 text-sm">
+                  <Calendar className="w-4 h-4 mr-2 text-gray-500" />
                   <span>Inicio: {formatDate(election.startTime)}</span>
                 </div>
 
-                <div className="flex items-center text-slate-600 text-sm">
-                  <Clock className="w-4 h-4 mr-2 text-slate-500" />
+                <div className="flex items-center text-gray-600 text-sm">
+                  <Clock className="w-4 h-4 mr-2 text-gray-500" />
                   <span>Fin: {formatDate(election.endTime)}</span>
                 </div>
 
@@ -369,23 +365,22 @@ const ElectionManagement = ({ user }) => {
                   ID: {election.id}
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  {!election.disabled && (
-                    <button
-                      className="text-red-200 hover:text-white hover:bg-red-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-red-400/50 hover:border-red-400"
-                      onClick={() => handleToggleElectionStatus(election)}
-                    >
-                      <XCircle className="w-4 h-4 inline mr-1" />
-                      Deshabilitar
-                    </button>
-                  )}
+                <div className="flex items-center space-x-2">                  {!election.disabled && (
+                  <button
+                    className="flex items-center space-x-1 text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-rose-200 hover:border-rose-500 shadow-sm"
+                    onClick={() => handleToggleElectionStatus(election)}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Deshabilitar</span>
+                  </button>
+                )}
                   {election.disabled && (
                     <button
-                      className="text-green-200 hover:text-white hover:bg-green-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200 border border-green-400/50 hover:border-green-400"
+                      className="flex items-center space-x-1 text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-200 hover:border-emerald-500 shadow-sm"
                       onClick={() => handleToggleElectionStatus(election)}
                     >
-                      <CheckCircle className="w-4 h-4 inline mr-1" />
-                      Habilitar
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Habilitar</span>
                     </button>
                   )}
                 </div>
@@ -419,13 +414,12 @@ const ElectionManagement = ({ user }) => {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-card rounded-xl border border-gray-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-sm"
             >              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-800">Detalles de la Elección</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Detalles de la Elección</h2>
                 <button
                   onClick={() => setSelectedElection(null)}
-                  className="p-2 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-all duration-200"
+                  className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -520,13 +514,12 @@ const ElectionManagement = ({ user }) => {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-card rounded-xl border border-gray-700 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-sm"
             >              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-800">Crear Nueva Elección</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Crear Nueva Elección</h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="p-2 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-all duration-200"
+                  className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -671,24 +664,22 @@ const ElectionManagement = ({ user }) => {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-card rounded-xl border border-gray-700 p-6 w-full max-w-lg"
+              exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-lg shadow-sm"
             >              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-800">Editar Elección</h2>
+                <h2 className="text-2xl font-bold text-gray-800">Editar Elección</h2>
                 <button
                   onClick={() => setEditingElection(null)}
-                  className="p-2 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg transition-all duration-200"
+                  className="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-all duration-200"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleEditElection} className="space-y-6">                {/* Current Election Info */}
-                <div className="bg-dark-accent border border-gray-600 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-slate-600 mb-2">Elección Actual</h3>
-                  <p className="text-slate-800 font-semibold">{editingElection.name}</p>
-                  <p className="text-slate-500 text-sm">ID: {editingElection.id}</p>
-                </div>
+              <form onSubmit={handleEditElection} className="space-y-6">                {/* Current Election Info */}                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Elección Actual</h3>
+                <p className="text-gray-800 font-semibold">{editingElection.name}</p>
+                <p className="text-gray-500 text-sm">ID: {editingElection.id}</p>
+              </div>
 
                 {/* Update Election Name */}
                 <div>

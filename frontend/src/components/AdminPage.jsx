@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { CONFIG } from "../config";
 import {
   ShieldCheck,
   Settings,
@@ -37,30 +38,44 @@ const AdminPage = () => {
       setIsAuthenticated(true);
       fetchSystemHealth();
     }
-  }, []);
-  const fetchSystemHealth = async () => {
+  }, []); const fetchSystemHealth = async () => {
     try {
       setLoading(true);
-      console.log('Fetching system health...');
+      console.log('Obteniendo estado del sistema...');
       const response = await fetch('http://localhost:3000/health');
 
       if (!response.ok) {
-        throw new Error(`Health API responded with status: ${response.status}`);
+        throw new Error(`Error al obtener estado del sistema: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('System health data:', data);
-      setSystemHealth(data);
+      console.log('Estado del sistema:', data); setSystemHealth(data);
     } catch (error) {
-      console.error('Failed to fetch system health:', error);
-      // Set a fallback health status
+      console.error('Error al obtener estado del sistema:', error);
       setSystemHealth({
         status: "error",
         timestamp: new Date().toISOString(),
-        services: {
-          api: { status: "unknown", message: "Health check failed" },
-          database: { status: "unknown", message: "Unknown" },
-          blockchain: { status: "unknown", message: "Unknown" }
+        api: {
+          status: "error",
+          message: "Error al conectar con la API",
+          version: "N/A",
+          port: 3000
+        },
+        relayer: {
+          status: "unknown",
+          message: "No se pudo verificar el estado del relayer",
+          port: 3001
+        },
+        blockchain: {
+          network: "Desconocido",
+          chainId: 0,
+          blockNumber: 0,
+          connected: false,
+          contractAddress: null,
+          contractDeployed: false
+        },
+        users: {
+          registered: 0
         },
         error: error.message
       });
@@ -77,10 +92,9 @@ const AdminPage = () => {
 
   if (!isAuthenticated) {
     return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
-  }
-  const tabs = [
-    { id: 'overview', label: 'System Overview', icon: Activity },
-    { id: 'elections', label: 'Election Management', icon: Vote }
+  } const tabs = [
+    { id: 'overview', label: 'Vista General', icon: Activity },
+    { id: 'elections', label: 'Gestión de Elecciones', icon: Vote }
   ];
   const renderOverview = () => (
     <div className="space-y-8">
@@ -97,8 +111,8 @@ const AdminPage = () => {
               <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">System Health Monitor</h2>
-              <p className="text-slate-600">Real-time system status and performance</p>
+              <h2 className="text-2xl font-bold text-gray-800">Monitor del Sistema</h2>
+              <p className="text-gray-600">Estado y rendimiento en tiempo real</p>
             </div>
           </div>
           <motion.button
@@ -106,10 +120,10 @@ const AdminPage = () => {
             whileTap={{ scale: 0.95 }}
             onClick={fetchSystemHealth}
             disabled={loading}
-            className="btn-primary px-4 py-2"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg shadow-sm transition-colors duration-300"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            <span className="ml-2">Refresh</span>
+            <span className="ml-2">Actualizar</span>
           </motion.button>
         </div>
 
@@ -122,51 +136,36 @@ const AdminPage = () => {
               transition={{ delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>              <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>
+              <div className="relative">
                 <div className="flex items-center justify-between mb-3">
                   <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                   <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                    Active
+                    {systemHealth.services.api.status}
                   </span>
                 </div>
-                <h3 className="font-bold text-emerald-800 mb-1">API Service</h3>
-                <p className="text-emerald-600 text-sm capitalize">{systemHealth.status}</p>
+                <h3 className="font-bold text-emerald-800 mb-1">Servicio API</h3>
+                <p className="text-emerald-600 text-sm capitalize">{systemHealth.services.api.message}</p>
               </div>
             </motion.div>
 
-            {/* Relayer Status */}
+            {/* Database Status */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className={`relative overflow-hidden rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 ${systemHealth.relayer?.status === 'running'
-                  ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/50'
-                  : 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/50'
-                }`}
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${systemHealth.relayer?.status === 'running'
-                  ? 'from-emerald-400/5 to-emerald-600/5'
-                  : 'from-red-400/5 to-red-600/5'
-                }`}></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
               <div className="relative">
-                <div className="flex items-center justify-between mb-3">                  {systemHealth.relayer?.status === 'running' ? (
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                ) : (
-                  <XCircle className="w-8 h-8 text-red-600" />
-                )}
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${systemHealth.relayer?.status === 'running'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-red-100 text-red-700'
-                    }`}>
-                    {systemHealth.relayer?.status === 'running' ? 'Running' : 'Error'}
+                <div className="flex items-center justify-between mb-3">
+                  <Database className="w-8 h-8 text-indigo-600" />
+                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                    {systemHealth.services.database.status}
                   </span>
                 </div>
-                <h3 className={`font-bold mb-1 ${systemHealth.relayer?.status === 'running' ? 'text-emerald-800' : 'text-red-800'
-                  }`}>Relayer Service</h3>
-                <p className={`text-sm capitalize ${systemHealth.relayer?.status === 'running' ? 'text-emerald-600' : 'text-red-600'
-                  }`}>
-                  {systemHealth.relayer?.status || 'Unknown'}
-                </p>
+                <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
+                <p className="text-indigo-600 text-sm">{systemHealth.services.database.userCount} usuarios</p>
               </div>
             </motion.div>
 
@@ -175,43 +174,45 @@ const AdminPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
-                  <Database className="w-8 h-8 text-indigo-600" />
-                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                    Synced
+                  <ShieldCheck className="w-8 h-8 text-blue-600" />
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                    {systemHealth.services.blockchain.status}
                   </span>
                 </div>
-                <h3 className="font-bold text-indigo-800 mb-1">Blockchain</h3>
-                <p className="text-indigo-600 text-sm">Block #{systemHealth.blockchain?.blockNumber || 'N/A'}</p>
+                <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
+                <p className="text-blue-600 text-sm">Bloque #{systemHealth.services.blockchain.currentBlock || 'N/A'}</p>
               </div>
             </motion.div>
 
-            {/* Users Count */}
+            {/* System Status */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 border border-violet-200/50 p-6 hover:shadow-lg transition-all duration-300"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-400/5 to-violet-600/5"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
-                  <Users className="w-8 h-8 text-violet-600" />
-                  <TrendingUp className="w-5 h-5 text-violet-600" />
+                  <Monitor className="w-8 h-8 text-amber-600" />
+                  <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                    {systemHealth.status}
+                  </span>
                 </div>
-                <h3 className="font-bold text-violet-800 mb-1">Registered Users</h3>
-                <p className="text-violet-600 text-sm font-semibold">{systemHealth.users?.registered || 0}</p>
+                <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
+                <p className="text-amber-600 text-sm capitalize">Sistema {systemHealth.status}</p>
               </div>
             </motion.div>
           </div>
         ) : (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading system health...</p>
+            <p className="text-slate-600">Cargando estado del sistema...</p>
           </div>
         )}
       </motion.div>
@@ -229,39 +230,44 @@ const AdminPage = () => {
             <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">Blockchain Configuration</h2>
-            <p className="text-slate-600">Network and contract information</p>
+            <h2 className="text-2xl font-bold text-gray-800">Configuración Blockchain</h2>
+            <p className="text-gray-600">Información de red y contratos</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Network Information */}
           <div className="space-y-6">
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
-                <Globe className="w-5 h-5 mr-2 text-primary" />
-                Network Details
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                <Globe className="w-5 h-5 mr-2 text-primary-500" />
+                Detalles de Red
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Network:</span>
-                  <span className="font-medium text-slate-800 bg-primary/10 px-3 py-1 rounded-full text-sm">
-                    MegaETH Testnet
+                  <span className="text-gray-600">Red:</span>
+                  <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
+                    {systemHealth?.services?.blockchain?.message?.includes('Connected') ? 'MegaETH Testnet' : 'Desconectado'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Contract Status:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.contractDeployed
-                      ? 'text-emerald-700 bg-emerald-100'
-                      : 'text-red-700 bg-red-100'
+                  <span className="text-gray-600">Estado:</span>
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.blockchain?.status === 'online'
+                    ? 'text-emerald-700 bg-emerald-100'
+                    : 'text-red-700 bg-red-100'
                     }`}>
-                    {systemHealth?.blockchain?.contractDeployed ? 'Deployed' : 'Not Found'}
+                    {systemHealth?.services?.blockchain?.message || 'Sin conexión'}
                   </span>
                 </div>
-                <div className="pt-2">
-                  <span className="text-slate-600 block mb-2">Contract Address:</span>
-                  <div className="bg-slate-100 rounded-lg p-3 font-mono text-xs text-slate-700 break-all">
-                    {systemHealth?.blockchain?.contractAddress || 'Loading...'}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Bloque Actual:</span>
+                  <span className="font-medium text-gray-800">
+                    #{systemHealth?.services?.blockchain?.currentBlock || 'N/A'}
+                  </span>
+                </div>                <div className="pt-2">
+                  <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
+                  <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
+                    {systemHealth?.services?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
                   </div>
                 </div>
               </div>
@@ -270,27 +276,32 @@ const AdminPage = () => {
 
           {/* Service Information */}
           <div className="space-y-6">
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
-                <Server className="w-5 h-5 mr-2 text-primary" />
-                Service Configuration
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+                <Server className="w-5 h-5 mr-2 text-primary-500" />
+                Configuración del Servicio
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">API Version:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.api?.version || 'N/A'}</span>
+                  <span className="text-gray-600">Versión API:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.services?.api?.version || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">API Port:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.api?.port || 3000}</span>
+                  <span className="text-gray-600">Estado API:</span>
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.api?.status === 'online'
+                    ? 'text-emerald-700 bg-emerald-100'
+                    : 'text-red-700 bg-red-100'
+                    }`}>
+                    {systemHealth?.services?.api?.message || 'Sin conexión'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Relayer Port:</span>
-                  <span className="font-medium text-slate-800">{systemHealth?.relayer?.port || 3001}</span>
+                  <span className="text-gray-600">Usuarios Registrados:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.services?.database?.userCount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Last Check:</span>
-                  <span className="font-medium text-slate-800 flex items-center">
+                  <span className="text-gray-600">Última Verificación:</span>
+                  <span className="font-medium text-gray-800 flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
                     {systemHealth?.timestamp ? new Date(systemHealth.timestamp).toLocaleTimeString() : 'N/A'}
                   </span>
@@ -303,7 +314,7 @@ const AdminPage = () => {
     </div>
   );
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden">
       {/* Floating Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-float"></div>
@@ -312,38 +323,42 @@ const AdminPage = () => {
       </div>
 
       {/* Header */}
-      <div className="relative backdrop-blur-sm bg-white/80 border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+      <div className="relative p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center space-x-3"
             >
-              <div className="relative">
-                <ShieldCheck className="w-10 h-10 text-primary" />
-                <div className="absolute -inset-1 bg-primary/20 rounded-full blur animate-pulse"></div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  BlockVote Admin
-                </h1>
-                <p className="text-sm text-slate-600">System Administration Panel</p>
-              </div>
+              <Settings className="w-7 h-7 text-primary-600" />
+              <h1 className="text-4xl font-bold text-primary-700">
+                Panel de Administración
+              </h1>
             </motion.div>
-
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-gray-600 text-lg max-w-2xl"
+            >
+              Gestiona el sistema de votación y monitorea la seguridad de la plataforma
+            </motion.p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 lg:mt-0"
+          >
             <motion.button
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleLogout}
-              className="btn-secondary flex items-center space-x-2"
+              className="flex items-center space-x-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors duration-300"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span>Cerrar Sesión</span>
             </motion.button>
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -361,28 +376,28 @@ const AdminPage = () => {
                   transition={{ delay: index * 0.1 }}
                   onClick={() => setActiveTab(tab.id)}
                   className={`relative flex items-center space-x-3 py-6 px-4 font-medium text-sm transition-all duration-300 group ${activeTab === tab.id
-                      ? 'text-primary'
-                      : 'text-slate-600 hover:text-slate-800'
+                    ? 'text-primary-600 bg-primary-50/80'
+                    : 'text-gray-600 hover:text-primary-600'
                     }`}
                 >
-                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary' : 'text-slate-500 group-hover:text-slate-700'
+                  <Icon className={`w-5 h-5 transition-all duration-300 ${activeTab === tab.id ? 'text-primary-600' : 'text-gray-500 group-hover:text-primary-600'
                     }`} />
-                  <span>{tab.label}</span>
+                  <span className="relative z-10">{tab.label}</span>
 
                   {/* Active indicator */}
                   {activeTab === tab.id && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-secondary rounded-full"
+                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-full shadow-sm"
                       initial={false}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
 
                   {/* Hover background */}
-                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 ${activeTab === tab.id
-                      ? 'bg-primary/5'
-                      : 'bg-transparent group-hover:bg-slate-100/50'
+                  <div className={`absolute inset-0 rounded-lg transition-all duration-300 opacity-0 group-hover:opacity-100 ${activeTab === tab.id
+                    ? 'bg-primary-100/0'
+                    : 'bg-primary-50/80'
                     }`}></div>
                 </motion.button>
               );

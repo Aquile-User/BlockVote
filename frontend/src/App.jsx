@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
 import AuthWrapper from "./components/AuthWrapper";
 import Dashboard from "./components/Dashboard";
 import Elections from "./components/Elections";
 import ElectionDetail from "./components/ElectionDetail";
-import Analytics from "./components/Analytics";
 import AdminPage from "./components/AdminPage";
 
 function App() {
@@ -23,7 +22,7 @@ function App() {
   }, []);
   return (
     <div className="min-h-screen bg-light-bg">
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           className: 'bg-white text-gray-900 border border-gray-200 shadow-medium',
@@ -42,18 +41,16 @@ function App() {
           },
         }}
       />
-      
       {isConnected ? (
-        <div className="flex bg-light-bg min-h-screen">
-          <Sidebar user={user} />
-          <main className="flex-1 lg:ml-64 p-4 md:p-6 lg:p-8">
+        <div className="flex flex-col bg-light-bg min-h-screen">
+          <Topbar user={user} />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 pt-2 md:pt-4">
             <div className="max-w-7xl mx-auto">
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard user={user} />} />
                 <Route path="/elections" element={<Elections user={user} />} />
                 <Route path="/elections/:id" element={<ElectionDetail user={user} />} />
-                <Route path="/analytics" element={<Analytics />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="*" element={
                   <div className="card p-8 text-center animate-fade-in-up">
@@ -64,7 +61,7 @@ function App() {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Página no encontrada</h2>
                     <p className="text-gray-600 mb-4">La página que buscas no existe.</p>
-                    <button 
+                    <button
                       onClick={() => window.history.back()}
                       className="btn-primary"
                     >
