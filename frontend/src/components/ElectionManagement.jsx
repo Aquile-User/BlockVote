@@ -454,7 +454,7 @@ const ElectionManagement = ({ user }) => {
           <Plus className="w-5 h-5" />
           <span>Crear Elección</span>
         </motion.button>
-      </div>{/* Elections Grid */}
+      </div>      {/* Elections Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {elections
           .sort((a, b) => {
@@ -481,14 +481,15 @@ const ElectionManagement = ({ user }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
-            >              {/* Header with Gradient */}
+            >
+              {/* Header with Gradient */}
               <div className={`relative p-6 pb-4 ${election.status === 'active'
-                  ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
-                  : election.status === 'upcoming'
-                    ? 'bg-gradient-to-br from-blue-400 to-indigo-500'
-                    : election.status === 'expired'
-                      ? 'bg-gradient-to-br from-orange-400 to-amber-500'
-                      : 'bg-gradient-to-br from-gray-400 to-slate-500'
+                ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                : election.status === 'upcoming'
+                  ? 'bg-gradient-to-br from-blue-400 to-indigo-500'
+                  : election.status === 'expired'
+                    ? 'bg-gradient-to-br from-orange-400 to-amber-500'
+                    : 'bg-gradient-to-br from-gray-400 to-slate-500'
                 } text-white`}>
                 <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
                   <div className="absolute inset-0 transform rotate-45 bg-white rounded-full -mr-16 -mt-16"></div>
@@ -629,7 +630,9 @@ const ElectionManagement = ({ user }) => {
                       </div>
                     )}
                   </div>
-                </div>                {/* Action Buttons */}
+                </div>
+
+                {/* Action Buttons */}
                 <div className="flex justify-center">
                   {!election.disabled ? (
                     <motion.button
@@ -650,7 +653,8 @@ const ElectionManagement = ({ user }) => {
                     >
                       <CheckCircle className="w-4 h-4" />
                       <span>Habilitar</span>
-                    </motion.button>)}
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </motion.div>

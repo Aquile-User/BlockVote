@@ -293,10 +293,8 @@ const Elections = ({ user }) => {
             </p>
           </div>
         </div>
-      </motion.div>
-
-      {/* Enhanced Elections Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      </motion.div>      {/* Enhanced Elections Grid - One per row */}
+      <div className="space-y-6">
         <AnimatePresence>
           {filteredElections.map((election, index) => (
             <motion.div
@@ -308,120 +306,130 @@ const Elections = ({ user }) => {
               transition={{ delay: index * 0.1, duration: 0.4 }}
               className="relative group"
             >              <div className="absolute inset-0 bg-white rounded-3xl transform group-hover:scale-[1.02] transition-transform duration-300"></div>
-              <div className="relative bg-white rounded-3xl border border-gray-200 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
-                {/* Status Badge */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(election.status)}`}>
-                    {getStatusIcon(election.status)}
-                    <span>{getStatusText(election.status)}</span>
-                  </div>
+              <div className="relative bg-white rounded-3xl border border-gray-200 shadow-soft hover:shadow-medium transition-all duration-300">
 
-                  {election.status === 'active' && (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                      <span className="text-emerald-600 text-sm font-medium">En vivo</span>
-                    </div>
-                  )}
-                </div>
+                {/* Horizontal Layout for Wide Cards */}
+                <div className="flex flex-col lg:flex-row">
 
-                {/* Election Info */}
-                <div className="space-y-4 mb-6">                  <h3 className="text-2xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
-                  {election.name}
-                </h3>
-
-                  <p className="text-gray-600 leading-relaxed">
-                    {election.candidates ? `${election.candidates.length} candidatos: ${election.candidates.slice(0, 3).join(', ')}${election.candidates.length > 3 ? '...' : ''}` : 'Sin candidatos disponibles'}
-                  </p>
-
-                  {/* Election Dates */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50/80 rounded-2xl">
-                      <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-primary-600" />
+                  {/* Left Section - Main Info */}
+                  <div className="flex-1 p-6 lg:p-8">
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(election.status)}`}>
+                        {getStatusIcon(election.status)}
+                        <span>{getStatusText(election.status)}</span>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Inicio</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {formatDate(election.startTime)}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50/80 rounded-2xl">
-                      <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-secondary-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fin</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {formatDate(election.endTime)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats */}                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-4 bg-primary-50 border border-primary-100 rounded-2xl shadow-soft">
-                    <div className="flex items-center justify-center mb-2">
-                      <Vote className="w-5 h-5 text-primary-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-primary-700">{election.totalVotes}</p>
-                    <p className="text-sm text-primary-600">Votos</p>
-                  </div>
-
-                  <div className="text-center p-4 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-soft">
-                    <div className="flex items-center justify-center mb-2">
-                      <TrendingUp className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-emerald-700">{election.participation}%</p>
-                    <p className="text-sm text-emerald-600">Participación</p>
-                  </div>
-                </div>
-
-                {/* Candidates Preview (if available) */}
-                {election.candidates && election.candidates.length > 0 && (
-                  <div className="mb-6">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                      <Users className="w-4 h-4 mr-2" />
-                      Candidatos
-                    </h4>                    <div className="space-y-2">
-                      {election.candidates.slice(0, 3).map((candidate, idx) => {
-                        const votes = election.results?.[candidate] || 0;
-                        const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
-
-                        return (<div key={idx} className="flex items-center justify-between p-3 bg-gray-50/60 rounded-xl">
-                          <span className="font-medium text-gray-900">{candidate}</span>
-                          <div className="text-right">
-                            <span className="text-sm font-semibold text-gray-700">{votes} votos</span>
-                            <div className="text-xs text-gray-500">{percentage}%</div>
-                          </div>
+                      {election.status === 'active' && (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                          <span className="text-emerald-600 text-sm font-medium">En vivo</span>
                         </div>
-                        );
-                      })}
-                      {election.candidates.length > 3 && (
-                        <p className="text-sm text-gray-500 text-center">
-                          +{election.candidates.length - 3} candidatos más
-                        </p>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* Action Button */}
-                <Link
-                  to={`/elections/${election.electionId}`}
-                  className="block"
-                >                  <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-3 group"
-                >
-                    <Eye className="w-5 h-5" />
-                    <span>Ver Detalles</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                  </motion.button>
-                </Link>
+                    {/* Election Title and Description */}
+                    <h3 className="text-3xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-200 mb-3">
+                      {election.name}
+                    </h3>
+
+                    <p className="text-gray-600 leading-relaxed mb-4">
+                      {election.candidates ? `${election.candidates.length} candidatos: ${election.candidates.slice(0, 4).join(', ')}${election.candidates.length > 4 ? '...' : ''}` : 'Sin candidatos disponibles'}
+                    </p>
+
+                    {/* Election Dates */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3 p-3 bg-gray-50/80 rounded-2xl">
+                        <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-primary-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Inicio</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatDate(election.startTime)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3 p-3 bg-gray-50/80 rounded-2xl">
+                        <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+                          <Clock className="w-5 h-5 text-secondary-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fin</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatDate(election.endTime)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Section - Stats and Action */}
+                  <div className="lg:w-80 p-6 lg:p-8 bg-gray-50/50 lg:border-l border-gray-100">
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="text-center p-4 bg-white border border-primary-100 rounded-2xl shadow-soft">
+                        <div className="flex items-center justify-center mb-2">
+                          <Vote className="w-5 h-5 text-primary-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-primary-700">{election.totalVotes}</p>
+                        <p className="text-sm text-primary-600">Votos</p>
+                      </div>
+
+                      <div className="text-center p-4 bg-white border border-emerald-100 rounded-2xl shadow-soft">
+                        <div className="flex items-center justify-center mb-2">
+                          <TrendingUp className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-emerald-700">{election.participation}%</p>
+                        <p className="text-sm text-emerald-600">Participación</p>
+                      </div>
+                    </div>
+
+                    {/* Candidates Preview */}
+                    {election.candidates && election.candidates.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                          <Users className="w-4 h-4 mr-2" />
+                          Top Candidatos
+                        </h4>
+                        <div className="space-y-2">
+                          {election.candidates.slice(0, 2).map((candidate, idx) => {
+                            const votes = election.results?.[candidate] || 0;
+                            const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
+
+                            return (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
+                                <div className="text-right">
+                                  <span className="text-sm font-semibold text-gray-700">{votes}</span>
+                                  <div className="text-xs text-gray-500">{percentage}%</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {election.candidates.length > 2 && (
+                            <p className="text-xs text-gray-500 text-center">
+                              +{election.candidates.length - 2} más
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    <Link to={`/elections/${election.electionId}`} className="block">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-2xl transition-all duration-300 shadow-soft hover:shadow-medium flex items-center justify-center space-x-2 group"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>Ver Detalles</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />                      </motion.button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}
