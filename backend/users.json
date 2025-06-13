@@ -22,5 +22,13 @@
     "province": "La Vega",
     "authMethod": "generated",
     "registeredAt": "2025-06-11T17:55:19.966Z"
+  },
+  "777-7777777-1": {
+    "address": "0x4dB1524E4296262c0F8929C54F4ccdf9C82ab28c",
+    "privateKey": "0xd63a43d93f123231c2bcacd214312bd5004423bbc115faddfd7b23a60c7cddb3",
+    "name": "Karla",
+    "province": "Samaná",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T00:03:45.983Z"
   }
 }
