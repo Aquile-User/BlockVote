@@ -13,13 +13,9 @@ import {
   CreditCard,
   Activity, ChevronUp,
   BarChart4,
-  Zap,
-  Globe,
   Calendar,
   RefreshCw,
   TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
   Award,
   ChevronLeft,
   ChevronRight,
@@ -612,10 +608,10 @@ const Dashboard = ({ user }) => {
           bgColor="emerald"
           delay={0.1}
         />        <StatCard
-          icon={Clock}
-          title="Elecciones Activas"
-          value={stats.activeElections}
-          subtitle="En curso actualmente"
+          icon={AlertTriangle}
+          title="Elecciones Deshabilitadas"
+          value={stats.disabledElections || stats.completedElections}
+          subtitle="Finalizadas o desactivadas"
           color="amber"
           bgColor="amber"
           delay={0.2}
@@ -628,77 +624,9 @@ const Dashboard = ({ user }) => {
           color="violet"
           bgColor="violet"
           delay={0.3}
-        />
-      </div>
+        />      </div>
 
-      {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="relative group cursor-pointer"
-        >          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Elecciones Deshabilitadas</p>
-                <p className="text-sm text-gray-600">
-                  {stats.disabledElections || stats.completedElections} elecciones finalizadas
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-green-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Globe className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Cobertura</p>
-                <p className="text-sm text-gray-600">
-                  {provinceData.length} provincia{provinceData.length !== 1 ? 's' : ''} registrada{provinceData.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="relative group cursor-pointer"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl transform group-hover:scale-105 transition-transform duration-200"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-200/50 p-6 shadow-soft hover:shadow-medium transition-all duration-200">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-semibold text-gray-900">Seguridad</p>
-                <p className="text-sm text-gray-600">
-                  Sistema blockchain activo
-                </p>
-              </div>
-              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors duration-200" />
-            </div>
-          </div>
-        </motion.div>
-      </div>      {/* Advanced Analytics Section */}
+      {/* Advanced Analytics Section */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Elections List */}
         <motion.div
@@ -1113,9 +1041,8 @@ const Dashboard = ({ user }) => {
                     <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 animate-pulse"></div>
                       Verificado
-                    </div>
-                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
-                      <Zap className="w-3 h-3 mr-2" />
+                    </div>                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                      <ShieldCheck className="w-3 h-3 mr-2" />
                       Activo
                     </div>
                   </div>
