@@ -18,6 +18,12 @@ const abi = votingJson.abi;
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// Establecer la codificación correcta para todas las respuestas
+app.use((req, res, next) => {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  next();
+});
 
 // Load or initialize user database (socialId -> wallet {address, privateKey})
 const usersFile = path.resolve(__dirname, "../users.json");
@@ -92,52 +98,58 @@ const votingContract = new ethers.Contract(
  */
 app.post("/users/register", async (req, res) => {
   try {
-    const { 
-      socialId, 
-      name, 
-      province, 
+    const {
+      socialId,
+      name,
+      province,
       authMethod, // 'metamask' or 'generated'
-      metamaskAddress 
+      metamaskAddress,
     } = req.body;
-    
+
     if (!socialId) return res.status(400).json({ error: "Missing socialId" });
     if (!name) return res.status(400).json({ error: "Missing name" });
     if (!province) return res.status(400).json({ error: "Missing province" });
-    if (!authMethod) return res.status(400).json({ error: "Missing authMethod" });
-    
+    if (!authMethod)
+      return res.status(400).json({ error: "Missing authMethod" });
+
     // Validate Dominican ID format: 000-0000000-0
     const dominicanIdRegex = /^\d{3}-\d{7}-\d{1}$/;
     if (!dominicanIdRegex.test(socialId)) {
-      return res.status(400).json({ error: "Invalid Dominican ID format. Use: 000-0000000-0" });
+      return res
+        .status(400)
+        .json({ error: "Invalid Dominican ID format. Use: 000-0000000-0" });
     }
-    
+
     if (users[socialId]) {
       return res.status(400).json({ error: "User already exists" });
     }
 
     // Check if MetaMask address is already registered by another user
-    if (authMethod === 'metamask' && metamaskAddress) {
-      const existingUser = Object.entries(users).find(([id, userData]) => 
-        userData.authMethod === 'metamask' && 
-        userData.address && 
-        userData.address.toLowerCase() === metamaskAddress.toLowerCase()
+    if (authMethod === "metamask" && metamaskAddress) {
+      const existingUser = Object.entries(users).find(
+        ([id, userData]) =>
+          userData.authMethod === "metamask" &&
+          userData.address &&
+          userData.address.toLowerCase() === metamaskAddress.toLowerCase()
       );
-      
+
       if (existingUser) {
-        return res.status(400).json({ 
-          error: "This MetaMask wallet is already registered to another user" 
+        return res.status(400).json({
+          error: "This MetaMask wallet is already registered to another user",
         });
       }
     }
 
-    let address, privateKey = null, fundTxHash = null;
+    let address,
+      privateKey = null,
+      fundTxHash = null;
 
-    if (authMethod === 'metamask') {
+    if (authMethod === "metamask") {
       if (!metamaskAddress) {
         return res.status(400).json({ error: "Missing MetaMask address" });
       }
       address = metamaskAddress;
-    } else if (authMethod === 'generated') {
+    } else if (authMethod === "generated") {
       // Generate a new wallet
       const wallet = ethers.Wallet.createRandom();
       privateKey = wallet.privateKey;
@@ -152,29 +164,31 @@ app.post("/users/register", async (req, res) => {
       await fundTx.wait();
       fundTxHash = fundTx.hash;
     } else {
-      return res.status(400).json({ error: "Invalid authMethod. Use 'metamask' or 'generated'" });
+      return res
+        .status(400)
+        .json({ error: "Invalid authMethod. Use 'metamask' or 'generated'" });
     }
 
     // Store user mapping with extended data
-    users[socialId] = { 
-      address, 
-      privateKey, 
-      name, 
-      province, 
+    users[socialId] = {
+      address,
+      privateKey,
+      name,
+      province,
       authMethod,
-      registeredAt: new Date().toISOString()
+      registeredAt: new Date().toISOString(),
     };
     saveUsers();
 
-    const response = { 
-      socialId, 
-      address, 
-      name, 
-      province, 
+    const response = {
+      socialId,
+      address,
+      name,
+      province,
       authMethod,
-      registeredAt: users[socialId].registeredAt
+      registeredAt: users[socialId].registeredAt,
     };
-    
+
     if (privateKey) response.privateKey = privateKey;
     if (fundTxHash) response.fundTxHash = fundTxHash;
 
@@ -240,7 +254,7 @@ app.get("/elections/:electionId/has-voted/:socialId", async (req, res) => {
   try {
     const { electionId, socialId } = req.params;
     const user = users[socialId];
-    
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -326,18 +340,20 @@ app.get("/health", async (req, res) => {
       services: {
         api: {
           status: "online",
-          message: "API server running"
+          message: "API server running",
         },
         database: {
           status: fs.existsSync(usersFile) ? "online" : "warning",
-          message: fs.existsSync(usersFile) ? "Users database accessible" : "Users file not found",
-          userCount: Object.keys(users).length
+          message: fs.existsSync(usersFile)
+            ? "Users database accessible"
+            : "Users file not found",
+          userCount: Object.keys(users).length,
         },
         blockchain: {
           status: "checking",
-          message: "Checking blockchain connection..."
-        }
-      }
+          message: "Checking blockchain connection...",
+        },
+      },
     };
 
     // Test blockchain connection
@@ -346,13 +362,13 @@ app.get("/health", async (req, res) => {
       health.services.blockchain = {
         status: "online",
         message: `Connected to block ${blockNumber}`,
-        currentBlock: blockNumber
+        currentBlock: blockNumber,
       };
     } catch (blockchainError) {
       health.services.blockchain = {
         status: "error",
         message: "Blockchain connection failed",
-        error: blockchainError.message
+        error: blockchainError.message,
       };
       health.status = "degraded";
     }
@@ -360,10 +376,10 @@ app.get("/health", async (req, res) => {
     res.json(health);
   } catch (error) {
     console.error("Health check error:", error);
-    res.status(500).json({ 
-      status: "error", 
+    res.status(500).json({
+      status: "error",
       timestamp: new Date().toISOString(),
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -397,7 +413,12 @@ app.get("/elections", async (req, res) => {
     const nextId = Number(nextIdBN);
     for (let i = 1; i < nextId; i++) {
       const [name, _] = await votingContract.getElection(i);
-      list.push({ electionId: i, name });
+      // Asegurar que el nombre se maneja correctamente y limpiar caracteres problemáticos
+      const cleanName = (typeof name === "string" ? name : name.toString())
+        .replace(/�/g, "ó")
+        .replace(/\u0000/g, "")
+        .trim();
+      list.push({ electionId: i, name: cleanName });
     }
     res.json(list);
   } catch (error) {
@@ -473,22 +494,24 @@ app.post("/elections/create", async (req, res) => {
       return res.status(400).json({ error: "endTime must be > startTime" });
     }
 
+    console.log("Creando elección con nombre:", name);
+    console.log("Candidatos:", candidates);
+
     const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
     const contractWithSigner = new ethers.Contract(
       process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
-
     const tx = await contractWithSigner.createElection(
       name,
       candidates,
       startTime,
       endTime,
       {
-        gasLimit: 500_000,
-        maxFeePerGas: ethers.parseUnits("5", "gwei"),
-        maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+        gasLimit: 450_000,
+        maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+        maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
       }
     );
     const receipt = await tx.wait();
@@ -559,7 +582,24 @@ app.get("/elections/:id", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
     let [name, candidates, startTime, endTime, disabled] =
-      await votingContract.getElection(electionId);
+      await votingContract.getElection(electionId); // Asegurar que el nombre y los candidatos se manejan correctamente
+    // Función para limpiar strings que pueden tener problemas de codificación
+    const cleanString = (str) => {
+      if (typeof str !== "string") {
+        str = str.toString();
+      }
+      // Reemplazar caracteres problemáticos
+      return str
+        .replace(/�/g, "ó")
+        .replace(/\u0000/g, "")
+        .trim();
+    };
+
+    name = cleanString(name);
+    if (Array.isArray(candidates)) {
+      candidates = candidates.map((c) => cleanString(c));
+    }
+
     startTime = Number(startTime);
     endTime = Number(endTime);
     // console.log("Election details:", { electionId, name, candidates, startTime, endTime, disabled });
@@ -621,11 +661,10 @@ app.put("/elections/:id/disable", async (req, res) => {
       abi,
       signer
     );
-
     const tx = await contractWithSigner.disableElection(electionId, {
       gasLimit: 100_000,
-      maxFeePerGas: ethers.parseUnits("5", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+      maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
     });
     const receipt = await tx.wait();
     res.json({
@@ -690,11 +729,10 @@ app.put("/elections/:id/enable", async (req, res) => {
       abi,
       signer
     );
-
     const tx = await contractWithSigner.enableElection(electionId, {
       gasLimit: 100_000,
-      maxFeePerGas: ethers.parseUnits("5", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+      maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
     });
     const receipt = await tx.wait();
     res.json({
@@ -762,11 +800,10 @@ app.put("/elections/:id/edit-name", async (req, res) => {
       abi,
       signer
     );
-
     const tx = await contractWithSigner.updateElectionName(electionId, name, {
       gasLimit: 100_000,
-      maxFeePerGas: ethers.parseUnits("5", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+      maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
     });
     const receipt = await tx.wait();
     res.json({
@@ -833,11 +870,10 @@ app.put("/elections/:id/add-candidate", async (req, res) => {
       abi,
       signer
     );
-
     const tx = await contractWithSigner.addCandidate(electionId, candidate, {
       gasLimit: 100_000,
-      maxFeePerGas: ethers.parseUnits("5", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("1", "gwei"),
+      maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
     });
     const receipt = await tx.wait();
     res.json({
@@ -881,12 +917,21 @@ app.get("/elections/:id/results", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
 
+    console.log(`Obteniendo resultados para la elección ${electionId}`);
     const candidates = await votingContract.getCandidates(electionId);
+    console.log(`Candidatos encontrados: ${JSON.stringify(candidates)}`);
+
     const results = {};
     for (let i = 0; i < candidates.length; i++) {
       const name = candidates[i];
-      const countBN = await votingContract.getVoteCount(electionId, name);
-      results[name] = Number(countBN);
+      console.log(`Obteniendo votos para candidato: ${name}`);
+      try {
+        const countBN = await votingContract.getVoteCount(electionId, name);
+        results[name] = Number(countBN);
+      } catch (error) {
+        console.error(`Error al obtener votos para ${name}:`, error.message);
+        results[name] = 0; // Valor por defecto en caso de error
+      }
     }
     res.json(results);
   } catch (error) {
@@ -943,18 +988,27 @@ app.post("/vote", async (req, res) => {
     const user = users[socialId];
     if (!user) return res.status(400).json({ error: "User not registered" });
 
-    const voterAddress = user.address;
-
-    // Build message hash exactly as contract expects
+    const voterAddress = user.address; // Build message hash exactly as contract expects
     const contractAddress = process.env.CONTRACT_ADDRESS;
     const messageHash = ethers.solidityPackedKeccak256(
       ["uint256", "string", "address", "address"],
       [electionId, selectedCandidate, voterAddress, contractAddress]
     );
 
+    console.log("Backend verification data:", {
+      electionId,
+      selectedCandidate,
+      voterAddress,
+      contractAddress,
+      messageHash,
+    });
+
     // Verify signature was signed by this user
     // Use getBytes() to match how the contract verifies (32-byte data, not string)
-    const recovered = ethers.verifyMessage(ethers.getBytes(messageHash), signature);
+    const recovered = ethers.verifyMessage(
+      ethers.getBytes(messageHash),
+      signature
+    );
     console.log("Recovered address:", recovered);
     console.log("Voter address:", voterAddress);
     if (recovered.toLowerCase() !== voterAddress.toLowerCase()) {
@@ -1012,19 +1066,21 @@ app.get("/health", async (req, res) => {
     // Check blockchain connection
     const blockNumber = await provider.getBlockNumber();
     const contractCode = await provider.getCode(process.env.CONTRACT_ADDRESS);
-    
+
     // Check users
     const userCount = Object.keys(users).length;
-    
+
     // Check relayer
     let relayerStatus = "unknown";
     try {
-      const relayerResponse = await axios.get("http://localhost:3001", { timeout: 2000 });
+      const relayerResponse = await axios.get("http://localhost:3001", {
+        timeout: 2000,
+      });
       relayerStatus = "running";
     } catch (error) {
       relayerStatus = "unreachable";
     }
-    
+
     res.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
@@ -1032,27 +1088,27 @@ app.get("/health", async (req, res) => {
         network: "MegaETH Testnet",
         blockNumber: blockNumber,
         contractDeployed: contractCode !== "0x",
-        contractAddress: process.env.CONTRACT_ADDRESS
+        contractAddress: process.env.CONTRACT_ADDRESS,
       },
       relayer: {
         status: relayerStatus,
-        port: 3001
+        port: 3001,
       },
       users: {
         registered: userCount,
-        storage: "local"
+        storage: "local",
       },
       api: {
         version: "2.0.0",
-        port: 3000
-      }
+        port: 3000,
+      },
     });
   } catch (error) {
     console.error("Health check error:", error.message);
     res.status(500).json({
       status: "unhealthy",
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -1061,4 +1117,3 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`🗳 API server running on http://localhost:${PORT}`);
 });
-

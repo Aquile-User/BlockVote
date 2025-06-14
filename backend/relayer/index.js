@@ -31,20 +31,25 @@ app.post("/meta-vote", async (req, res) => {
   console.log("Relayer received vote request:", req.body);
   try {
     const { electionId, selectedCandidate, voter, signature } = req.body;
-    
+
     // Validate required parameters
     if (!electionId || !selectedCandidate || !voter || !signature) {
-      return res.status(400).json({ 
-        error: "Missing required parameters: electionId, selectedCandidate, voter, signature" 
+      return res.status(400).json({
+        error:
+          "Missing required parameters: electionId, selectedCandidate, voter, signature",
       });
     }
-    
     const candidate = selectedCandidate;
     const tx = await votingContract.voteMeta(
       electionId,
       candidate,
       voter,
-      signature
+      signature,
+      {
+        gasLimit: 200_000,
+        maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+        maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
+      }
     );
     const receipt = await tx.wait();
     return res.json({
@@ -62,4 +67,3 @@ const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Relayer listening on http://localhost:${PORT}`);
 });
-

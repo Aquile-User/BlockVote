@@ -2,16 +2,20 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import { 
-  Shield, 
-  Wallet, 
-  User, 
-  MapPin, 
+import {
+  ShieldCheck,
+  CreditCard as Wallet,
+  User,
+  MapPin,
   CreditCard,
   Eye,
   EyeOff,
-  Check,
+  CheckCircle2 as Check,
   ArrowRight,
+  AlertTriangle,
+  Zap,
+  Key,
+  Download,
   AlertCircle
 } from "lucide-react";
 import { registerUser } from "../api";
@@ -69,7 +73,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
 
     try {
       setLoading(true);
-      
+
       // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
@@ -81,7 +85,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
       }
 
       const address = accounts[0];
-      
+
       // Register with MetaMask
       const userData = {
         socialId: formData.socialId,
@@ -92,16 +96,16 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
       };
 
       const data = await registerUser(userData);
-      
+
       // Save user data
       const completeUserData = { ...userData, address: data.address };
       localStorage.setItem('currentUser', JSON.stringify(completeUserData));
-      
+
       setUser(completeUserData);
       setIsConnected(true);
-      
+
       toast.success("Successfully registered with MetaMask!");
-      
+
     } catch (error) {
       console.error('MetaMask connection error:', error);
       toast.error(error.response?.data?.error || "Failed to connect with MetaMask");
@@ -113,7 +117,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
   const generateWallet = async () => {
     try {
       setLoading(true);
-      
+
       const userData = {
         socialId: formData.socialId,
         name: formData.name,
@@ -123,22 +127,22 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
 
       const data = await registerUser(userData);
       setWalletInfo(data);
-      
+
       // Save user data including private key for generated wallets
-      const completeUserData = { 
-        ...userData, 
+      const completeUserData = {
+        ...userData,
         address: data.address,
-        privateKey: data.privateKey 
+        privateKey: data.privateKey
       };
       localStorage.setItem('currentUser', JSON.stringify(completeUserData));
       localStorage.setItem(`user-${data.socialId}`, JSON.stringify({
         address: data.address,
         privateKey: data.privateKey
       }));
-      
+
       setStep(3);
       toast.success("Wallet generated successfully!");
-      
+
     } catch (error) {
       console.error('Wallet generation error:', error);
       toast.error(error.response?.data?.error || "Failed to generate wallet");
@@ -155,7 +159,7 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
   const formatIdInput = (value) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '');
-    
+
     // Format as 000-0000000-0
     if (digits.length <= 3) {
       return digits;
@@ -164,45 +168,98 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
     } else {
       return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10, 11)}`;
     }
+  };  // Función para obtener las clases dinámicas del contenedor según el paso
+  const getContainerClasses = () => {
+    const baseClasses = "w-full mx-auto transition-all duration-700 ease-in-out transform";
+
+    switch (step) {
+      case 1:
+        return `${baseClasses} max-w-2xl`; // Más estrecho para formulario
+      case 2:
+        return `${baseClasses} max-w-lg`; // Mismo tamaño que login para consistencia
+      case 3:
+        return `${baseClasses} max-w-4xl`; // Ancho medio para información de billetera
+      default:
+        return `${baseClasses} max-w-5xl`;
+    }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-gray-900 via-dark-bg to-gray-800">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary-dark rounded-full mb-4">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">EtherVote</h1>
-          <p className="text-gray-400">Secure Blockchain Voting System</p>
-          
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center space-x-2 mt-6">
-            {[1, 2, 3].map((stepNum) => (
-              <div key={stepNum} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step >= stepNum 
-                    ? 'bg-primary text-white' 
-                    : 'bg-gray-700 text-gray-400'
-                }`}>
-                  {step > stepNum ? <Check className="w-4 h-4" /> : stepNum}
-                </div>
-                {stepNum < 3 && (
-                  <div className={`w-8 h-px ${
-                    step > stepNum ? 'bg-primary' : 'bg-gray-700'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+  // Función para obtener las clases dinámicas del contenido según el paso
+  const getContentClasses = () => {
+    const baseClasses = "bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/50 relative overflow-hidden transition-all duration-700 transform";
 
-        <div className="card p-6">
+    switch (step) {
+      case 1:
+        return `${baseClasses} p-8`; // Más padding para formulario
+      case 2:
+        return `${baseClasses} p-6`; // Padding normal para cards
+      case 3:
+        return `${baseClasses} p-6`; // Padding normal para información
+      default:
+        return `${baseClasses} p-6`;
+    }
+  };
+
+  // Función para obtener estilos dinámicos del contenedor interno
+  const getInnerContainerStyles = () => {
+    switch (step) {
+      case 1:
+        return {
+          padding: '2rem',
+          minHeight: '400px'
+        };
+      case 2:
+        return {
+          padding: '1.5rem',
+          minHeight: '500px'
+        };
+      case 3:
+        return {
+          padding: '1.5rem',
+          minHeight: '450px'
+        };
+      default:
+        return {
+          padding: '1.5rem',
+          minHeight: '400px'
+        };
+    }
+  };
+
+  return (<div className={getContainerClasses()}>
+    <motion.div
+      className={getContentClasses()}
+      initial={{ opacity: 0, y: 50, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      layout
+    >
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-primary-500 to-coral-500"></div>
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-emerald-100 to-primary-100 rounded-full blur-3xl opacity-30"></div>
+      <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-br from-coral-100 to-violet-100 rounded-full blur-2xl opacity-40"></div>      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="text-center mb-6 relative z-10"
+        layout
+      >
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 via-emerald-700 to-slate-800 bg-clip-text text-transparent mb-2">
+          Crear Cuenta
+        </h1>
+        <p className="text-slate-600 text-base font-medium">
+          Únete a <span className="text-emerald-600 font-semibold">BlockVote</span> y participa
+        </p>
+      </motion.div><motion.div
+        className="bg-white/95 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-soft transition-all duration-700"
+        style={getInnerContainerStyles()}
+        layout
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="relative z-10">
           {/* Step 1: Personal Information */}
           {step === 1 && (
             <motion.div
@@ -211,255 +268,437 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
               className="space-y-6"
             >
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-white mb-2">Personal Information</h2>
-                <p className="text-gray-400 text-sm">Enter your details to get started</p>
-              </div>
-
-              {/* Name Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <User className="w-4 h-4 inline mr-2" />
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="input-field"
-                />
-              </div>
-
-              {/* Dominican ID Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <CreditCard className="w-4 h-4 inline mr-2" />
-                  Dominican ID (Cédula)
-                </label>
-                <input
-                  type="text"
-                  placeholder="000-0000000-0"
-                  value={formData.socialId}
-                  onChange={(e) => handleInputChange('socialId', formatIdInput(e.target.value))}
-                  className="input-field"
-                  maxLength={13}
-                />
-                {formData.socialId && !validateDominicanID(formData.socialId) && (
-                  <div className="flex items-center mt-2 text-red-400 text-sm">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    Invalid ID format. Use: 000-0000000-0
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Información Personal</h2>
+                <p className="text-slate-600">Ingresa tus datos para comenzar</p>
+              </div>                {/* Name Input */}
+              <div className="relative">
+                <label className="flex text-sm font-semibold text-slate-700 mb-2 items-center gap-2">
+                  <div className="w-5 h-5 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <User className="w-3 h-3 text-emerald-600" />
                   </div>
+                  Nombre Completo
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full bg-slate-50/50 border border-slate-200 text-slate-900 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 placeholder-slate-400 font-medium"
+                    placeholder="Tu nombre completo"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-primary-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
+              </div>
+
+              {/* Dominican ID Input */}              <div className="relative">
+                <label className="flex text-sm font-semibold text-slate-700 mb-2 items-center gap-2">
+                  <div className="w-5 h-5 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-3 h-3 text-primary-600" />
+                  </div>
+                  Cédula Dominicana
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full bg-slate-50/50 border border-slate-200 text-slate-900 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 placeholder-slate-400 font-mono"
+                    placeholder="000-0000000-0"
+                    value={formData.socialId}
+                    onChange={(e) => handleInputChange('socialId', formatIdInput(e.target.value))}
+                    maxLength="13"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-primary-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
+                {!validateDominicanID(formData.socialId) && formData.socialId && (
+                  <p className="text-xs text-rose-500 mt-1 flex items-center gap-2">
+                    <AlertCircle className="w-3 h-3" />
+                    Formato requerido: 000-0000000-0
+                  </p>
                 )}
               </div>
 
-              {/* Province Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <MapPin className="w-4 h-4 inline mr-2" />
-                  Province
+              {/* Province Selection */}              <div className="relative">
+                <label className="flex text-sm font-semibold text-slate-700 mb-2 items-center gap-2">
+                  <div className="w-5 h-5 bg-coral-100 rounded-lg flex items-center justify-center">
+                    <MapPin className="w-3 h-3 text-coral-600" />
+                  </div>
+                  Provincia
                 </label>
-                <select
-                  value={formData.province}
-                  onChange={(e) => handleInputChange('province', e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">Select your province</option>
-                  {DOMINICAN_PROVINCES.map((province) => (
-                    <option key={province} value={province}>
-                      {province}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
+                <div className="relative">
+                  <select
+                    value={formData.province}
+                    onChange={(e) => handleInputChange('province', e.target.value)}
+                    className="w-full bg-slate-50/50 border border-slate-200 text-slate-900 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 font-medium appearance-none bg-no-repeat bg-right pr-12"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                      backgroundSize: '20px',
+                      backgroundPosition: 'right 16px center'
+                    }}
+                  >
+                    <option value="">Selecciona tu provincia</option>
+                    {DOMINICAN_PROVINCES.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-coral-500/5 opacity-0 focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
+              </div>                <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleNext}
-                className="btn-primary w-full flex items-center justify-center space-x-2"
+                className="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-semibold text-lg py-3.5 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center space-x-3 group"
               >
-                <span>Continue</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                <span>Continuar</span>
+              </motion.button>
             </motion.div>
-          )}
-
-          {/* Step 2: Authentication Method */}
-          {step === 2 && (
+          )}          {/* Step 2: Enhanced Authentication Method */}          {step === 2 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
+              transition={{ duration: 0.5 }}
+              className="w-full space-y-6"
             >
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-white mb-2">Choose Authentication</h2>
-                <p className="text-gray-400 text-sm">Select how you want to secure your votes</p>
-              </div>
-
-              {/* MetaMask Option */}
-              <div className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                metamaskAvailable 
-                  ? 'border-gray-600 hover:border-primary bg-gray-800/30' 
-                  : 'border-gray-700 bg-gray-800/20 opacity-50 cursor-not-allowed'
-              }`}>
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Wallet className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-white mb-1">
-                      Connect MetaMask Wallet
-                      {!metamaskAvailable && <span className="text-red-400 text-sm ml-2">(Not Available)</span>}
-                    </h3>
-                    <p className="text-gray-400 text-sm mb-3">
-                      Use your existing MetaMask wallet for secure voting
-                    </p>
-                    <button
-                      onClick={connectMetaMask}
-                      disabled={!metamaskAvailable || loading}
-                      className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? 'Connecting...' : 'Connect MetaMask'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Generated Wallet Option */}
-              <div className="p-4 border-2 border-gray-600 hover:border-primary bg-gray-800/30 rounded-lg cursor-pointer transition-all">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-white mb-1">Generate New Wallet</h3>
-                    <p className="text-gray-400 text-sm mb-3">
-                      Create a new secure wallet automatically funded for voting
-                    </p>
-                    <button
-                      onClick={generateWallet}
-                      disabled={loading}
-                      className="btn-primary text-sm disabled:opacity-50"
-                    >
-                      {loading ? 'Generating...' : 'Generate Wallet'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setStep(1)}
-                className="btn-secondary w-full"
+                <motion.h2
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-bold text-slate-900 mb-2"
+                >
+                  Elige tu Método de Autenticación
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-slate-600 text-base"
+                >
+                  Selecciona cómo quieres proteger tu billetera y votos
+                </motion.p>
+              </div>              {/* Enhanced Generated Wallet Option - Now Primary */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="group relative overflow-hidden cursor-pointer hover:scale-[1.02] transition-all duration-500"
               >
-                Back
-              </button>
-            </motion.div>
-          )}
+                {/* Multiple Background Layers for Depth */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-emerald-50 to-teal-100 rounded-2xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/95 via-white/90 to-white/80 backdrop-blur-sm rounded-2xl"></div>
+                <div className="absolute inset-0 border-2 border-primary-200/60 rounded-2xl group-hover:border-primary-300/80 transition-all duration-300"></div>
 
-          {/* Step 3: Wallet Information (Generated Wallet Only) */}
+                {/* Floating Decoration Elements */}
+                <div className="absolute top-3 right-3 w-6 h-6 bg-primary-200/30 rounded-full"></div>
+                <div className="absolute bottom-4 left-4 w-3 h-3 bg-emerald-300/40 rounded-full blur-sm"></div>                <div className="relative p-5">
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    {/* Enhanced Icon Container */}
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary-600 via-emerald-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                        <Key className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
+                        <Check className="w-2 h-2 text-white" />
+                      </div>
+                      {/* Pulsing Ring */}
+                      <div className="absolute inset-0 w-10 h-10 rounded-xl border-2 border-primary-400/50 animate-ping"></div>
+                    </div>
+
+                    <div className="flex-1 w-full space-y-2">
+                      {/* Enhanced Title */}
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-slate-900 flex items-center justify-center flex-wrap gap-2">
+                          Generar Billetera Nueva
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full border border-emerald-200 font-medium animate-pulse">
+                            Recomendado
+                          </span>
+                        </h3>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                          Crea una nueva billetera segura automáticamente financiada para votar.
+                        </p>
+                      </div>
+
+                      {/* Enhanced Button */}
+                      <div className="space-y-2">                          <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={generateWallet}
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 bg-gradient-to-r from-primary-600 to-emerald-700 hover:from-primary-700 hover:to-emerald-800 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 border-2 border-primary-700/30 relative overflow-hidden group"
+                      >
+                        {/* Button Shine Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        <span className="relative z-10">
+                          {loading ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <span>Generando...</span>
+                            </div>
+                          ) : (
+                            'Generar Billetera'
+                          )}
+                        </span>
+                      </motion.button>
+
+                        {/* Enhanced Features List */}
+                        <div className="bg-emerald-50 py-2 px-3 rounded-lg border border-emerald-200">
+                          <div className="flex items-center justify-center space-x-2 text-emerald-700 text-xs mb-1.5">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span className="font-semibold">Características incluidas:</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5 text-xs text-emerald-600">
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Financiado</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Seguro</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Automático</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Check className="w-2.5 h-2.5" />
+                              <span>Instantáneo</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>                    </div>
+                </div>
+              </motion.div>
+
+              {/* Divider */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="relative"
+              >
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500 font-medium">O conecta con</span>
+                </div>
+              </motion.div>              {/* MetaMask Button - Google Style */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                whileHover={metamaskAvailable ? { scale: 1.02 } : {}}
+                whileTap={metamaskAvailable ? { scale: 0.98 } : {}}
+                onClick={connectMetaMask}
+                disabled={!metamaskAvailable || loading}
+                className={`w-full flex items-center justify-center space-x-3 px-6 py-4 rounded-xl border-2 transition-all duration-300 ${metamaskAvailable
+                  ? 'bg-white border-gray-300 hover:border-orange-500 hover:shadow-md text-gray-700'
+                  : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+              >
+                <img
+                  src="/src/assets/MetaMask-icon-fox.svg"
+                  alt="MetaMask"
+                  className="w-5 h-5"
+                />
+                <span className="font-medium">
+                  {loading ? 'Conectando...' : 'Conectar con MetaMask'}
+                </span>
+                {!metamaskAvailable && (
+                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                    No disponible
+                  </span>
+                )}                </motion.button>
+
+              {/* Enhanced Navigation */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="pt-4 border-t border-slate-200"
+              >
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors duration-200"
+                >
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  <span>Volver a información personal</span>
+                </button>
+              </motion.div>
+            </motion.div>
+          )}            {/* Step 3: Enhanced Wallet Information */}
           {step === 3 && walletInfo && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2">Wallet Created Successfully!</h2>
-                <p className="text-gray-400 text-sm">Your wallet has been funded and is ready to use</p>
+              transition={{ duration: 0.5 }}
+              className="space-y-4"
+            >              <div className="text-center mb-4">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-bold text-slate-900 mb-2"
+                >
+                  ¡Billetera Creada Exitosamente!
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-slate-600 text-base"
+                >
+                  Tu billetera ha sido financiada y está lista para usar
+                </motion.p>
               </div>
 
-              {/* Wallet Details */}
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <h3 className="font-medium text-white mb-3">Wallet Information</h3>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs text-gray-400 uppercase tracking-wide">Address</label>
-                      <p className="font-mono text-sm text-gray-300 break-all mt-1">
-                        {walletInfo.address}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs text-gray-400 uppercase tracking-wide">Private Key</label>
-                        <button
-                          onClick={() => setShowPrivateKey(!showPrivateKey)}
-                          className="text-xs text-primary hover:text-primary-dark flex items-center space-x-1"
-                        >
-                          {showPrivateKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                          <span>{showPrivateKey ? 'Hide' : 'Show'}</span>
-                        </button>
+              {/* Enhanced Wallet Details */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-3"
+              >                <div className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-2xl"></div>
+                  <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200"></div>
+                  <div className="relative p-5">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                      <Wallet className="w-5 h-5 mr-2 text-primary-600" />
+                      Información de tu Billetera
+                    </h3>
+
+                    <div className="space-y-4">
+                      {/* Address */}
+                      <div className="group">                        <label className="text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                        Dirección de Billetera
+                      </label>
+                        <div className="relative">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-primary-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
+                              {walletInfo.address}
+                            </p>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                        </div>
                       </div>
-                      <p className="font-mono text-sm text-gray-300 break-all mt-1">
-                        {showPrivateKey ? walletInfo.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
-                      </p>
-                    </div>
 
-                    <div>
-                      <label className="text-xs text-gray-400 uppercase tracking-wide">Funding Transaction</label>
-                      <p className="font-mono text-sm text-gray-300 break-all mt-1">
-                        {walletInfo.fundTxHash}
-                      </p>
+                      {/* Private Key */}
+                      <div className="group">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-slate-700">
+                            Clave Privada
+                          </label>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowPrivateKey(!showPrivateKey)}
+                            className="flex items-center space-x-1 px-3 py-1.5 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg transition-all duration-200 border border-primary-200"
+                          >
+                            {showPrivateKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            <span className="text-sm font-medium">{showPrivateKey ? 'Ocultar' : 'Mostrar'}</span>
+                          </motion.button>
+                        </div>
+                        <div className="relative">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-amber-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
+                              {showPrivateKey ? walletInfo.privateKey : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
+                            </p>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                        </div>
+                      </div>
+
+                      {/* Funding Transaction */}
+                      <div className="group">
+                        <label className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Transacción de Financiamiento
+                        </label>
+                        <div className="relative">
+                          <div className="bg-slate-100 backdrop-blur-sm rounded-xl p-3 border border-slate-200 group-hover:border-emerald-300 transition-all duration-300">
+                            <p className="font-mono text-slate-800 break-all text-sm leading-relaxed">
+                              {walletInfo.fundTxHash}
+                            </p>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Security Warning */}
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-amber-400 mb-1">Important Security Notice</h4>
-                      <p className="text-amber-200 text-sm">
-                        Your private key has been saved securely. Never share it with anyone. 
-                        This is shown here for testing purposes only.
-                      </p>
+                </div>                {/* Simplified Security Warning */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl"></div>
+                  <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl border border-amber-200"></div>
+                  <div className="relative p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-amber-800 text-sm font-medium">
+                          <strong className="text-amber-900">¡NUNCA compartas tu clave privada!</strong> Guárdala en un lugar seguro.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <button
-                onClick={completeRegistration}
-                className="btn-primary w-full flex items-center justify-center space-x-2"
+              {/* Enhanced Complete Button */}              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="pt-2 flex justify-center"
               >
-                <Check className="w-4 h-4" />
-                <span>Complete Registration</span>
-              </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={completeRegistration}
+                  className="w-64 bg-gradient-to-r from-emerald-500 via-emerald-600 to-primary-600 hover:from-emerald-600 hover:via-emerald-700 hover:to-primary-700 text-white font-bold text-lg py-3.5 px-6 rounded-2xl transition-all duration-300 shadow-button hover:shadow-button-hover flex items-center justify-center group"
+                >
+                  <span>Completar Registro</span>
+                </motion.button></motion.div>
             </motion.div>
-          )}        </div>
-
-        {/* Login Link */}
-        {switchToLogin && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="text-center mt-6"
-          >
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <button
-                onClick={switchToLogin}
-                className="text-primary hover:text-primary-dark font-medium transition-colors"
-              >
-                Sign in here
-              </button>
-            </p>
-          </motion.div>
-        )}
-
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-gray-500 text-sm">
-            Powered by blockchain technology for transparent and secure voting
-          </p>
+          )}
         </div>
       </motion.div>
-    </div>
+
+      {/* Login Link */}
+      {switchToLogin && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="text-center mt-4"
+        >
+          <div className="relative">
+            <p className="text-slate-600 text-base">
+              ¿Ya tienes una cuenta?{' '}
+              <button
+                onClick={switchToLogin}
+                className="text-primary-600 hover:text-primary-700 font-semibold transition-all duration-300 hover:underline decoration-2 underline-offset-2 relative group"
+              >
+                Inicia sesión aquí
+                <span className="absolute inset-0 bg-primary-100 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-300 -m-1"></span>
+              </button>
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Footer */}
+      <div className="text-center mt-4">
+        <p className="text-gray-500 text-sm">
+          Powered by blockchain technology for transparent and secure voting
+        </p>
+      </div>
+    </motion.div>
+  </div>
   );
 };
 

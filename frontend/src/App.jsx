@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
 import AuthWrapper from "./components/AuthWrapper";
 import Dashboard from "./components/Dashboard";
 import Elections from "./components/Elections";
 import ElectionDetail from "./components/ElectionDetail";
-import Analytics from "./components/Analytics";
 import AdminPage from "./components/AdminPage";
 
 function App() {
@@ -21,35 +20,57 @@ function App() {
       setIsConnected(true);
     }
   }, []);
-
   return (
-    <div className="min-h-screen bg-dark-bg">
-      <Toaster 
+    <div className="min-h-screen bg-light-bg">
+      <Toaster
         position="top-right"
         toastOptions={{
-          className: 'bg-dark-card text-white border border-gray-700',
+          className: 'bg-white text-gray-900 border border-gray-200 shadow-medium',
           duration: 4000,
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#ffffff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#f43f5e',
+              secondary: '#ffffff',
+            },
+          },
         }}
       />
-      
       {isConnected ? (
-        <div className="flex">
-          <Sidebar user={user} />
-          <main className="flex-1 ml-64 p-6">
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard user={user} />} />
-              <Route path="/elections" element={<Elections user={user} />} />
-              <Route path="/elections/:id" element={<ElectionDetail user={user} />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="*" element={
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold text-red-400">Page not found</h2>
-                  <p className="text-gray-400 mt-2">The page you're looking for doesn't exist.</p>
-                </div>
-              } />
-            </Routes>
+        <div className="flex flex-col bg-light-bg min-h-screen">
+          <Topbar user={user} />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 pt-2 md:pt-4">
+            <div className="max-w-7xl mx-auto">
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<Dashboard user={user} />} />
+                <Route path="/elections" element={<Elections user={user} />} />
+                <Route path="/elections/:id" element={<ElectionDetail user={user} />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="*" element={
+                  <div className="card p-8 text-center animate-fade-in-up">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-rose-100 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Página no encontrada</h2>
+                    <p className="text-gray-600 mb-4">La página que buscas no existe.</p>
+                    <button
+                      onClick={() => window.history.back()}
+                      className="btn-primary"
+                    >
+                      Volver atrás
+                    </button>
+                  </div>
+                } />
+              </Routes>
+            </div>
           </main>
         </div>
       ) : (
