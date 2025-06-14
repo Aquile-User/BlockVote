@@ -110,5 +110,13 @@
     "province": "Hermanas Mirabal",
     "authMethod": "generated",
     "registeredAt": "2025-06-13T16:03:25.842Z"
+  },
+  "544-6466666-6": {
+    "address": "0x212c6Ff1F94fC618Dba89099da37E2611b82b92C",
+    "privateKey": "0x892858c6f3899add14c386b06ae4c98bec1f7121b00e10196d174aed00b47d35",
+    "name": "Horacio",
+    "province": "La Altagracia",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-13T23:35:44.353Z"
   }
 }
