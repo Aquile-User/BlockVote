@@ -45,56 +45,83 @@ const Elections = ({ user }) => {
   useEffect(() => {
     loadElections();
   }, []);
-
   const loadElections = async () => {
     try {
       setLoading(true);
 
       // Get elections from API
-      const electionsList = await getElections();
+      const electionsList = await getElections();      // Optimización mejorada: Obtener detalles y resultados con manejo de errores individual
+      const detailsPromises = electionsList.map(async (election, index) => {
+        try {
+          // Add small delay to prevent overwhelming the server
+          if (index > 0) {
+            await new Promise(resolve => setTimeout(resolve, index * 50));
+          }
+          return await getElectionById(election.electionId);
+        } catch (error) {
+          console.warn(`Failed to load details for election ${election.electionId}:`, error.message);
+          return null; // Return null for failed elections
+        }
+      });
 
-      // Optimización: Obtener todos los detalles y resultados en paralelo
-      const detailsPromises = electionsList.map(election => getElectionById(election.electionId));
-      const resultsPromises = electionsList.map(election => getResults(election.electionId));
+      const resultsPromises = electionsList.map(async (election, index) => {
+        try {
+          // Add small delay to prevent overwhelming the server
+          if (index > 0) {
+            await new Promise(resolve => setTimeout(resolve, index * 75));
+          }
+          return await getResults(election.electionId);
+        } catch (error) {
+          console.warn(`Failed to load results for election ${election.electionId}:`, error.message);
+          return {}; // Return empty object for failed results
+        }
+      });
 
-      // Ejecutar todas las promesas en paralelo
+      // Ejecutar todas las promesas en paralelo (ahora no fallarán)
       const [detailsArray, resultsArray, totalUsers] = await Promise.all([
         Promise.all(detailsPromises),
         Promise.all(resultsPromises),
         getTotalRegisteredUsers()
       ]);
 
-      // Combinar los resultados
-      const electionsWithDetails = electionsList.map((election, index) => {
-        const details = detailsArray[index];
-        const results = resultsArray[index] || {};
+      // Combinar los resultados, filtrando las elecciones que fallaron
+      const electionsWithDetails = electionsList
+        .map((election, index) => {
+          const details = detailsArray[index];
 
-        // Calculate total votes
-        const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
+          // Skip elections that failed to load
+          if (!details) {
+            return null;
+          }
 
-        // Determine status
-        const now = Math.floor(Date.now() / 1000);
-        let status = 'upcoming';
+          const results = resultsArray[index] || {};
 
-        if (details.disabled) {
-          status = 'disabled';
-        } else if (now >= details.startTime && now <= details.endTime) {
-          status = 'active';
-        } else if (now > details.endTime) {
-          status = 'expired';
-        }
+          // Calculate total votes
+          const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
 
-        return {
-          ...election,
-          ...details,
-          results,
-          totalVotes,
-          status,
-          participation: totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0
-        };
-      });
+          // Determine status
+          const now = Math.floor(Date.now() / 1000);
+          let status = 'upcoming';
 
-      setElections(electionsWithDetails);      // Elections loaded and processed
+          if (details.disabled) {
+            status = 'disabled';
+          } else if (now >= details.startTime && now <= details.endTime) {
+            status = 'active';
+          } else if (now > details.endTime) {
+            status = 'expired';
+          } return {
+            ...election,
+            ...details,
+            results,
+            totalVotes,
+            status,
+            participation: totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0
+          };
+        })
+        .filter(election => election !== null); // Remove failed elections
+
+      console.log(`Elections loaded: ${electionsWithDetails.length} valid elections out of ${electionsList.length} total`);
+      setElections(electionsWithDetails);// Elections loaded and processed
     } catch (error) {
       console.error('Error loading elections:', error);
       toast.error('Failed to load elections');
