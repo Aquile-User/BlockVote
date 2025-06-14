@@ -16,11 +16,11 @@ import {
   Sparkles,
   Globe,
   Server,
-  Lock,
-  TrendingUp,
+  Lock,  TrendingUp,
   Clock,
   Monitor,
-  Zap
+  Zap,
+  Cpu
 } from "lucide-react";
 import AdminLogin from "./AdminLogin";
 import ElectionManagement from "./ElectionManagement";
@@ -49,34 +49,35 @@ const AdminPage = () => {
       }
 
       const data = await response.json();
-      console.log('Estado del sistema:', data); setSystemHealth(data);
-    } catch (error) {
-      console.error('Error al obtener estado del sistema:', error);
+      console.log('Estado del sistema:', data); setSystemHealth(data);    } catch (error) {
+      console.error('Error al obtener estado del sistema:', error);      
       setSystemHealth({
         status: "error",
         timestamp: new Date().toISOString(),
+        circuitBreaker: {
+          state: "UNKNOWN",
+          failureCount: 0
+        },
         api: {
           status: "error",
-          message: "Error al conectar con la API",
           version: "N/A",
           port: 3000
         },
-        relayer: {
-          status: "unknown",
-          message: "No se pudo verificar el estado del relayer",
-          port: 3001
-        },
         blockchain: {
+          status: "error",
           network: "Desconocido",
-          chainId: 0,
           blockNumber: 0,
-          connected: false,
-          contractAddress: null,
           contractDeployed: false
         },
         users: {
-          registered: 0
+          registered: 0,
+          storage: "unknown"
         },
+        relayer: {
+          status: "unreachable",
+          port: 3001
+        },
+        uptime: 0,
         error: error.message
       });
     } finally {
@@ -127,27 +128,7 @@ const AdminPage = () => {
           </motion.button>
         </div>
 
-        {systemHealth ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* API Status */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/50 p-6 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/5 to-emerald-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-                  <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                    {systemHealth.services.api.status}
-                  </span>
-                </div>
-                <h3 className="font-bold text-emerald-800 mb-1">Servicio API</h3>
-                <p className="text-emerald-600 text-sm capitalize">{systemHealth.services.api.message}</p>
-              </div>
-            </motion.div>
+        {systemHealth ? (          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
             {/* Database Status */}
             <motion.div
@@ -157,15 +138,23 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
+              <div className="relative">                <div className="flex items-center justify-between mb-3">
                   <Database className="w-8 h-8 text-indigo-600" />
                   <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                    {systemHealth.services.database.status}
+                    {systemHealth.users ? 'active' : (systemHealth.status === 'healthy' ? 'active' : 'unknown')}
                   </span>
                 </div>
                 <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
-                <p className="text-indigo-600 text-sm">{systemHealth.services.database.userCount} usuarios</p>
+                <p className="text-indigo-600 text-sm">
+                  {systemHealth.users ? (
+                    <>
+                      Usuarios: {systemHealth.users.registered}<br />
+                      Tipo: {systemHealth.users.storage}
+                    </>
+                  ) : (
+                    `Estado: ${systemHealth.status}`
+                  )}
+                </p>
               </div>
             </motion.div>
 
@@ -177,15 +166,52 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
+              <div className="relative">                <div className="flex items-center justify-between mb-3">
                   <ShieldCheck className="w-8 h-8 text-blue-600" />
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                    {systemHealth.services.blockchain.status}
+                    {systemHealth.blockchain ? systemHealth.blockchain.status : (systemHealth.status === 'healthy' ? 'connected' : 'unknown')}
                   </span>
                 </div>
                 <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
-                <p className="text-blue-600 text-sm">Bloque #{systemHealth.services.blockchain.currentBlock || 'N/A'}</p>
+                <p className="text-blue-600 text-sm">
+                  {systemHealth.blockchain ? (
+                    <>
+                      Red: {systemHealth.blockchain.network}<br />
+                      Bloque: #{systemHealth.blockchain.blockNumber}<br />
+                      Contrato: {systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}
+                    </>
+                  ) : (
+                    `Estado: ${systemHealth.status}`
+                  )}                </p>
+              </div>
+            </motion.div>
+
+            {/* Relayer Status */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35 }}
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/50 p-6 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-purple-600/5"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <Cpu className="w-8 h-8 text-purple-600" />
+                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                    {systemHealth.relayer ? systemHealth.relayer.status : 'unknown'}
+                  </span>
+                </div>
+                <h3 className="font-bold text-purple-800 mb-1">Servicio Relayer</h3>
+                <p className="text-purple-600 text-sm">
+                  {systemHealth.relayer ? (
+                    <>
+                      Estado: {systemHealth.relayer.status}<br />
+                      Puerto: {systemHealth.relayer.port}
+                    </>
+                  ) : (
+                    'Sin información'
+                  )}
+                </p>
               </div>
             </motion.div>
 
@@ -197,15 +223,17 @@ const AdminPage = () => {
               className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
+              <div className="relative">                <div className="flex items-center justify-between mb-3">
                   <Monitor className="w-8 h-8 text-amber-600" />
                   <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
                     {systemHealth.status}
                   </span>
                 </div>
                 <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
-                <p className="text-amber-600 text-sm capitalize">Sistema {systemHealth.status}</p>
+                <p className="text-amber-600 text-sm">
+                  Circuit Breaker: {systemHealth.circuitBreaker ? systemHealth.circuitBreaker.state : 'N/A'} <br />
+                  Uptime: {systemHealth.uptime ? `${Math.floor(systemHealth.uptime)}s` : 'N/A'}
+                </p>
               </div>
             </motion.div>
           </div>
@@ -243,31 +271,30 @@ const AdminPage = () => {
                 <Globe className="w-5 h-5 mr-2 text-primary-500" />
                 Detalles de Red
               </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
+              <div className="space-y-3">                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Red:</span>
                   <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
-                    {systemHealth?.services?.blockchain?.message?.includes('Connected') ? 'MegaETH Testnet' : 'Desconectado'}
+                    {systemHealth?.blockchain?.network || 'Desconectado'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.blockchain?.status === 'online'
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.status === 'connected'
                     ? 'text-emerald-700 bg-emerald-100'
                     : 'text-red-700 bg-red-100'
                     }`}>
-                    {systemHealth?.services?.blockchain?.message || 'Sin conexión'}
+                    {systemHealth?.blockchain?.status || 'Sin conexión'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Bloque Actual:</span>
                   <span className="font-medium text-gray-800">
-                    #{systemHealth?.services?.blockchain?.currentBlock || 'N/A'}
+                    #{systemHealth?.blockchain?.blockNumber || 'N/A'}
                   </span>
                 </div>                <div className="pt-2">
                   <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
                   <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
-                    {systemHealth?.services?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
+                    {systemHealth?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
                   </div>
                 </div>
               </div>
@@ -276,28 +303,25 @@ const AdminPage = () => {
 
           {/* Service Information */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
                 <Server className="w-5 h-5 mr-2 text-primary-500" />
                 Configuración del Servicio
               </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
+              <div className="space-y-3">                <div className="flex justify-between items-center">
                   <span className="text-gray-600">Versión API:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.services?.api?.version || 'N/A'}</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado API:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.services?.api?.status === 'online'
+                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.api?.status === 'online'
                     ? 'text-emerald-700 bg-emerald-100'
                     : 'text-red-700 bg-red-100'
                     }`}>
-                    {systemHealth?.services?.api?.message || 'Sin conexión'}
+                    {systemHealth?.api?.status || 'Sin conexión'}
                   </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Usuarios Registrados:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.services?.database?.userCount || 0}</span>
+                </div>                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Puerto API:</span>
+                  <span className="font-medium text-gray-800">{systemHealth?.api?.port || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Última Verificación:</span>
