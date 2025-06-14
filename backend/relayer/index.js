@@ -16,14 +16,19 @@ const logger = {
 
 // Constantes y configuración
 const PORT = process.env.RELAYER_PORT || 3001;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = parseInt(process.env.MAX_RPC_RETRIES || "3");
 const RETRY_DELAY_MS = 1000;
 const DEFAULT_GAS_LIMIT = 250_000; // Incrementado para mayor seguridad
 
 // Validar variables de entorno críticas al inicio
-const requiredEnvVars = ["RPC_URL", "CONTRACT_ADDRESS", "RELAYER_PK"];
+const requiredEnvVars = [
+  { name: "BLOCKCHAIN_RPC_URL", fallback: "RPC_URL" },
+  { name: "VOTING_CONTRACT_ADDRESS", fallback: "CONTRACT_ADDRESS" },
+  { name: "RELAYER_PRIVATE_KEY", fallback: "RELAYER_PK" },
+];
+
 const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName]
+  (varObj) => !(process.env[varObj.name] || process.env[varObj.fallback])
 );
 
 if (missingEnvVars.length > 0) {
@@ -44,14 +49,19 @@ let votingContract;
 
 async function setupBlockchainConnection() {
   try {
-    provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    provider = new ethers.JsonRpcProvider(
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+    );
 
     // Verificar conexión
     await provider.getBlockNumber();
 
-    relayerWallet = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    relayerWallet = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     votingContract = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       relayerWallet
     );
@@ -107,15 +117,12 @@ async function sendTransactionWithRetry(
       logger.info(`Transacción enviada: ${tx.hash}`);
 
       // Esperar por la confirmación de la transacción
-      const receipt = await tx.wait();
-
-      // Extraer eventos relevantes de la transacción
+      const receipt = await tx.wait(); // Extraer eventos relevantes de la transacción
+      const contractAddress = (
+        process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+      ).toLowerCase();
       const events = receipt.logs
-        .filter(
-          (log) =>
-            log.address.toLowerCase() ===
-            process.env.CONTRACT_ADDRESS.toLowerCase()
-        )
+        .filter((log) => log.address.toLowerCase() === contractAddress)
         .map((log) => {
           try {
             return votingContract.interface.parseLog(log);
