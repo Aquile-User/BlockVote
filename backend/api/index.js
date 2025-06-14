@@ -85,9 +85,13 @@ app.get("/health", (req, res) => {
 });
 
 // Read-only provider for contract interactions
-const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+const provider = new ethers.JsonRpcProvider(
+  process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+);
 const votingContract = new ethers.Contract(
-  process.env.CONTRACT_ADDRESS,
+  process.env.VOTING_CONTRACT_ADDRESS ||
+    process.env.VOTING_CONTRACT_ADDRESS ||
+    process.env.CONTRACT_ADDRESS,
   abi,
   provider
 );
@@ -182,10 +186,11 @@ app.post("/users/register", async (req, res) => {
       // Generate a new wallet
       const wallet = ethers.Wallet.createRandom();
       privateKey = wallet.privateKey;
-      address = wallet.address;
-
-      // Fund wallet with small amount for gas
-      const relayerWallet = new ethers.Wallet(process.env.RELAYER_PK, provider);
+      address = wallet.address; // Fund wallet with small amount for gas
+      const relayerWallet = new ethers.Wallet(
+        process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+        provider
+      );
       const fundTx = await relayerWallet.sendTransaction({
         to: address,
         value: ethers.parseEther("0.0000001"),
@@ -576,9 +581,12 @@ app.post("/elections/create", async (req, res) => {
     console.log("Creando elección con nombre:", name);
     console.log("Candidatos:", candidates);
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -767,9 +775,12 @@ app.put("/elections/:id/disable", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -835,9 +846,12 @@ app.put("/elections/:id/enable", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -906,9 +920,12 @@ app.put("/elections/:id/edit-name", async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: "Missing new name" });
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -976,9 +993,12 @@ app.put("/elections/:id/add-candidate", async (req, res) => {
     if (!candidate)
       return res.status(400).json({ error: "Missing candidate name" });
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -1242,7 +1262,8 @@ app.post("/vote", async (req, res) => {
     if (!user) return res.status(400).json({ error: "User not registered" });
 
     const voterAddress = user.address; // Build message hash exactly as contract expects
-    const contractAddress = process.env.CONTRACT_ADDRESS;
+    const contractAddress =
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS;
     const messageHash = ethers.solidityPackedKeccak256(
       ["uint256", "string", "address", "address"],
       [electionId, selectedCandidate, voterAddress, contractAddress]
@@ -1318,7 +1339,9 @@ app.get("/health", async (req, res) => {
   try {
     // Check blockchain connection
     const blockNumber = await provider.getBlockNumber();
-    const contractCode = await provider.getCode(process.env.CONTRACT_ADDRESS);
+    const contractCode = await provider.getCode(
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+    );
 
     // Check users
     const userCount = Object.keys(users).length;
@@ -1341,7 +1364,8 @@ app.get("/health", async (req, res) => {
         network: "MegaETH Testnet",
         blockNumber: blockNumber,
         contractDeployed: contractCode !== "0x",
-        contractAddress: process.env.CONTRACT_ADDRESS,
+        contractAddress:
+          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       },
       relayer: {
         status: relayerStatus,
