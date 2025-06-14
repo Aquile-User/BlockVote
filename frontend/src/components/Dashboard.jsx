@@ -33,10 +33,12 @@ const Dashboard = ({ user }) => {
     activeElections: 0,
     completedElections: 0,
     disabledElections: 0
-  }); const [provinceData, setProvinceData] = useState([]);
+  });
+  const [provinceData, setProvinceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('7d');
+  const [rateLimitWarning, setRateLimitWarning] = useState(false);
 
   // Estados para la lista de elecciones
   const [elections, setElections] = useState([]);
@@ -47,9 +49,13 @@ const Dashboard = ({ user }) => {
   useEffect(() => {
     loadDashboardData();
   }, [timeframe]);
-
   // Función para refrescar manualmente todos los datos del dashboard
   const handleRefresh = async () => {
+    // Prevenir múltiples refreshes simultáneos
+    if (refreshing || loading) {
+      return;
+    }
+
     setRefreshing(true);
     try {
       await loadDashboardData();
@@ -231,18 +237,37 @@ const Dashboard = ({ user }) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // Dashboard: Loading data...
-
-      // Get elections and find the one with oldest end time
+      // Dashboard: Loading data...      // Get elections and find the one with oldest end time
       const elections = await getElections();
       console.log('Dashboard: Elections loaded:', elections);
 
-      // Get detailed election data to find oldest
-      const electionPromises = elections.map(election => getElectionById(election.electionId));
-      const electionDetails = await Promise.all(electionPromises);
+      let hasRateLimitIssues = false;
+
+      // Get detailed election data to find oldest - with error handling and staggered delays
+      const electionPromises = elections.map(async (election, index) => {
+        try {
+          // Add small delay to prevent overwhelming the blockchain node
+          if (index > 0) {
+            await new Promise(resolve => setTimeout(resolve, index * 100));
+          }
+          return await getElectionById(election.electionId);
+        } catch (error) {
+          console.warn(`Dashboard: Failed to load election ${election.electionId}:`, error.message);
+
+          // Check for rate limiting specifically
+          if (error.response?.status === 429 || error.message.includes('Rate limit')) {
+            console.warn(`Dashboard: Rate limit exceeded for election ${election.electionId}. This election will be skipped.`);
+            hasRateLimitIssues = true;
+          }
+
+          return null;
+        }
+      }); const electionDetails = await Promise.all(electionPromises);
+
+      console.log('Dashboard: Election details loaded, valid count:', electionDetails.filter(e => e !== null).length);
 
       // Find election with oldest end time
-      let validElections = electionDetails.filter(e => e !== null);      // Apply timeframe filtering
+      let validElections = electionDetails.filter(e => e !== null && e.electionId);// Apply timeframe filtering
       const now = Math.floor(Date.now() / 1000);
       const getTimeframeCutoff = (timeframe) => {
         switch (timeframe) {
@@ -272,17 +297,40 @@ const Dashboard = ({ user }) => {
         ? validElections.reduce((oldest, current) =>
           (oldest.endTime < current.endTime) ? oldest : current
         )
-        : null;
+        : null;      // Cargar resultados de todas las elecciones de una vez para evitar múltiples llamadas - with error handling
+      console.log('Dashboard: Loading results for elections:', validElections.map(e => e.electionId)); const resultsPromises = validElections.map(async (election, index) => {
+        try {
+          // Add increased delay to prevent overwhelming the blockchain node
+          if (index > 0) {
+            await new Promise(resolve => setTimeout(resolve, index * 150));
+          }
+          return await getResults(election.electionId);
+        } catch (error) {
+          console.warn(`Dashboard: Failed to load results for election ${election.electionId}:`, error.message);
 
-      // Cargar resultados de todas las elecciones de una vez para evitar múltiples llamadas
-      const resultsPromises = validElections.map(election => getResults(election.electionId));
+          // Check for rate limiting specifically
+          if (error.response?.status === 429 || error.message.includes('Rate limit')) {
+            console.warn(`Dashboard: Rate limit exceeded for results of election ${election.electionId}. Using empty results.`);
+            hasRateLimitIssues = true;
+          }
+
+          return {};
+        }
+      });
       const allResults = await Promise.all(resultsPromises);
+      console.log('Dashboard: Results loaded:', allResults.length, 'results fetched');
+
+      // Show warning if there were rate limiting issues
+      if (hasRateLimitIssues) {
+        setRateLimitWarning(true);
+        setTimeout(() => setRateLimitWarning(false), 10000); // Hide after 10 seconds
+      }
 
       // Crear un mapa de resultados para acceso rápido
       const resultsMap = {};
       validElections.forEach((election, index) => {
         resultsMap[election.electionId] = allResults[index] || {};
-      });      // Calculate actual stats from real data
+      });// Calculate actual stats from real data
       let totalVotes = 0;
       let activeElections = 0;
       let completedElections = 0;
@@ -612,9 +660,36 @@ const Dashboard = ({ user }) => {
                 <option value="all">🔄 Todo el tiempo</option>
               </select>
             </motion.div>
-          </div>
-        </div>
-      </div>      {/* Enhanced Stats Grid with New Metrics */}      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          </div>        </div>
+      </div>
+
+      {/* Rate Limit Warning */}
+      <AnimatePresence>
+        {rateLimitWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="bg-amber-50 border border-amber-200 rounded-xl p-4"
+          >
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-amber-800">
+                  Limitación de Solicitudes Detectada
+                </h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  Algunos datos pueden estar incompletos debido a límites de velocidad del servidor.
+                  Los datos se actualizarán automáticamente. Si persiste el problema, espere unos momentos y actualice manualmente.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Enhanced Stats Grid with New Metrics */}<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         <StatCard
           icon={Vote}
           title="Votos Emitidos"

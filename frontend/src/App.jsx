@@ -7,6 +7,7 @@ import Dashboard from "./components/Dashboard";
 import Elections from "./components/Elections";
 import ElectionDetail from "./components/ElectionDetail";
 import AdminPage from "./components/AdminPage";
+import NetworkStatus from "./components/NetworkStatus";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -40,10 +41,10 @@ function App() {
             },
           },
         }}
-      />
-      {isConnected ? (
+      />      {isConnected ? (
         <div className="flex flex-col bg-light-bg min-h-screen">
           <Topbar user={user} />
+          <NetworkStatus />
           <main className="flex-1 p-4 md:p-6 lg:p-8 pt-2 md:pt-4">
             <div className="max-w-7xl mx-auto">
               <Routes>
