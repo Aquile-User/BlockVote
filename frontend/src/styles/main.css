@@ -127,31 +127,8 @@
   .gradient-success {
     background-image: linear-gradient(to right, #10b981, #059669);
   }
-
   .gradient-warning {
     background-image: linear-gradient(to right, #f59e0b, #d97706);
-  }
-
-  .sidebar-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    color: #4b5563;
-    border-radius: 0.5rem;
-    transition: all 0.2s;
-    cursor: pointer;
-  }
-
-  .sidebar-item:hover {
-    color: #111827;
-    background-color: #f3f4f6;
-  }
-
-  .sidebar-item.active {
-    color: white;
-    background-color: #14b8a6;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-      0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 
   .shadow-soft {

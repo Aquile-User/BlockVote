@@ -71,17 +71,14 @@ export async function getElectionById(id) {
   }
 }
 
-export async function getResults(id) {
-  try {
+export async function getResults(id) {  try {
     // Verificar si los resultados están en caché y son válidos
     if (resultsCache.isValid(id)) {
-      console.log(`API getResults(${id}) from cache:`, resultsCache.get(id));
       return resultsCache.get(id);
     }
 
     // Si no están en caché o expiraron, hacer la petición
     const resp = await axios.get(`${API_BASE}/elections/${id}/results`);
-    console.log(`API getResults(${id}) response:`, resp.data);
 
     // Guardar los resultados en caché
     resultsCache.set(id, resp.data);
