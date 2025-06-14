@@ -1368,5 +1368,16 @@ app.get("/health", async (req, res) => {
 
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`🗳 API server running on http://localhost:${PORT}`);
+  const startTime = new Date().toLocaleTimeString();
+  console.log("\n" + "=".repeat(50));
+  console.log(`� BlockVote API Server v2.0 Iniciado!`);
+  console.log(`⏰ Hora de inicio: ${startTime}`);
+  console.log(`🔗 URL: http://localhost:${PORT}`);
+  console.log(`📚 Documentación: http://localhost:${PORT}/api-docs`);
+  console.log(`🌡️ Ambiente: ${process.env.NODE_ENV || "development"}`);
+  console.log(
+    `🧠 Memoria: ${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`
+  );
+  console.log(`🛠️ Para detener el servidor: Ctrl+C`);
+  console.log("=".repeat(50) + "\n");
 });
