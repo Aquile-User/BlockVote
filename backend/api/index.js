@@ -62,7 +62,7 @@ app.get("/health", async (req, res) => {
     let blockchainStatus = "error";
     let blockNumber = null;
     let contractDeployed = false;
-    
+
     try {
       blockNumber = await provider.getBlockNumber();
       const contractCode = await provider.getCode(
@@ -73,16 +73,19 @@ app.get("/health", async (req, res) => {
     } catch (err) {
       logger.error(`Error al verificar blockchain: ${err.message}`);
     }
-    
+
     // Verificar usuarios
     const userCount = Object.keys(users).length;
-    
+
     // Verificar relayer
     let relayerStatus = "unknown";
     try {
-      const relayerResponse = await axios.get(`http://localhost:${process.env.RELAYER_PORT || 3001}/health`, {
-        timeout: 2000,
-      });
+      const relayerResponse = await axios.get(
+        `http://localhost:${process.env.RELAYER_PORT || 3001}/health`,
+        {
+          timeout: 2000,
+        }
+      );
       relayerStatus = "running";
     } catch (err) {
       logger.error(`Error al verificar relayer: ${err.message}`);
@@ -100,22 +103,24 @@ app.get("/health", async (req, res) => {
       api: {
         version: "2.0.0",
         port: parseInt(process.env.API_PORT || 3000),
-        status: "online"
-      },      blockchain: {
+        status: "online",
+      },
+      blockchain: {
         network: "MegaETH Testnet",
         blockNumber: blockNumber,
         contractDeployed: contractDeployed,
         status: blockchainStatus,
-        contractAddress: process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+        contractAddress:
+          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       },
       users: {
         registered: userCount,
-        storage: "local"
+        storage: "local",
       },
       relayer: {
         status: relayerStatus,
-        port: parseInt(process.env.RELAYER_PORT || 3001)
-      }
+        port: parseInt(process.env.RELAYER_PORT || 3001),
+      },
     };
 
     // Si el circuit breaker está abierto, marcar como degraded
