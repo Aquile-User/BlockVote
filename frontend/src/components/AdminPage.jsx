@@ -16,7 +16,7 @@ import {
   Sparkles,
   Globe,
   Server,
-  Lock,  TrendingUp,
+  Lock, TrendingUp,
   Clock,
   Monitor,
   Zap,
@@ -49,8 +49,9 @@ const AdminPage = () => {
       }
 
       const data = await response.json();
-      console.log('Estado del sistema:', data); setSystemHealth(data);    } catch (error) {
-      console.error('Error al obtener estado del sistema:', error);      
+      console.log('Estado del sistema:', data); setSystemHealth(data);
+    } catch (error) {
+      console.error('Error al obtener estado del sistema:', error);
       setSystemHealth({
         status: "error",
         timestamp: new Date().toISOString(),
@@ -128,115 +129,115 @@ const AdminPage = () => {
           </motion.button>
         </div>
 
-        {systemHealth ? (          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {systemHealth ? (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-            {/* Database Status */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                  <Database className="w-8 h-8 text-indigo-600" />
-                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                    {systemHealth.users ? 'active' : (systemHealth.status === 'healthy' ? 'active' : 'unknown')}
-                  </span>
-                </div>
-                <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
-                <p className="text-indigo-600 text-sm">
-                  {systemHealth.users ? (
-                    <>
-                      Usuarios: {systemHealth.users.registered}<br />
-                      Tipo: {systemHealth.users.storage}
-                    </>
-                  ) : (
-                    `Estado: ${systemHealth.status}`
-                  )}
-                </p>
-              </div>
-            </motion.div>
+          {/* Database Status */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
+            <div className="relative">                <div className="flex items-center justify-between mb-3">
+              <Database className="w-8 h-8 text-indigo-600" />
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                {systemHealth.users ? 'active' : (systemHealth.status === 'healthy' ? 'active' : 'unknown')}
+              </span>
+            </div>
+              <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
+              <p className="text-indigo-600 text-sm">
+                {systemHealth.users ? (
+                  <>
+                    Usuarios: {systemHealth.users.registered}<br />
+                    Tipo: {systemHealth.users.storage}
+                  </>
+                ) : (
+                  `Estado: ${systemHealth.status}`
+                )}
+              </p>
+            </div>
+          </motion.div>
 
-            {/* Blockchain Status */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
-              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                  <ShieldCheck className="w-8 h-8 text-blue-600" />
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                    {systemHealth.blockchain ? systemHealth.blockchain.status : (systemHealth.status === 'healthy' ? 'connected' : 'unknown')}
-                  </span>
-                </div>
-                <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
-                <p className="text-blue-600 text-sm">
-                  {systemHealth.blockchain ? (
-                    <>
-                      Red: {systemHealth.blockchain.network}<br />
-                      Bloque: #{systemHealth.blockchain.blockNumber}<br />
-                      Contrato: {systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}
-                    </>
-                  ) : (
-                    `Estado: ${systemHealth.status}`
-                  )}                </p>
-              </div>
-            </motion.div>
+          {/* Blockchain Status */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
+            <div className="relative">                <div className="flex items-center justify-between mb-3">
+              <ShieldCheck className="w-8 h-8 text-blue-600" />
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                {systemHealth.blockchain ? systemHealth.blockchain.status : (systemHealth.status === 'healthy' ? 'connected' : 'unknown')}
+              </span>
+            </div>
+              <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
+              <p className="text-blue-600 text-sm">
+                {systemHealth.blockchain ? (
+                  <>
+                    Red: {systemHealth.blockchain.network}<br />
+                    Bloque: #{systemHealth.blockchain.blockNumber}<br />
+                    Contrato: {systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}
+                  </>
+                ) : (
+                  `Estado: ${systemHealth.status}`
+                )}                </p>
+            </div>
+          </motion.div>
 
-            {/* Relayer Status */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.35 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/50 p-6 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-purple-600/5"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <Cpu className="w-8 h-8 text-purple-600" />
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                    {systemHealth.relayer ? systemHealth.relayer.status : 'unknown'}
-                  </span>
-                </div>
-                <h3 className="font-bold text-purple-800 mb-1">Servicio Relayer</h3>
-                <p className="text-purple-600 text-sm">
-                  {systemHealth.relayer ? (
-                    <>
-                      Estado: {systemHealth.relayer.status}<br />
-                      Puerto: {systemHealth.relayer.port}
-                    </>
-                  ) : (
-                    'Sin información'
-                  )}
-                </p>
+          {/* Relayer Status */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/50 p-6 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-purple-600/5"></div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <Cpu className="w-8 h-8 text-purple-600" />
+                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                  {systemHealth.relayer ? systemHealth.relayer.status : 'unknown'}
+                </span>
               </div>
-            </motion.div>
+              <h3 className="font-bold text-purple-800 mb-1">Servicio Relayer</h3>
+              <p className="text-purple-600 text-sm">
+                {systemHealth.relayer ? (
+                  <>
+                    Estado: {systemHealth.relayer.status}<br />
+                    Puerto: {systemHealth.relayer.port}
+                  </>
+                ) : (
+                  'Sin información'
+                )}
+              </p>
+            </div>
+          </motion.div>
 
-            {/* System Status */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
-              <div className="relative">                <div className="flex items-center justify-between mb-3">
-                  <Monitor className="w-8 h-8 text-amber-600" />
-                  <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                    {systemHealth.status}
-                  </span>
-                </div>
-                <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
-                <p className="text-amber-600 text-sm">
-                  Circuit Breaker: {systemHealth.circuitBreaker ? systemHealth.circuitBreaker.state : 'N/A'} <br />
-                  Uptime: {systemHealth.uptime ? `${Math.floor(systemHealth.uptime)}s` : 'N/A'}
-                </p>
-              </div>
-            </motion.div>
-          </div>
+          {/* System Status */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
+            <div className="relative">                <div className="flex items-center justify-between mb-3">
+              <Monitor className="w-8 h-8 text-amber-600" />
+              <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                {systemHealth.status}
+              </span>
+            </div>
+              <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
+              <p className="text-amber-600 text-sm">
+                Circuit Breaker: {systemHealth.circuitBreaker ? systemHealth.circuitBreaker.state : 'N/A'} <br />
+                Uptime: {systemHealth.uptime ? `${Math.floor(systemHealth.uptime)}s` : 'N/A'}
+              </p>
+            </div>
+          </motion.div>
+        </div>
         ) : (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -272,11 +273,11 @@ const AdminPage = () => {
                 Detalles de Red
               </h3>
               <div className="space-y-3">                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Red:</span>
-                  <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
-                    {systemHealth?.blockchain?.network || 'Desconectado'}
-                  </span>
-                </div>
+                <span className="text-gray-600">Red:</span>
+                <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
+                  {systemHealth?.blockchain?.network || 'Desconectado'}
+                </span>
+              </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado:</span>
                   <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.status === 'connected'
@@ -304,13 +305,13 @@ const AdminPage = () => {
           {/* Service Information */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                <Server className="w-5 h-5 mr-2 text-primary-500" />
-                Configuración del Servicio
-              </h3>
+              <Server className="w-5 h-5 mr-2 text-primary-500" />
+              Configuración del Servicio
+            </h3>
               <div className="space-y-3">                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Versión API:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
-                </div>
+                <span className="text-gray-600">Versión API:</span>
+                <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
+              </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Estado API:</span>
                   <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.api?.status === 'online'
