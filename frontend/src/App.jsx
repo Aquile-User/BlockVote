@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Topbar from "./components/Topbar";
-import AuthWrapper from "./components/AuthWrapper";
-import Dashboard from "./components/Dashboard";
-import Elections from "./components/Elections";
-import ElectionDetail from "./components/ElectionDetail";
-import AdminPage from "./components/AdminPage";
-import NetworkStatus from "./components/NetworkStatus";
+import Topbar from "./components/layout/Topbar";
+import AuthWrapper from "./components/auth/AuthWrapper";
+import UserDashboard from "./components/user/UserDashboard";
+import ElectionList from "./components/election/ElectionList";
+import ElectionDetail from "./components/election/ElectionDetail";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import NetworkStatus from "./components/common/NetworkStatus";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -49,10 +49,10 @@ function App() {
             <div className="max-w-7xl mx-auto">
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard user={user} />} />
-                <Route path="/elections" element={<Elections user={user} />} />
+                <Route path="/dashboard" element={<UserDashboard user={user} />} />
+                <Route path="/elections" element={<ElectionList user={user} />} />
                 <Route path="/elections/:id" element={<ElectionDetail user={user} />} />
-                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="*" element={
                   <div className="card p-8 text-center animate-fade-in-up">
                     <div className="w-16 h-16 mx-auto mb-4 bg-rose-100 rounded-full flex items-center justify-center">

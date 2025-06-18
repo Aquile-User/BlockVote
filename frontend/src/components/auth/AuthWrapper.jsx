@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Login from "./Login";
-import Register from "./Register";
+import UserLogin from "./UserLogin";
+import UserRegister from "./UserRegister";
 
 const AuthWrapper = ({ setUser, setIsConnected }) => {
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
@@ -35,7 +35,7 @@ const AuthWrapper = ({ setUser, setIsConnected }) => {
               exit={{ opacity: 0, x: 300, scale: 0.9 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
             >
-              <Login
+              <UserLogin
                 setUser={setUser}
                 setIsConnected={setIsConnected}
                 switchToRegister={switchToRegister}
@@ -49,7 +49,7 @@ const AuthWrapper = ({ setUser, setIsConnected }) => {
               exit={{ opacity: 0, x: -300, scale: 0.9 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
             >
-              <Register
+              <UserRegister
                 setUser={setUser}
                 setIsConnected={setIsConnected}
                 switchToLogin={switchToLogin}

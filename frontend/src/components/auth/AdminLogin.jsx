@@ -322,8 +322,8 @@ const AdminLogin = ({ onLogin }) => {
                       onFocus={() => setFocusedField('username')}
                       onBlur={() => setFocusedField(null)}
                       className={`w-full pl-12 pr-4 py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === 'username'
-                          ? 'border-primary-500 bg-white shadow-glow'
-                          : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
+                        ? 'border-primary-500 bg-white shadow-glow'
+                        : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
                         }`}
                       placeholder="Enter admin username"
                       required
@@ -359,8 +359,8 @@ const AdminLogin = ({ onLogin }) => {
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField(null)}
                       className={`w-full pl-12 pr-16 py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === 'password'
-                          ? 'border-primary-500 bg-white shadow-glow'
-                          : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
+                        ? 'border-primary-500 bg-white shadow-glow'
+                        : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
                         }`}
                       placeholder="Enter admin password"
                       required

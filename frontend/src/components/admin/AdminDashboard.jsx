@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CONFIG } from "../config";
+import { CONFIG } from "../../config";
 import {
   ShieldCheck,
   Settings,
@@ -22,7 +22,7 @@ import {
   Zap,
   Cpu
 } from "lucide-react";
-import AdminLogin from "./AdminLogin";
+import AdminLogin from "../auth/AdminLogin";
 import ElectionManagement from "./ElectionManagement";
 
 const AdminPage = () => {
