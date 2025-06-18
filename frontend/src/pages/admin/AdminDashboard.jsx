@@ -29,36 +29,34 @@ const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay 
     <div className="absolute inset-0 bg-gradient-to-br from-current/5 to-current/5"></div>
     <div className="relative">
       <div className="flex items-center justify-between mb-3">
-        <Icon className={`w-8 h-8 ${colorClass.includes('indigo') ? 'text-indigo-600' : 
-          colorClass.includes('blue') ? 'text-blue-600' : 
-          colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'}`} />
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-          colorClass.includes('indigo') ? 'bg-indigo-100 text-indigo-700' :
-          colorClass.includes('blue') ? 'bg-blue-100 text-blue-700' :
-          colorClass.includes('purple') ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
-        }`}>
+        <Icon className={`w-8 h-8 ${colorClass.includes('indigo') ? 'text-indigo-600' :
+          colorClass.includes('blue') ? 'text-blue-600' :
+            colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'}`} />
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass.includes('indigo') ? 'bg-indigo-100 text-indigo-700' :
+            colorClass.includes('blue') ? 'bg-blue-100 text-blue-700' :
+              colorClass.includes('purple') ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
+          }`}>
           {status}
         </span>
       </div>
-      <h3 className={`font-bold mb-1 ${
-        colorClass.includes('indigo') ? 'text-indigo-800' :
-        colorClass.includes('blue') ? 'text-blue-800' :
-        colorClass.includes('purple') ? 'text-purple-800' : 'text-amber-800'
-      }`}>
+      <h3 className={`font-bold mb-1 ${colorClass.includes('indigo') ? 'text-indigo-800' :
+          colorClass.includes('blue') ? 'text-blue-800' :
+            colorClass.includes('purple') ? 'text-purple-800' : 'text-amber-800'
+        }`}>
         {title}
       </h3>
-      <p className={`text-sm ${
-        colorClass.includes('indigo') ? 'text-indigo-600' :
-        colorClass.includes('blue') ? 'text-blue-600' :
-        colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'
-      }`}>
+      <p className={`text-sm ${colorClass.includes('indigo') ? 'text-indigo-600' :
+          colorClass.includes('blue') ? 'text-blue-600' :
+            colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'
+        }`}>
         {description}
       </p>
     </div>
   </motion.div>
 );
 
-const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const AdminPage = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [systemHealth, setSystemHealth] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -89,7 +87,7 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
     try {
       const response = await fetch('http://localhost:3000/health');
       if (!response.ok) throw new Error(`Error: ${response.status}`);
-      
+
       const data = await response.json();
       setSystemHealth(data);
     } catch (error) {
@@ -98,7 +96,7 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
     } finally {
       setLoading(false);
     }
-  };  const handleLogout = () => {
+  }; const handleLogout = () => {
     localStorage.removeItem('adminAuthenticated');
     localStorage.removeItem('adminSession');
     setIsAuthenticated(false);
@@ -112,13 +110,13 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
   // Configuración de los datos para las cards de estado
   const getStatusCardsData = () => {
     if (!systemHealth) return [];
-    
+
     return [
       {
         icon: Database,
         title: "Base de Datos",
         status: systemHealth.users ? 'active' : systemHealth.status === 'healthy' ? 'active' : 'unknown',
-        description: systemHealth.users ? 
+        description: systemHealth.users ?
           `Usuarios: ${systemHealth.users.registered}\nTipo: ${systemHealth.users.storage}` :
           `Estado: ${systemHealth.status}`,
         colorClass: "from-indigo-50 to-indigo-100/50 border-indigo-200/50",
@@ -128,7 +126,7 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
         icon: ShieldCheck,
         title: "Blockchain",
         status: systemHealth.blockchain?.status || (systemHealth.status === 'healthy' ? 'connected' : 'unknown'),
-        description: systemHealth.blockchain ? 
+        description: systemHealth.blockchain ?
           `Red: ${systemHealth.blockchain.network}\nBloque: #${systemHealth.blockchain.blockNumber}\nContrato: ${systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}` :
           `Estado: ${systemHealth.status}`,
         colorClass: "from-blue-50 to-blue-100/50 border-blue-200/50",
@@ -138,7 +136,7 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
         icon: Cpu,
         title: "Servicio Relayer",
         status: systemHealth.relayer?.status || 'unknown',
-        description: systemHealth.relayer ? 
+        description: systemHealth.relayer ?
           `Estado: ${systemHealth.relayer.status}\nPuerto: ${systemHealth.relayer.port}` :
           'Sin información',
         colorClass: "from-purple-50 to-purple-100/50 border-purple-200/50",
@@ -158,7 +156,7 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
   const tabs = [
     { id: 'overview', label: 'Vista General', icon: Activity },
     { id: 'elections', label: 'Gestión de Elecciones', icon: Vote }
-  ];  const renderOverview = () => (
+  ]; const renderOverview = () => (
     <div className="space-y-8">
       {/* System Health Dashboard */}
       <motion.div
@@ -236,8 +234,8 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
               ].map(({ label, value, isStatus }, idx) => (
                 <div key={idx} className="flex justify-between items-center">
                   <span className="text-gray-600">{label}:</span>
-                  <span className={`font-medium ${isStatus ? 
-                    `px-3 py-1 rounded-full text-sm ${value.includes('connected') || value.includes('Desconectado') ? 
+                  <span className={`font-medium ${isStatus ?
+                    `px-3 py-1 rounded-full text-sm ${value.includes('connected') || value.includes('Desconectado') ?
                       value.includes('connected') ? 'text-emerald-700 bg-emerald-100' : 'text-primary-700 bg-primary-50' :
                       'text-red-700 bg-red-100'}` : 'text-gray-800'}`}>
                     {value}
@@ -264,16 +262,16 @@ const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useStat
                 { label: 'Versión API', value: systemHealth?.api?.version || 'N/A' },
                 { label: 'Estado API', value: systemHealth?.api?.status || 'Sin conexión', isStatus: true },
                 { label: 'Puerto API', value: systemHealth?.api?.port || 'N/A' },
-                { 
-                  label: 'Última Verificación', 
+                {
+                  label: 'Última Verificación',
                   value: systemHealth?.timestamp ? new Date(systemHealth.timestamp).toLocaleTimeString() : 'N/A',
                   hasIcon: true
                 },
               ].map(({ label, value, isStatus, hasIcon }, idx) => (
                 <div key={idx} className="flex justify-between items-center">
                   <span className="text-gray-600">{label}:</span>
-                  <span className={`font-medium flex items-center ${isStatus ? 
-                    `px-3 py-1 rounded-full text-sm ${value === 'online' ? 
+                  <span className={`font-medium flex items-center ${isStatus ?
+                    `px-3 py-1 rounded-full text-sm ${value === 'online' ?
                       'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'}` : 'text-gray-800'}`}>
                     {hasIcon && <Clock className="w-4 h-4 mr-1" />}
                     {value}
