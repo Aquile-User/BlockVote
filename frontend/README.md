@@ -2,6 +2,8 @@
 
 Interfaz de usuario moderna y responsive para el sistema de votación descentralizado BlockVote, construida con React y tecnologías de vanguardia.
 
+> **Nombre del proyecto**: `ether-vote-frontend` (package.json) | **Nombre público**: BlockVote Frontend
+
 ## 🌟 Características
 
 - **🎨 Interfaz Moderna**: Diseño limpio y profesional con Tailwind CSS
@@ -15,18 +17,20 @@ Interfaz de usuario moderna y responsive para el sistema de votación descentral
 
 ## 🛠️ Stack Tecnológico
 
-| Categoría         | Tecnología       | Versión  | Propósito                        |
-| ----------------- | ---------------- | -------- | -------------------------------- |
-| **Framework**     | React            | ^18.3.1  | Biblioteca principal de UI       |
-| **Build Tool**    | Vite             | ^5.4.10  | Bundler y servidor de desarrollo |
-| **Routing**       | React Router DOM | ^6.28.0  | Navegación SPA                   |
-| **Styling**       | Tailwind CSS     | ^3.4.14  | Framework de CSS utility-first   |
-| **Animations**    | Framer Motion    | ^11.11.9 | Animaciones y transiciones       |
-| **Charts**        | ECharts          | ^5.5.0   | Visualización de datos           |
-| **Icons**         | Lucide React     | ^0.460.0 | Biblioteca de iconos             |
-| **HTTP Client**   | Axios            | ^1.7.7   | Peticiones HTTP                  |
-| **Blockchain**    | Ethers.js        | ^6.13.4  | Interacción con blockchain       |
-| **Notifications** | React Hot Toast  | ^2.4.1   | Sistema de notificaciones        |
+| Categoría         | Tecnología        | Versión  | Propósito                        |
+| ----------------- | ----------------- | -------- | -------------------------------- |
+| **Framework**     | React             | ^18.3.1  | Biblioteca principal de UI       |
+| **Build Tool**    | Vite              | ^5.4.10  | Bundler y servidor de desarrollo |
+| **Routing**       | React Router DOM  | ^6.28.0  | Navegación SPA                   |
+| **Styling**       | Tailwind CSS      | ^3.4.14  | Framework de CSS utility-first   |
+| **Animations**    | Framer Motion     | ^11.11.9 | Animaciones y transiciones       |
+| **Charts**        | ECharts           | ^5.5.0   | Visualización de datos           |
+| **Charts React**  | ECharts for React | ^3.0.2   | Wrapper de ECharts para React    |
+| **Icons**         | Lucide React      | ^0.460.0 | Biblioteca de iconos             |
+| **HTTP Client**   | Axios             | ^1.7.7   | Peticiones HTTP                  |
+| **Blockchain**    | Ethers.js         | ^6.13.4  | Interacción con blockchain       |
+| **Notifications** | React Hot Toast   | ^2.4.1   | Sistema de notificaciones        |
+| **Linting**       | ESLint            | ^9.x     | Análisis de código y estilo      |
 
 ## 📁 Estructura del Proyecto
 
@@ -36,7 +40,8 @@ frontend/
 │   ├── favicon.ico
 │   └── firewall.png
 ├── 📁 src/                     # Código fuente
-│   ├── 📁 components/          # Componentes React organizados
+│   ├── 📁 pages/               # Páginas y componentes React organizados
+│   │   │                       # (Anteriormente 'components' - reorganizado por páginas)
 │   │   ├── 📁 auth/            # Autenticación
 │   │   │   ├── AdminLogin.jsx
 │   │   │   ├── UserLogin.jsx
@@ -60,8 +65,8 @@ frontend/
 │   ├── 📁 styles/              # Estilos globales
 │   │   └── main.css
 │   ├── 📁 utils/               # Utilidades
-│   │   ├── dominican.js
-│   │   └── provinceUtils.js
+│   │   ├── dominicanRepublic.js # Datos y validación de República Dominicana
+│   │   └── demographics.js     # Mapeo demográfico y poblacional
 │   ├── api.js                  # Cliente API
 │   ├── config.js               # Configuración
 │   ├── App.jsx                 # Componente principal
@@ -92,9 +97,19 @@ cd BlockVote/frontend
 npm install
 ```
 
-### **2. Configurar Variables de Entorno**
+### **2. Configurar Aplicación**
 
-Crea un archivo `.env.local` en la raíz del frontend:
+La configuración se maneja a través del archivo `src/config.js`:
+
+```javascript
+// src/config.js - Configuración principal
+export const CONFIG = {
+  CONTRACT_ADDRESS: "0xC1a9e2cC2C6c83bf486c17AB16127080A442A461",
+  API_BASE: "http://localhost:3000",
+};
+```
+
+Opcionalmente, puedes crear un archivo `.env.local` para variables de entorno:
 
 ```env
 # API Configuration
@@ -146,7 +161,7 @@ module.exports = {
 # Servidor de desarrollo con hot reload
 npm run dev
 
-# Acceder a: http://localhost:5173
+# Acceder a: http://localhost:5173 (o puerto alternativo si está ocupado)
 ```
 
 ### **Build para Producción**
@@ -167,9 +182,11 @@ npm run preview
 | `npm run build`   | Build de producción    | Despliegue             |
 | `npm run preview` | Vista previa del build | Testing pre-despliegue |
 
-## 🎨 Guía de Componentes
+> **Nota**: No se incluyen scripts de linting o testing en la configuración actual.
 
-### **🔐 Componentes de Autenticación**
+## 🎨 Guía de Páginas y Componentes
+
+### **🔐 Páginas de Autenticación**
 
 #### **UserLogin.jsx**
 
@@ -189,7 +206,7 @@ npm run preview
 - Animaciones avanzadas
 - Autenticación especial
 
-### **📊 Componentes de Dashboard**
+### **📊 Páginas de Dashboard**
 
 #### **UserDashboard.jsx**
 
@@ -204,7 +221,7 @@ npm run preview
 - Gestión de sistema
 - Métricas avanzadas
 
-### **🗳️ Componentes de Elecciones**
+### **🗳️ Páginas de Elecciones**
 
 #### **ElectionList.jsx**
 
@@ -296,25 +313,20 @@ const chartOption = {
 
 ## 🔧 Configuración Avanzada
 
-### **⚡ Optimización de Vite**
+### **⚡ Configuración de Vite**
 
 ```javascript
-// vite.config.js - Configuración optimizada
+// vite.config.js - Configuración actual
 export default defineConfig({
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          router: ["react-router-dom"],
-          ui: ["framer-motion", "lucide-react"],
-        },
-      },
-    },
+  server: {
+    port: 5173,
+    host: true,
   },
 });
 ```
+
+> **Nota**: El puerto puede cambiar automáticamente si 5173 está ocupado.
 
 ### **🎨 Configuración de PostCSS**
 
@@ -333,8 +345,8 @@ module.exports = {
 ### **📡 Cliente API**
 
 ```javascript
-// api.js - Configuración del cliente
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// api.js y config.js - Configuración actual
+const API_BASE_URL = "http://localhost:3000"; // Definido en config.js
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -462,7 +474,7 @@ console.log("Estado de la aplicación:", appState);
 
 ### **📏 Estándares de Código**
 
-- **Componentes**: PascalCase (`UserDashboard.jsx`)
+- **Páginas/Componentes**: PascalCase (`UserDashboard.jsx`)
 - **Funciones**: camelCase (`handleSubmit`)
 - **Constantes**: UPPER_CASE (`API_BASE_URL`)
 - **CSS Classes**: kebab-case (`user-dashboard`)

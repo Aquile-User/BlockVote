@@ -19,7 +19,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { registerUser } from "../../api";
-import { DOMINICAN_PROVINCES, validateDominicanID } from "../../utils/dominican";
+import { DOMINICAN_PROVINCES, validateDominicanID } from "../../utils/dominicanRepublic";
 
 const UserRegister = ({ setUser, setIsConnected, switchToLogin }) => {
   const [step, setStep] = useState(1);
