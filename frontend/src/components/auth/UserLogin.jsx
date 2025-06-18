@@ -8,9 +8,9 @@ import {
   Zap,
   Shield
 } from "lucide-react";
-import { validateDominicanID } from "../utils/dominican";
+import { validateDominicanID } from "../../utils/dominican";
 
-const Login = ({ setUser, setIsConnected, switchToRegister }) => {
+const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
   const [formData, setFormData] = useState({
     socialId: "",
     name: ""
@@ -297,4 +297,4 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
   );
 };
 
-export default Login;
+export default UserLogin;

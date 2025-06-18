@@ -22,7 +22,7 @@ import {
   Globe,
   Target
 } from 'lucide-react';
-import { getElections, getResults, getElectionById } from '../api';
+import { getElections, getResults, getElectionById } from '../../api';
 
 // Utility function to get total registered users
 const getTotalRegisteredUsers = async () => {
