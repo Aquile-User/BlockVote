@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Topbar from "./components/layout/Topbar";
-import AuthWrapper from "./components/auth/AuthWrapper";
-import UserDashboard from "./components/user/UserDashboard";
-import ElectionList from "./components/election/ElectionList";
-import ElectionDetail from "./components/election/ElectionDetail";
-import AdminDashboard from "./components/admin/AdminDashboard";
-import NetworkStatus from "./components/common/NetworkStatus";
+import Topbar from "./pages/layout/Topbar";
+import AuthWrapper from "./pages/auth/AuthWrapper";
+import UserDashboard from "./pages/user/UserDashboard";
+import ElectionList from "./pages/election/ElectionList";
+import ElectionDetail from "./pages/election/ElectionDetail";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import NetworkStatus from "./pages/common/NetworkStatus";
 
 function App() {
   const [user, setUser] = useState(null);
