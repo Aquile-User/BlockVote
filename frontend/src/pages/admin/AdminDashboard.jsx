@@ -6,86 +6,99 @@ import {
   Settings,
   Database,
   Activity,
-  Users,
   Vote,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
   RefreshCw,
   LogOut,
-  Sparkles,
   Globe,
   Server,
-  Lock, TrendingUp,
   Clock,
   Monitor,
-  Zap,
   Cpu
 } from "lucide-react";
 import AdminLogin from "../auth/AdminLogin";
 import ElectionManagement from "./ElectionManagement";
 
-const AdminPage = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// Componente reutilizable para las cards de estado del sistema
+const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay }}
+    className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${colorClass} border p-6 hover:shadow-lg transition-all duration-300`}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-current/5 to-current/5"></div>
+    <div className="relative">
+      <div className="flex items-center justify-between mb-3">
+        <Icon className={`w-8 h-8 ${colorClass.includes('indigo') ? 'text-indigo-600' : 
+          colorClass.includes('blue') ? 'text-blue-600' : 
+          colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'}`} />
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          colorClass.includes('indigo') ? 'bg-indigo-100 text-indigo-700' :
+          colorClass.includes('blue') ? 'bg-blue-100 text-blue-700' :
+          colorClass.includes('purple') ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
+        }`}>
+          {status}
+        </span>
+      </div>
+      <h3 className={`font-bold mb-1 ${
+        colorClass.includes('indigo') ? 'text-indigo-800' :
+        colorClass.includes('blue') ? 'text-blue-800' :
+        colorClass.includes('purple') ? 'text-purple-800' : 'text-amber-800'
+      }`}>
+        {title}
+      </h3>
+      <p className={`text-sm ${
+        colorClass.includes('indigo') ? 'text-indigo-600' :
+        colorClass.includes('blue') ? 'text-blue-600' :
+        colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'
+      }`}>
+        {description}
+      </p>
+    </div>
+  </motion.div>
+);
+
+const AdminPage = () => {  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [systemHealth, setSystemHealth] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Estado por defecto para errores
+  const defaultErrorState = {
+    status: "error",
+    timestamp: new Date().toISOString(),
+    circuitBreaker: { state: "UNKNOWN", failureCount: 0 },
+    api: { status: "error", version: "N/A", port: 3000 },
+    blockchain: { status: "error", network: "Desconocido", blockNumber: 0, contractDeployed: false },
+    users: { registered: 0, storage: "unknown" },
+    relayer: { status: "unreachable", port: 3001 },
+    uptime: 0
+  };
+
   useEffect(() => {
-    // Check if admin is already logged in
     const adminAuth = localStorage.getItem('adminAuthenticated');
     const adminSession = localStorage.getItem('adminSession');
     if (adminAuth === 'true' || adminSession === 'true') {
       setIsAuthenticated(true);
       fetchSystemHealth();
     }
-  }, []); const fetchSystemHealth = async () => {
+  }, []);
+
+  const fetchSystemHealth = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      console.log('Obteniendo estado del sistema...');
       const response = await fetch('http://localhost:3000/health');
-
-      if (!response.ok) {
-        throw new Error(`Error al obtener estado del sistema: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      
       const data = await response.json();
-      console.log('Estado del sistema:', data); setSystemHealth(data);
+      setSystemHealth(data);
     } catch (error) {
       console.error('Error al obtener estado del sistema:', error);
-      setSystemHealth({
-        status: "error",
-        timestamp: new Date().toISOString(),
-        circuitBreaker: {
-          state: "UNKNOWN",
-          failureCount: 0
-        },
-        api: {
-          status: "error",
-          version: "N/A",
-          port: 3000
-        },
-        blockchain: {
-          status: "error",
-          network: "Desconocido",
-          blockNumber: 0,
-          contractDeployed: false
-        },
-        users: {
-          registered: 0,
-          storage: "unknown"
-        },
-        relayer: {
-          status: "unreachable",
-          port: 3001
-        },
-        uptime: 0,
-        error: error.message
-      });
+      setSystemHealth({ ...defaultErrorState, error: error.message });
     } finally {
       setLoading(false);
     }
-  };
-  const handleLogout = () => {
+  };  const handleLogout = () => {
     localStorage.removeItem('adminAuthenticated');
     localStorage.removeItem('adminSession');
     setIsAuthenticated(false);
@@ -94,11 +107,58 @@ const AdminPage = () => {
 
   if (!isAuthenticated) {
     return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
-  } const tabs = [
+  }
+
+  // Configuración de los datos para las cards de estado
+  const getStatusCardsData = () => {
+    if (!systemHealth) return [];
+    
+    return [
+      {
+        icon: Database,
+        title: "Base de Datos",
+        status: systemHealth.users ? 'active' : systemHealth.status === 'healthy' ? 'active' : 'unknown',
+        description: systemHealth.users ? 
+          `Usuarios: ${systemHealth.users.registered}\nTipo: ${systemHealth.users.storage}` :
+          `Estado: ${systemHealth.status}`,
+        colorClass: "from-indigo-50 to-indigo-100/50 border-indigo-200/50",
+        delay: 0.2
+      },
+      {
+        icon: ShieldCheck,
+        title: "Blockchain",
+        status: systemHealth.blockchain?.status || (systemHealth.status === 'healthy' ? 'connected' : 'unknown'),
+        description: systemHealth.blockchain ? 
+          `Red: ${systemHealth.blockchain.network}\nBloque: #${systemHealth.blockchain.blockNumber}\nContrato: ${systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}` :
+          `Estado: ${systemHealth.status}`,
+        colorClass: "from-blue-50 to-blue-100/50 border-blue-200/50",
+        delay: 0.3
+      },
+      {
+        icon: Cpu,
+        title: "Servicio Relayer",
+        status: systemHealth.relayer?.status || 'unknown',
+        description: systemHealth.relayer ? 
+          `Estado: ${systemHealth.relayer.status}\nPuerto: ${systemHealth.relayer.port}` :
+          'Sin información',
+        colorClass: "from-purple-50 to-purple-100/50 border-purple-200/50",
+        delay: 0.35
+      },
+      {
+        icon: Monitor,
+        title: "Estado General",
+        status: systemHealth.status,
+        description: `Circuit Breaker: ${systemHealth.circuitBreaker?.state || 'N/A'}\nUptime: ${systemHealth.uptime ? `${Math.floor(systemHealth.uptime)}s` : 'N/A'}`,
+        colorClass: "from-amber-50 to-amber-100/50 border-amber-200/50",
+        delay: 0.4
+      }
+    ];
+  };
+
+  const tabs = [
     { id: 'overview', label: 'Vista General', icon: Activity },
     { id: 'elections', label: 'Gestión de Elecciones', icon: Vote }
-  ];
-  const renderOverview = () => (
+  ];  const renderOverview = () => (
     <div className="space-y-8">
       {/* System Health Dashboard */}
       <motion.div
@@ -129,115 +189,12 @@ const AdminPage = () => {
           </motion.button>
         </div>
 
-        {systemHealth ? (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-          {/* Database Status */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/50 p-6 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/5 to-indigo-600/5"></div>
-            <div className="relative">                <div className="flex items-center justify-between mb-3">
-              <Database className="w-8 h-8 text-indigo-600" />
-              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
-                {systemHealth.users ? 'active' : (systemHealth.status === 'healthy' ? 'active' : 'unknown')}
-              </span>
-            </div>
-              <h3 className="font-bold text-indigo-800 mb-1">Base de Datos</h3>
-              <p className="text-indigo-600 text-sm">
-                {systemHealth.users ? (
-                  <>
-                    Usuarios: {systemHealth.users.registered}<br />
-                    Tipo: {systemHealth.users.storage}
-                  </>
-                ) : (
-                  `Estado: ${systemHealth.status}`
-                )}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Blockchain Status */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/50 p-6 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/5 to-blue-600/5"></div>
-            <div className="relative">                <div className="flex items-center justify-between mb-3">
-              <ShieldCheck className="w-8 h-8 text-blue-600" />
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                {systemHealth.blockchain ? systemHealth.blockchain.status : (systemHealth.status === 'healthy' ? 'connected' : 'unknown')}
-              </span>
-            </div>
-              <h3 className="font-bold text-blue-800 mb-1">Blockchain</h3>
-              <p className="text-blue-600 text-sm">
-                {systemHealth.blockchain ? (
-                  <>
-                    Red: {systemHealth.blockchain.network}<br />
-                    Bloque: #{systemHealth.blockchain.blockNumber}<br />
-                    Contrato: {systemHealth.blockchain.contractDeployed ? '✅ Desplegado' : '❌ No encontrado'}
-                  </>
-                ) : (
-                  `Estado: ${systemHealth.status}`
-                )}                </p>
-            </div>
-          </motion.div>
-
-          {/* Relayer Status */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/50 p-6 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-purple-600/5"></div>
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <Cpu className="w-8 h-8 text-purple-600" />
-                <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                  {systemHealth.relayer ? systemHealth.relayer.status : 'unknown'}
-                </span>
-              </div>
-              <h3 className="font-bold text-purple-800 mb-1">Servicio Relayer</h3>
-              <p className="text-purple-600 text-sm">
-                {systemHealth.relayer ? (
-                  <>
-                    Estado: {systemHealth.relayer.status}<br />
-                    Puerto: {systemHealth.relayer.port}
-                  </>
-                ) : (
-                  'Sin información'
-                )}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* System Status */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/50 p-6 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-amber-600/5"></div>
-            <div className="relative">                <div className="flex items-center justify-between mb-3">
-              <Monitor className="w-8 h-8 text-amber-600" />
-              <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                {systemHealth.status}
-              </span>
-            </div>
-              <h3 className="font-bold text-amber-800 mb-1">Estado General</h3>
-              <p className="text-amber-600 text-sm">
-                Circuit Breaker: {systemHealth.circuitBreaker ? systemHealth.circuitBreaker.state : 'N/A'} <br />
-                Uptime: {systemHealth.uptime ? `${Math.floor(systemHealth.uptime)}s` : 'N/A'}
-              </p>
-            </div>
-          </motion.div>
-        </div>
+        {systemHealth ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {getStatusCardsData().map((card, index) => (
+              <StatusCard key={index} {...card} />
+            ))}
+          </div>
         ) : (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -266,72 +223,63 @@ const AdminPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Network Information */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                <Globe className="w-5 h-5 mr-2 text-primary-500" />
-                Detalles de Red
-              </h3>
-              <div className="space-y-3">                <div className="flex justify-between items-center">
-                <span className="text-gray-600">Red:</span>
-                <span className="font-medium text-gray-800 bg-primary-50 px-3 py-1 rounded-full text-sm">
-                  {systemHealth?.blockchain?.network || 'Desconectado'}
-                </span>
-              </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Estado:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.blockchain?.status === 'connected'
-                    ? 'text-emerald-700 bg-emerald-100'
-                    : 'text-red-700 bg-red-100'
-                    }`}>
-                    {systemHealth?.blockchain?.status || 'Sin conexión'}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+              <Globe className="w-5 h-5 mr-2 text-primary-500" />
+              Detalles de Red
+            </h3>
+            <div className="space-y-3">
+              {[
+                { label: 'Red', value: systemHealth?.blockchain?.network || 'Desconectado', isStatus: true },
+                { label: 'Estado', value: systemHealth?.blockchain?.status || 'Sin conexión', isStatus: true },
+                { label: 'Bloque Actual', value: `#${systemHealth?.blockchain?.blockNumber || 'N/A'}` },
+              ].map(({ label, value, isStatus }, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-gray-600">{label}:</span>
+                  <span className={`font-medium ${isStatus ? 
+                    `px-3 py-1 rounded-full text-sm ${value.includes('connected') || value.includes('Desconectado') ? 
+                      value.includes('connected') ? 'text-emerald-700 bg-emerald-100' : 'text-primary-700 bg-primary-50' :
+                      'text-red-700 bg-red-100'}` : 'text-gray-800'}`}>
+                    {value}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Bloque Actual:</span>
-                  <span className="font-medium text-gray-800">
-                    #{systemHealth?.blockchain?.blockNumber || 'N/A'}
-                  </span>
-                </div>                <div className="pt-2">
-                  <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
-                  <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
-                    {systemHealth?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
-                  </div>
+              ))}
+              <div className="pt-2">
+                <span className="text-gray-600 block mb-2">Dirección del Contrato:</span>
+                <div className="bg-gray-50 rounded-lg p-3 font-mono text-xs text-gray-700 break-all border border-gray-100">
+                  {systemHealth?.blockchain?.contractAddress || CONFIG.CONTRACT_ADDRESS || 'No disponible'}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Service Information */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">              <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
               <Server className="w-5 h-5 mr-2 text-primary-500" />
               Configuración del Servicio
             </h3>
-              <div className="space-y-3">                <div className="flex justify-between items-center">
-                <span className="text-gray-600">Versión API:</span>
-                <span className="font-medium text-gray-800">{systemHealth?.api?.version || 'N/A'}</span>
-              </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Estado API:</span>
-                  <span className={`font-medium px-3 py-1 rounded-full text-sm ${systemHealth?.api?.status === 'online'
-                    ? 'text-emerald-700 bg-emerald-100'
-                    : 'text-red-700 bg-red-100'
-                    }`}>
-                    {systemHealth?.api?.status || 'Sin conexión'}
-                  </span>
-                </div>                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Puerto API:</span>
-                  <span className="font-medium text-gray-800">{systemHealth?.api?.port || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Última Verificación:</span>
-                  <span className="font-medium text-gray-800 flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {systemHealth?.timestamp ? new Date(systemHealth.timestamp).toLocaleTimeString() : 'N/A'}
+            <div className="space-y-3">
+              {[
+                { label: 'Versión API', value: systemHealth?.api?.version || 'N/A' },
+                { label: 'Estado API', value: systemHealth?.api?.status || 'Sin conexión', isStatus: true },
+                { label: 'Puerto API', value: systemHealth?.api?.port || 'N/A' },
+                { 
+                  label: 'Última Verificación', 
+                  value: systemHealth?.timestamp ? new Date(systemHealth.timestamp).toLocaleTimeString() : 'N/A',
+                  hasIcon: true
+                },
+              ].map(({ label, value, isStatus, hasIcon }, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-gray-600">{label}:</span>
+                  <span className={`font-medium flex items-center ${isStatus ? 
+                    `px-3 py-1 rounded-full text-sm ${value === 'online' ? 
+                      'text-emerald-700 bg-emerald-100' : 'text-red-700 bg-red-100'}` : 'text-gray-800'}`}>
+                    {hasIcon && <Clock className="w-4 h-4 mr-1" />}
+                    {value}
                   </span>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
