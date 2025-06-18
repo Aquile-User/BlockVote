@@ -8,7 +8,7 @@ import {
   Zap,
   Shield
 } from "lucide-react";
-import { validateDominicanID } from "../../utils/dominican";
+import { validateDominicanID } from "../../utils/dominicanRepublic";
 
 const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
   const [formData, setFormData] = useState({

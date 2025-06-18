@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { getElections, getResults, getElectionById, hasVoted } from '../../api';
-import { mapUsersToProvinces } from '../../utils/provinceUtils';
+import { mapUsersToProvinces } from '../../utils/demographics';
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState({
