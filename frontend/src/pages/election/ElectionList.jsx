@@ -24,16 +24,105 @@ import {
 } from 'lucide-react';
 import { getElections, getResults, getElectionById } from '../../api';
 
+// Configuraciones constantes
+const BACKEND_URL = 'http://localhost:3000/users';
+const FALLBACK_USER_COUNT = 6;
+const STAGGER_DELAY_DETAILS = 50;
+const STAGGER_DELAY_RESULTS = 75;
+
+const STATUS_CONFIGS = {
+  active: {
+    color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
+    icon: <Vote className="w-4 h-4" />,
+    text: 'Activa',
+    priority: 1
+  },
+  upcoming: {
+    color: 'text-primary-600 bg-primary-50 border-primary-200',
+    icon: <Clock className="w-4 h-4" />,
+    text: 'Próxima',
+    priority: 2
+  },
+  disabled: {
+    color: 'text-amber-600 bg-amber-50 border-amber-200',
+    icon: <AlertTriangle className="w-4 h-4" />,
+    text: 'Deshabilitada',
+    priority: 3
+  },
+  expired: {
+    color: 'text-gray-600 bg-gray-50 border-gray-200',
+    icon: <CheckCircle2 className="w-4 h-4" />,
+    text: 'Finalizada',
+    priority: 4
+  }
+};
+
+const FILTER_OPTIONS = [
+  { value: 'all', label: 'Todas' },
+  { value: 'active', label: 'Activas' },
+  { value: 'upcoming', label: 'Próximas' },
+  { value: 'expired', label: 'Finalizadas' },
+  { value: 'disabled', label: 'Deshabilitadas' }
+];
+
 // Utility function to get total registered users
 const getTotalRegisteredUsers = async () => {
   try {
-    const response = await fetch('http://localhost:3000/users');
+    const response = await fetch(BACKEND_URL);
     const users = await response.json();
     return Object.keys(users).length;
   } catch (error) {
     console.error('Error fetching user count:', error);
-    return 6; // Fallback to known user count
+    return FALLBACK_USER_COUNT;
   }
+};
+
+// Función para determinar el estado de una elección
+const determineElectionStatus = (details) => {
+  if (details.disabled) return 'disabled';
+
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= details.startTime && now <= details.endTime) return 'active';
+  if (now > details.endTime) return 'expired';
+  return 'upcoming';
+};
+
+// Componente reutilizable para candidatos
+const CandidateMetric = ({ candidate, votes, percentage, rank }) => {
+  const rankColors = {
+    0: 'bg-yellow-500',
+    1: 'bg-gray-400',
+    2: 'bg-orange-600'
+  };
+
+  const progressColors = {
+    0: 'bg-gradient-to-r from-yellow-400 to-yellow-500',
+    1: 'bg-gradient-to-r from-gray-300 to-gray-400',
+    2: 'bg-gradient-to-r from-orange-400 to-orange-600'
+  };
+
+  return (
+    <div className="bg-white p-3 rounded-lg border border-purple-200 hover:shadow-sm transition-all duration-200">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${rankColors[rank] || 'bg-gray-500'}`}>
+            {rank + 1}
+          </div>
+          <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-sm font-semibold text-gray-700">{votes}</div>
+          <div className="text-xs text-gray-500">{percentage}%</div>
+        </div>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-1.5">
+        <div
+          className={`h-1.5 rounded-full transition-all duration-500 ${progressColors[rank] || 'bg-gradient-to-r from-gray-400 to-gray-500'}`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
 };
 
 const Elections = ({ user }) => {
@@ -44,84 +133,68 @@ const Elections = ({ user }) => {
 
   useEffect(() => {
     loadElections();
-  }, []);
-  const loadElections = async () => {
+  }, []); const loadElections = async () => {
     try {
       setLoading(true);
 
-      // Get elections from API
-      const electionsList = await getElections();      // Optimización mejorada: Obtener detalles y resultados con manejo de errores individual
-      const detailsPromises = electionsList.map(async (election, index) => {
+      const electionsList = await getElections();
+
+      // Funciones optimizadas para cargar datos con manejo de errores
+      const loadElectionDetails = async (election, index) => {
         try {
-          // Add small delay to prevent overwhelming the server
           if (index > 0) {
-            await new Promise(resolve => setTimeout(resolve, index * 50));
+            await new Promise(resolve => setTimeout(resolve, index * STAGGER_DELAY_DETAILS));
           }
           return await getElectionById(election.electionId);
         } catch (error) {
           console.warn(`Failed to load details for election ${election.electionId}:`, error.message);
-          return null; // Return null for failed elections
+          return null;
         }
-      });
+      };
 
-      const resultsPromises = electionsList.map(async (election, index) => {
+      const loadElectionResults = async (election, index) => {
         try {
-          // Add small delay to prevent overwhelming the server
           if (index > 0) {
-            await new Promise(resolve => setTimeout(resolve, index * 75));
+            await new Promise(resolve => setTimeout(resolve, index * STAGGER_DELAY_RESULTS));
           }
           return await getResults(election.electionId);
         } catch (error) {
           console.warn(`Failed to load results for election ${election.electionId}:`, error.message);
-          return {}; // Return empty object for failed results
+          return {};
         }
-      });
+      };
 
-      // Ejecutar todas las promesas en paralelo (ahora no fallarán)
+      // Ejecutar todas las promesas en paralelo
       const [detailsArray, resultsArray, totalUsers] = await Promise.all([
-        Promise.all(detailsPromises),
-        Promise.all(resultsPromises),
+        Promise.all(electionsList.map(loadElectionDetails)),
+        Promise.all(electionsList.map(loadElectionResults)),
         getTotalRegisteredUsers()
       ]);
 
-      // Combinar los resultados, filtrando las elecciones que fallaron
+      // Procesar y combinar resultados
       const electionsWithDetails = electionsList
         .map((election, index) => {
           const details = detailsArray[index];
-
-          // Skip elections that failed to load
-          if (!details) {
-            return null;
-          }
+          if (!details) return null;
 
           const results = resultsArray[index] || {};
-
-          // Calculate total votes
           const totalVotes = Object.values(results).reduce((sum, count) => sum + count, 0);
+          const status = determineElectionStatus(details);
+          const participation = totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0;
 
-          // Determine status
-          const now = Math.floor(Date.now() / 1000);
-          let status = 'upcoming';
-
-          if (details.disabled) {
-            status = 'disabled';
-          } else if (now >= details.startTime && now <= details.endTime) {
-            status = 'active';
-          } else if (now > details.endTime) {
-            status = 'expired';
-          } return {
+          return {
             ...election,
             ...details,
             results,
             totalVotes,
             status,
-            participation: totalVotes > 0 ? ((totalVotes / totalUsers) * 100).toFixed(1) : 0
+            participation
           };
         })
-        .filter(election => election !== null); // Remove failed elections
+        .filter(Boolean);
 
       console.log(`Elections loaded: ${electionsWithDetails.length} valid elections out of ${electionsList.length} total`);
-      setElections(electionsWithDetails);// Elections loaded and processed
+      setElections(electionsWithDetails);
     } catch (error) {
       console.error('Error loading elections:', error);
       toast.error('Failed to load elections');
@@ -129,52 +202,7 @@ const Elections = ({ user }) => {
       setLoading(false);
     }
   };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'text-emerald-600 bg-emerald-50 border-emerald-200';
-      case 'upcoming':
-        return 'text-primary-600 bg-primary-50 border-primary-200';
-      case 'expired':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-      case 'disabled':
-        return 'text-amber-600 bg-amber-50 border-amber-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'active':
-        return <Vote className="w-4 h-4" />;
-      case 'upcoming':
-        return <Clock className="w-4 h-4" />;
-      case 'expired':
-        return <CheckCircle2 className="w-4 h-4" />;
-      case 'disabled':
-        return <AlertTriangle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'active':
-        return 'Activa';
-      case 'upcoming':
-        return 'Próxima';
-      case 'expired':
-        return 'Finalizada';
-      case 'disabled':
-        return 'Deshabilitada';
-      default:
-        return 'Desconocido';
-    }
-  };
-
+  // Función para formatear fechas
   const formatDate = (timestamp) => {
     return new Date(timestamp * 1000).toLocaleDateString('es-DO', {
       year: 'numeric',
@@ -183,24 +211,21 @@ const Elections = ({ user }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  }; const filteredElections = elections
-    .filter(election => {
-      const matchesSearch = election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        election.candidates?.some(candidate => candidate.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesFilter = filterStatus === 'all' || election.status === filterStatus;
-      return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
-      // Sort order: active -> upcoming -> disabled -> expired
-      const statusPriority = {
-        'active': 1,
-        'upcoming': 2,
-        'disabled': 3,
-        'expired': 4
-      };
-      return statusPriority[a.status] - statusPriority[b.status];
-    });
-  // Filtered elections processing
+  };
+
+  // Función para filtrar y ordenar elecciones
+  const getFilteredElections = () => {
+    return elections
+      .filter(election => {
+        const matchesSearch = election.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          election.candidates?.some(candidate => candidate.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesFilter = filterStatus === 'all' || election.status === filterStatus;
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => STATUS_CONFIGS[a.status]?.priority - STATUS_CONFIGS[b.status]?.priority);
+  };
+
+  const filteredElections = getFilteredElections();
 
   if (loading) {
     return (
@@ -288,9 +313,7 @@ const Elections = ({ user }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 placeholder-gray-400"
               />
-            </div>
-
-            {/* Filter */}
+            </div>            {/* Filter */}
             <div className="flex items-center space-x-4">
               <Filter className="text-gray-500 w-5 h-5" />
               <select
@@ -298,11 +321,11 @@ const Elections = ({ user }) => {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="bg-gray-50/50 border border-gray-200 text-gray-900 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 min-w-[150px]"
               >
-                <option value="all">Todas</option>
-                <option value="active">Activas</option>
-                <option value="upcoming">Próximas</option>
-                <option value="expired">Finalizadas</option>
-                <option value="disabled">Deshabilitadas</option>
+                {FILTER_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -331,12 +354,11 @@ const Elections = ({ user }) => {
 
                 {/* Horizontal Layout for Wide Cards */}
                 <div className="flex flex-col lg:flex-row">                  {/* Left Section - Main Info with gradient background */}
-                  <div className="flex-1 p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50 rounded-l-3xl">
-                    {/* Status Badge */}
+                  <div className="flex-1 p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50 rounded-l-3xl">                    {/* Status Badge */}
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(election.status)}`}>
-                        {getStatusIcon(election.status)}
-                        <span>{getStatusText(election.status)}</span>
+                      <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold border ${STATUS_CONFIGS[election.status]?.color || STATUS_CONFIGS.upcoming.color}`}>
+                        {STATUS_CONFIGS[election.status]?.icon || STATUS_CONFIGS.upcoming.icon}
+                        <span>{STATUS_CONFIGS[election.status]?.text || 'Desconocido'}</span>
                       </div>
 
                       {election.status === 'active' && (
@@ -345,7 +367,7 @@ const Elections = ({ user }) => {
                           <span className="text-emerald-600 text-sm font-medium">En vivo</span>
                         </div>
                       )}
-                    </div>                    {/* Election Title and Description */}
+                    </div>{/* Election Title and Description */}
                     <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4">
                       <h3 className="text-2xl font-bold text-gray-800 group-hover:text-teal-600 transition-colors duration-200 mb-2 flex items-center">
                         <Vote className="w-6 h-6 mr-3 text-teal-500" />
@@ -362,35 +384,19 @@ const Elections = ({ user }) => {
                         <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
                           <Users className="w-5 h-5 mr-2 text-purple-500" />
                           Top Candidatos
-                        </h4>
-                        <div className="space-y-2">
+                        </h4>                        <div className="space-y-2">
                           {election.candidates.slice(0, 3).map((candidate, idx) => {
                             const votes = election.results?.[candidate] || 0;
                             const percentage = election.totalVotes > 0 ? ((votes / election.totalVotes) * 100).toFixed(1) : 0;
 
                             return (
-                              <div key={idx} className="bg-white p-3 rounded-lg border border-purple-200 hover:shadow-sm transition-all duration-200">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center space-x-2 min-w-0 flex-1">
-                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : 'bg-orange-600'}`}>
-                                      {idx + 1}
-                                    </div>
-                                    <span className="font-medium text-gray-900 text-sm truncate">{candidate}</span>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div className="text-sm font-semibold text-gray-700">{votes}</div>
-                                    <div className="text-xs text-gray-500">{percentage}%</div>
-                                  </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full transition-all duration-500 ${idx === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : idx === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-400' : 'bg-gradient-to-r from-orange-400 to-orange-600'}`}
-                                    style={{ width: `${percentage}%` }}
-                                  ></div>
-                                </div>
-                              </div>
+                              <CandidateMetric
+                                key={idx}
+                                candidate={candidate}
+                                votes={votes}
+                                percentage={percentage}
+                                rank={idx}
+                              />
                             );
                           })}
                           {election.candidates.length > 3 && (
