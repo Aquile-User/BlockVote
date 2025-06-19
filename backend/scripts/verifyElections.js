@@ -5,13 +5,15 @@ require("dotenv").config();
 async function main() {
   try {
     console.log("🔍 Verificando elecciones en la blockchain...");
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const provider = new ethers.JsonRpcProvider(
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+    );
     const votingJson = require("../artifacts/contracts/Voting.sol/Voting.json");
     const abi = votingJson.abi;
 
     // Leer el contrato de votación
     const votingContract = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       provider
     );

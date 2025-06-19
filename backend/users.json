@@ -111,6 +111,22 @@
     "authMethod": "generated",
     "registeredAt": "2025-06-13T16:03:25.842Z"
   },
+  "484-4444444-4": {
+    "address": "0xd62402088eC180B807deb16b81CB94213cf7431A",
+    "privateKey": "0x8b7a51e80256fda0e9235d4b2510b299f8ffef7f5eba98db3ea78e1fca9b44ad",
+    "name": "Juan",
+    "province": "Monseñor Nouel",
+    "authMethod": "generated",
+    "registeredAt": "2025-06-18T19:21:48.864Z"
+  },
+  "755-5555555-5": {
+    "address": "0x3d72f94d7ed1aefb9ecb150f4114b0e3b093ca93",
+    "privateKey": null,
+    "name": "Toño",
+    "province": "Elías Piña",
+    "authMethod": "metamask",
+    "registeredAt": "2025-06-18T19:25:03.883Z"
+  },
   "544-6466666-6": {
     "address": "0x212c6Ff1F94fC618Dba89099da37E2611b82b92C",
     "privateKey": "0x892858c6f3899add14c386b06ae4c98bec1f7121b00e10196d174aed00b47d35",

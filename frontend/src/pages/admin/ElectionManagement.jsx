@@ -29,8 +29,8 @@ import {
   BarChart3,
   TrendingUp
 } from "lucide-react";
-import { getElections, getElectionById, getResults, createElection, disableElection, enableElection, updateElectionName, addCandidate } from "../api";
-import { DOMINICAN_PROVINCES } from "../utils/dominican";
+import { getElections, getElectionById, getResults, createElection, disableElection, enableElection, updateElectionName, addCandidate } from "../../api";
+import { DOMINICAN_PROVINCES } from "../../utils/dominicanRepublic";
 
 const ElectionManagement = ({ user }) => {
   const [elections, setElections] = useState([]);

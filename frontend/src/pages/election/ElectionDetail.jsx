@@ -19,8 +19,8 @@ import {
   ExternalLink
 } from "lucide-react";
 import ReactECharts from 'echarts-for-react';
-import { getElectionById, getResults, submitVote, hasVoted } from "../api";
-import { CONFIG } from "../config";
+import { getElectionById, getResults, submitVote, hasVoted } from "../../api";
+import { CONFIG } from "../../config";
 
 // Utility function to get total registered users
 const getTotalRegisteredUsers = async () => {
