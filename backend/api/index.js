@@ -55,10 +55,98 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Health check endpoint
+app.get("/health", async (req, res) => {
+  try {
+    // Verificar conexión a blockchain
+    let blockchainStatus = "error";
+    let blockNumber = null;
+    let contractDeployed = false;
+
+    try {
+      blockNumber = await provider.getBlockNumber();
+      const contractCode = await provider.getCode(
+        process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+      );
+      contractDeployed = contractCode !== "0x";
+      blockchainStatus = "connected";
+    } catch (err) {
+      logger.error(`Error al verificar blockchain: ${err.message}`);
+    }
+
+    // Verificar usuarios
+    const userCount = Object.keys(users).length;
+
+    // Verificar relayer
+    let relayerStatus = "unknown";
+    try {
+      const relayerResponse = await axios.get(
+        `http://localhost:${process.env.RELAYER_PORT || 3001}/health`,
+        {
+          timeout: 2000,
+        }
+      );
+      relayerStatus = "running";
+    } catch (err) {
+      logger.error(`Error al verificar relayer: ${err.message}`);
+      relayerStatus = "unreachable";
+    }
+
+    const healthStatus = {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      circuitBreaker: {
+        state: circuitBreaker.state,
+        failureCount: circuitBreaker.failureCount,
+      },
+      uptime: process.uptime(),
+      api: {
+        version: "2.0.0",
+        port: parseInt(process.env.API_PORT || 3000),
+        status: "online",
+      },
+      blockchain: {
+        network: "MegaETH Testnet",
+        blockNumber: blockNumber,
+        contractDeployed: contractDeployed,
+        status: blockchainStatus,
+        contractAddress:
+          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
+      },
+      users: {
+        registered: userCount,
+        storage: "local",
+      },
+      relayer: {
+        status: relayerStatus,
+        port: parseInt(process.env.RELAYER_PORT || 3001),
+      },
+    };
+
+    // Si el circuit breaker está abierto, marcar como degraded
+    if (circuitBreaker.state === "OPEN") {
+      healthStatus.status = "degraded";
+      return res.status(503).json(healthStatus);
+    }
+
+    res.json(healthStatus);
+  } catch (error) {
+    res.status(500).json({
+      status: "unhealthy",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
 // Read-only provider for contract interactions
-const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+const provider = new ethers.JsonRpcProvider(
+  process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+);
 const votingContract = new ethers.Contract(
-  process.env.CONTRACT_ADDRESS,
+  process.env.VOTING_CONTRACT_ADDRESS ||
+    process.env.VOTING_CONTRACT_ADDRESS ||
+    process.env.CONTRACT_ADDRESS,
   abi,
   provider
 );
@@ -153,10 +241,11 @@ app.post("/users/register", async (req, res) => {
       // Generate a new wallet
       const wallet = ethers.Wallet.createRandom();
       privateKey = wallet.privateKey;
-      address = wallet.address;
-
-      // Fund wallet with small amount for gas
-      const relayerWallet = new ethers.Wallet(process.env.RELAYER_PK, provider);
+      address = wallet.address; // Fund wallet with small amount for gas
+      const relayerWallet = new ethers.Wallet(
+        process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+        provider
+      );
       const fundTx = await relayerWallet.sendTransaction({
         to: address,
         value: ethers.parseEther("0.0000001"),
@@ -409,20 +498,70 @@ app.get("/health", async (req, res) => {
 app.get("/elections", async (req, res) => {
   try {
     const list = [];
-    const nextIdBN = await votingContract.nextElectionId();
+
+    // Get total elections with retry
+    const nextIdBN = await retryWithBackoff(() =>
+      votingContract.nextElectionId()
+    );
     const nextId = Number(nextIdBN);
+
     for (let i = 1; i < nextId; i++) {
-      const [name, _] = await votingContract.getElection(i);
-      // Asegurar que el nombre se maneja correctamente y limpiar caracteres problemáticos
-      const cleanName = (typeof name === "string" ? name : name.toString())
-        .replace(/�/g, "ó")
-        .replace(/\u0000/g, "")
-        .trim();
-      list.push({ electionId: i, name: cleanName });
+      try {
+        // Get election details with retry and delay
+        const [name, _] = await retryWithBackoff(() =>
+          votingContract.getElection(i)
+        );
+
+        // Asegurar que el nombre se maneja correctamente y limpiar caracteres problemáticos
+        const cleanName = (typeof name === "string" ? name : name.toString())
+          .replace(/�/g, "ó")
+          .replace(/\u0000/g, "")
+          .trim();
+        list.push({ electionId: i, name: cleanName });
+
+        // Add delay between calls to avoid rate limiting
+        if (i < nextId - 1) {
+          await delay(100); // 100ms delay between election calls
+        }
+      } catch (error) {
+        console.warn(
+          `Elections list: Skipping invalid election ${i}:`,
+          error.message
+        );
+        // Skip invalid elections instead of breaking the entire list
+        continue;
+      }
     }
     res.json(list);
   } catch (error) {
     console.error("List elections error:", error.message || error);
+
+    // Check if it's a circuit breaker error
+    const isCircuitBreakerOpen =
+      error.message && error.message.includes("Circuit breaker is OPEN");
+
+    // Check if it's a rate limiting error
+    const isRateLimit =
+      error.message &&
+      (error.message.includes("rate limit") ||
+        error.message.includes("Rate limit") ||
+        error.message.includes("Too Many Requests") ||
+        error.code === -32016);
+
+    if (isCircuitBreakerOpen) {
+      return res.status(503).json({
+        error: "Service temporarily unavailable due to high load",
+        retryAfter: 30, // seconds
+      });
+    }
+
+    if (isRateLimit) {
+      return res.status(429).json({
+        error: "Rate limit exceeded, please try again later",
+        retryAfter: 5, // seconds
+      });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });
@@ -497,9 +636,12 @@ app.post("/elections/create", async (req, res) => {
     console.log("Creando elección con nombre:", name);
     console.log("Candidatos:", candidates);
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -576,13 +718,20 @@ app.post("/elections/create", async (req, res) => {
 app.get("/elections/:id", async (req, res) => {
   try {
     const electionId = parseInt(req.params.id, 10);
-    const nextIdBN = await votingContract.nextElectionId();
+
+    // Check if election exists with retry
+    const nextIdBN = await retryWithBackoff(() =>
+      votingContract.nextElectionId()
+    );
     const nextId = Number(nextIdBN);
     if (electionId < 1 || electionId >= nextId) {
       return res.status(404).json({ error: "Election not found" });
     }
+
+    // Get election details with retry
     let [name, candidates, startTime, endTime, disabled] =
-      await votingContract.getElection(electionId); // Asegurar que el nombre y los candidatos se manejan correctamente
+      await retryWithBackoff(() => votingContract.getElection(electionId));
+
     // Función para limpiar strings que pueden tener problemas de codificación
     const cleanString = (str) => {
       if (typeof str !== "string") {
@@ -606,6 +755,32 @@ app.get("/elections/:id", async (req, res) => {
     res.json({ electionId, name, candidates, startTime, endTime, disabled });
   } catch (error) {
     console.error("Get election error:", error.message || error);
+
+    // Check if it's a rate limiting error
+    const isRateLimit =
+      error.message &&
+      (error.message.includes("rate limit") ||
+        error.message.includes("Rate limit") ||
+        error.message.includes("Too Many Requests") ||
+        error.code === -32016);
+
+    if (isRateLimit) {
+      return res.status(429).json({
+        error: "Rate limit exceeded, please try again later",
+        retryAfter: 5, // seconds
+      });
+    }
+
+    // Check if it's a contract call error (election doesn't exist)
+    if (
+      error.message &&
+      (error.message.includes("execution reverted") ||
+        error.message.includes("invalid opcode") ||
+        error.message.includes("revert"))
+    ) {
+      return res.status(404).json({ error: "Election not found" });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });
@@ -655,9 +830,12 @@ app.put("/elections/:id/disable", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -723,9 +901,12 @@ app.put("/elections/:id/enable", async (req, res) => {
       return res.status(404).json({ error: "Election not found" });
     }
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -794,9 +975,12 @@ app.put("/elections/:id/edit-name", async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: "Missing new name" });
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -864,9 +1048,12 @@ app.put("/elections/:id/add-candidate", async (req, res) => {
     if (!candidate)
       return res.status(400).json({ error: "Missing candidate name" });
 
-    const signer = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    const signer = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
     const contractWithSigner = new ethers.Contract(
-      process.env.CONTRACT_ADDRESS,
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
       signer
     );
@@ -908,34 +1095,175 @@ app.put("/elections/:id/add-candidate", async (req, res) => {
  *               additionalProperties:
  *                 type: integer
  */
+// Helper function to add delay between RPC calls to avoid rate limiting
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Circuit breaker para evitar sobrecargas en el nodo RPC
+class CircuitBreaker {
+  constructor(threshold = 5, timeout = 30000) {
+    this.failureThreshold = threshold;
+    this.timeout = timeout;
+    this.failureCount = 0;
+    this.lastFailureTime = null;
+    this.state = "CLOSED"; // CLOSED, OPEN, HALF_OPEN
+  }
+
+  async execute(fn) {
+    if (this.state === "OPEN") {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = "HALF_OPEN";
+        console.log("Circuit breaker: Transitioning to HALF_OPEN state");
+      } else {
+        throw new Error(
+          "Circuit breaker is OPEN - service temporarily unavailable"
+        );
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failureCount = 0;
+    this.state = "CLOSED";
+  }
+
+  onFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.failureCount >= this.failureThreshold) {
+      this.state = "OPEN";
+      console.warn(
+        `Circuit breaker: OPEN state activated after ${this.failureCount} failures`
+      );
+    }
+  }
+}
+
+const circuitBreaker = new CircuitBreaker(5, 30000); // 5 fallos, 30 segundos timeout
+
+// Helper function to retry RPC calls with exponential backoff and circuit breaker
+async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
+  return await circuitBreaker.execute(async () => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        const isRateLimit =
+          error.message &&
+          (error.message.includes("rate limit") ||
+            error.message.includes("Rate limit") ||
+            error.message.includes("Too Many Requests") ||
+            error.code === -32016 ||
+            error.message.includes("429"));
+
+        const isNodeError =
+          error.message &&
+          (error.message.includes("missing revert data") ||
+            error.message.includes("CALL_EXCEPTION") ||
+            error.message.includes("network timeout") ||
+            error.message.includes("connection timeout"));
+
+        if ((isRateLimit || isNodeError) && attempt < maxRetries) {
+          const delayMs =
+            baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+          console.warn(
+            `RPC error (${
+              isRateLimit ? "rate limit" : "node error"
+            }), retrying in ${delayMs}ms (attempt ${attempt}/${maxRetries}): ${
+              error.message
+            }`
+          );
+          await delay(delayMs);
+          continue;
+        }
+        throw error;
+      }
+    }
+  });
+}
+
 app.get("/elections/:id/results", async (req, res) => {
   try {
     const electionId = parseInt(req.params.id, 10);
-    const nextIdBN = await votingContract.nextElectionId();
+
+    // Check if election exists with retry
+    const nextIdBN = await retryWithBackoff(() =>
+      votingContract.nextElectionId()
+    );
     const nextId = Number(nextIdBN);
     if (electionId < 1 || electionId >= nextId) {
       return res.status(404).json({ error: "Election not found" });
     }
 
     console.log(`Obteniendo resultados para la elección ${electionId}`);
-    const candidates = await votingContract.getCandidates(electionId);
+
+    // Get candidates with retry
+    const candidates = await retryWithBackoff(() =>
+      votingContract.getCandidates(electionId)
+    );
     console.log(`Candidatos encontrados: ${JSON.stringify(candidates)}`);
 
     const results = {};
+
+    // Get vote counts sequentially with delays to avoid rate limiting
     for (let i = 0; i < candidates.length; i++) {
       const name = candidates[i];
       console.log(`Obteniendo votos para candidato: ${name}`);
+
       try {
-        const countBN = await votingContract.getVoteCount(electionId, name);
+        const countBN = await retryWithBackoff(() =>
+          votingContract.getVoteCount(electionId, name)
+        );
         results[name] = Number(countBN);
+
+        // Add delay between calls to avoid hitting rate limits
+        if (i < candidates.length - 1) {
+          await delay(200); // 200ms delay between vote count calls
+        }
       } catch (error) {
         console.error(`Error al obtener votos para ${name}:`, error.message);
         results[name] = 0; // Valor por defecto en caso de error
       }
     }
+
     res.json(results);
   } catch (error) {
     console.error("Get results error:", error.message || error);
+
+    // Check if it's a rate limiting error
+    const isRateLimit =
+      error.message &&
+      (error.message.includes("rate limit") ||
+        error.message.includes("Rate limit") ||
+        error.message.includes("Too Many Requests") ||
+        error.code === -32016);
+
+    if (isRateLimit) {
+      return res.status(429).json({
+        error: "Rate limit exceeded, please try again later",
+        retryAfter: 5, // seconds
+      });
+    }
+
+    // Check if it's a contract call error (election doesn't exist)
+    if (
+      error.message &&
+      (error.message.includes("execution reverted") ||
+        error.message.includes("invalid opcode") ||
+        error.message.includes("revert"))
+    ) {
+      return res.status(404).json({ error: "Election not found" });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });
@@ -989,7 +1317,8 @@ app.post("/vote", async (req, res) => {
     if (!user) return res.status(400).json({ error: "User not registered" });
 
     const voterAddress = user.address; // Build message hash exactly as contract expects
-    const contractAddress = process.env.CONTRACT_ADDRESS;
+    const contractAddress =
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS;
     const messageHash = ethers.solidityPackedKeccak256(
       ["uint256", "string", "address", "address"],
       [electionId, selectedCandidate, voterAddress, contractAddress]
@@ -1065,7 +1394,9 @@ app.get("/health", async (req, res) => {
   try {
     // Check blockchain connection
     const blockNumber = await provider.getBlockNumber();
-    const contractCode = await provider.getCode(process.env.CONTRACT_ADDRESS);
+    const contractCode = await provider.getCode(
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+    );
 
     // Check users
     const userCount = Object.keys(users).length;
@@ -1088,7 +1419,8 @@ app.get("/health", async (req, res) => {
         network: "MegaETH Testnet",
         blockNumber: blockNumber,
         contractDeployed: contractCode !== "0x",
-        contractAddress: process.env.CONTRACT_ADDRESS,
+        contractAddress:
+          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       },
       relayer: {
         status: relayerStatus,
@@ -1115,5 +1447,16 @@ app.get("/health", async (req, res) => {
 
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`🗳 API server running on http://localhost:${PORT}`);
+  const startTime = new Date().toLocaleTimeString();
+  console.log("\n" + "=".repeat(50));
+  console.log(`� BlockVote API Server v2.0 Iniciado!`);
+  console.log(`⏰ Hora de inicio: ${startTime}`);
+  console.log(`🔗 URL: http://localhost:${PORT}`);
+  console.log(`📚 Documentación: http://localhost:${PORT}/api-docs`);
+  console.log(`🌡️ Ambiente: ${process.env.NODE_ENV || "development"}`);
+  console.log(
+    `🧠 Memoria: ${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`
+  );
+  console.log(`🛠️ Para detener el servidor: Ctrl+C`);
+  console.log("=".repeat(50) + "\n");
 });

@@ -18,10 +18,10 @@ import {
   Download,
   AlertCircle
 } from "lucide-react";
-import { registerUser } from "../api";
-import { DOMINICAN_PROVINCES, validateDominicanID } from "../utils/dominican";
+import { registerUser } from "../../api";
+import { DOMINICAN_PROVINCES, validateDominicanID } from "../../utils/dominicanRepublic";
 
-const Register = ({ setUser, setIsConnected, switchToLogin }) => {
+const UserRegister = ({ setUser, setIsConnected, switchToLogin }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
@@ -702,4 +702,4 @@ const Register = ({ setUser, setIsConnected, switchToLogin }) => {
   );
 };
 
-export default Register;
+export default UserRegister;

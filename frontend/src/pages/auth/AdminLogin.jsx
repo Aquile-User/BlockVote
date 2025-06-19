@@ -1,34 +1,101 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
-  Shield,
   Lock,
   User,
   Eye,
   EyeOff,
   Terminal,
   Database,
-  Zap,
-  Code,
-  Settings,
-  KeyRound,
-  Fingerprint,
   Cpu,
   Wifi,
   Globe,
   ShieldCheck,
-  Layers,
   Binary,
   Scan,
-  Server
+  Server,
+  Fingerprint
 } from "lucide-react";
 
+// Configuraciones constantes
+const TYPING_TEXT = "ADMINISTRATIVE_PROTOCOL_INITIATED";
+const TYPING_SPEED = 60;
+const SCAN_INCREMENT = 2;
+
+const SYSTEM_ICONS = [
+  { Icon: Database, label: "Database", delay: 0.1 },
+  { Icon: Wifi, label: "Network", delay: 0.2 },
+  { Icon: Cpu, label: "Processing", delay: 0.3 },
+  { Icon: Server, label: "Server", delay: 0.4 },
+  { Icon: Globe, label: "Global", delay: 0.5 },
+  { Icon: Binary, label: "Binary", delay: 0.6 },
+];
+
+const PARTICLES_COUNT = 20;
+const LINES_COUNT = 8;
+
+// Generador de partículas optimizado
+const generateParticles = (count) => Array.from({ length: count }, (_, i) => ({
+  id: i,
+  size: Math.random() * 4 + 2,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  duration: Math.random() * 20 + 10,
+  delay: Math.random() * 5
+}));
+
+// Componente para input reutilizable
+const FormInput = ({ label, type, value, onChange, placeholder, icon: Icon, isPassword = false, showPassword, setShowPassword, focusedField, setFocusedField }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: type === 'text' ? 0.8 : 0.9 }}
+  >
+    <label className="block text-sm font-medium text-slate-700 mb-3">
+      {label}
+    </label>
+    <div className="relative">
+      <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+        <Icon className="w-5 h-5 text-slate-500" />
+      </div>
+      <input
+        type={isPassword && !showPassword ? "password" : "text"}
+        value={value}
+        onChange={onChange}
+        onFocus={() => setFocusedField(type)}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-12 ${isPassword ? 'pr-16' : 'pr-4'} py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === type
+            ? 'border-primary-500 bg-white shadow-glow'
+            : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
+          }`}
+        placeholder={placeholder}
+        required
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors p-1"
+        >
+          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        </button>
+      )}
+      {focusedField === type && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className={`absolute ${isPassword ? 'right-12' : 'right-4'} top-1/2 transform -translate-y-1/2`}
+        >
+          <div className={`w-2 h-2 ${type === 'text' ? 'bg-primary-500' : 'bg-emerald-500'} rounded-full animate-pulse`} />
+        </motion.div>
+      )}
+    </div>
+  </motion.div>
+);
+
 const AdminLogin = ({ onLogin }) => {
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: ""
-  });
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -37,31 +104,26 @@ const AdminLogin = ({ onLogin }) => {
 
   // Efecto de escritura automática para el encabezado
   useEffect(() => {
-    const text = "ADMINISTRATIVE_PROTOCOL_INITIATED";
     let i = 0;
     const timer = setInterval(() => {
-      setTypingText(text.slice(0, i));
+      setTypingText(TYPING_TEXT.slice(0, i));
       i++;
-      if (i > text.length) {
-        clearInterval(timer);
-      }
-    }, 60);
+      if (i > TYPING_TEXT.length) clearInterval(timer);
+    }, TYPING_SPEED);
     return () => clearInterval(timer);
   }, []);
 
   // Animación de escaneo de seguridad
   useEffect(() => {
     const interval = setInterval(() => {
-      setScanProgress(prev => (prev >= 100 ? 0 : prev + 2));
+      setScanProgress(prev => (prev >= 100 ? 0 : prev + SCAN_INCREMENT));
     }, 100);
     return () => clearInterval(interval);
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulación de proceso de autenticación con delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (credentials.username === "eljefe" && credentials.password === "123456") {
@@ -76,25 +138,8 @@ const AdminLogin = ({ onLogin }) => {
     setLoading(false);
   };
 
-  // Partículas flotantes para el background
-  const backgroundParticles = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 4 + 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 20 + 10,
-    delay: Math.random() * 5
-  }));
-
-  // Iconos de sistema para el panel
-  const systemIcons = [
-    { Icon: Database, label: "Database", delay: 0.1 },
-    { Icon: Wifi, label: "Network", delay: 0.2 },
-    { Icon: Cpu, label: "Processing", delay: 0.3 },
-    { Icon: Server, label: "Server", delay: 0.4 },
-    { Icon: Globe, label: "Global", delay: 0.5 },
-    { Icon: Binary, label: "Binary", delay: 0.6 },
-  ]; return (
+  // Usar las constantes para generar elementos
+  const backgroundParticles = generateParticles(PARTICLES_COUNT); return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
 
       {/* Patrones geométricos de fondo */}
@@ -127,11 +172,9 @@ const AdminLogin = ({ onLogin }) => {
             }}
           />
         ))}
-      </div>
-
-      {/* Líneas de conexión animadas */}
+      </div>      {/* Líneas de conexión animadas */}
       <div className="absolute inset-0 overflow-hidden opacity-20">
-        {[...Array(8)].map((_, i) => (
+        {Array.from({ length: LINES_COUNT }, (_, i) => (
           <motion.div
             key={i}
             className="absolute bg-gradient-to-r from-transparent via-primary-400/40 to-transparent"
@@ -195,11 +238,9 @@ const AdminLogin = ({ onLogin }) => {
                 Secure blockchain voting platform with advanced authentication protocols.
                 Administrative access required for election management and system oversight.
               </p>
-            </div>
-
-            {/* Grid de iconos del sistema */}
+            </div>            {/* Grid de iconos del sistema */}
             <div className="grid grid-cols-3 gap-4">
-              {systemIcons.map(({ Icon, label, delay }, index) => (
+              {SYSTEM_ICONS.map(({ Icon, label, delay }, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 30 }}
@@ -298,91 +339,35 @@ const AdminLogin = ({ onLogin }) => {
                 <p className="text-slate-600 text-sm">
                   Enter your administrative credentials
                 </p>
-              </div>
-
-              {/* Formulario */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-
-                {/* Campo de usuario */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                >                  <label className="block text-sm font-medium text-slate-700 mb-3">
-                    Administrator Username
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                      <User className="w-5 h-5 text-slate-500" />
-                    </div>
-                    <input
-                      type="text"
-                      value={credentials.username}
-                      onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
-                      onFocus={() => setFocusedField('username')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-12 pr-4 py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === 'username'
-                          ? 'border-primary-500 bg-white shadow-glow'
-                          : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
-                        }`}
-                      placeholder="Enter admin username"
-                      required
-                    />
-                    {focusedField === 'username' && (
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2"
-                      >
-                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
+              </div>              {/* Formulario */}
+              <form onSubmit={handleSubmit} className="space-y-6">                {/* Campo de usuario */}
+                <FormInput
+                  label="Administrator Username"
+                  type="text"
+                  value={credentials.username}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder="Enter admin username"
+                  icon={User}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
 
                 {/* Campo de contraseña */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.9 }}
-                >                  <label className="block text-sm font-medium text-slate-700 mb-3">
-                    Security Passphrase
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                      <Lock className="w-5 h-5 text-slate-500" />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={credentials.password}
-                      onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-                      onFocus={() => setFocusedField('password')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-12 pr-16 py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === 'password'
-                          ? 'border-primary-500 bg-white shadow-glow'
-                          : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
-                        }`}
-                      placeholder="Enter admin password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors p-1"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                    {focusedField === 'password' && (
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="absolute right-12 top-1/2 transform -translate-y-1/2"
-                      >
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
+                <FormInput
+                  label="Security Passphrase"
+                  type="password"
+                  value={credentials.password}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Enter admin password"
+                  icon={Lock}
+                  isPassword={true}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
 
                 {/* Botón de envío */}
                 <motion.div
