@@ -1,39 +1,39 @@
 // Province utility functions for real data distribution
-import { DOMINICAN_PROVINCES } from './dominican';
+import { DOMINICAN_PROVINCES } from "./dominicanRepublic";
 
 // Province population data for Dominican Republic
 const PROVINCE_POPULATIONS = {
-  'Distrito Nacional': 965040,
-  'Santo Domingo': 2908607,
-  'Santiago': 963422,
-  'San Pedro de Macorís': 290458,
-  'La Vega': 394205,
-  'Puerto Plata': 321597,
-  'San Cristóbal': 569930,
-  'Monte Plata': 185956,
-  'Sánchez Ramírez': 151392,
-  'La Altagracia': 273210,
-  'Azua': 214311,
-  'Barahona': 187105,
-  'San Juan': 232333,
-  'Duarte': 289574,
-  'Espaillat': 231938,
-  'Monseñor Nouel': 165224,
-  'Santiago Rodríguez': 57476,
-  'Valverde': 163030,
-  'Elías Piña': 63029,
-  'Baoruco': 97313,
-  'Dajabón': 63955,
-  'Hermanas Mirabal': 92193,
-  'Independencia': 52589,
-  'La Romana': 245433,
-  'María Trinidad Sánchez': 140925,
-  'Monte Cristi': 109607,
-  'Pedernales': 31587,
-  'Peravia': 184344,
-  'Samaná': 101494,
-  'San José de Ocoa': 59544,
-  'El Seibo': 87680
+  "Distrito Nacional": 965040,
+  "Santo Domingo": 2908607,
+  Santiago: 963422,
+  "San Pedro de Macorís": 290458,
+  "La Vega": 394205,
+  "Puerto Plata": 321597,
+  "San Cristóbal": 569930,
+  "Monte Plata": 185956,
+  "Sánchez Ramírez": 151392,
+  "La Altagracia": 273210,
+  Azua: 214311,
+  Barahona: 187105,
+  "San Juan": 232333,
+  Duarte: 289574,
+  Espaillat: 231938,
+  "Monseñor Nouel": 165224,
+  "Santiago Rodríguez": 57476,
+  Valverde: 163030,
+  "Elías Piña": 63029,
+  Baoruco: 97313,
+  Dajabón: 63955,
+  "Hermanas Mirabal": 92193,
+  Independencia: 52589,
+  "La Romana": 245433,
+  "María Trinidad Sánchez": 140925,
+  "Monte Cristi": 109607,
+  Pedernales: 31587,
+  Peravia: 184344,
+  Samaná: 101494,
+  "San José de Ocoa": 59544,
+  "El Seibo": 87680,
 };
 
 /**
@@ -45,7 +45,7 @@ const PROVINCE_POPULATIONS = {
 export const mapUsersToProvinces = (users, electionResults) => {
   // Count real users by province
   const realProvinceUsers = {};
-  Object.values(users).forEach(user => {
+  Object.values(users).forEach((user) => {
     const province = user.province;
     if (!realProvinceUsers[province]) {
       realProvinceUsers[province] = [];
@@ -54,23 +54,27 @@ export const mapUsersToProvinces = (users, electionResults) => {
   });
 
   // Calculate total real votes
-  const totalVotes = Object.values(electionResults).reduce((sum, count) => sum + count, 0);
-  
+  const totalVotes = Object.values(electionResults).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+
   // Create province data array - ONLY for provinces with real users
   const provinceData = [];
-  
-  Object.keys(realProvinceUsers).forEach(provinceName => {
+
+  Object.keys(realProvinceUsers).forEach((provinceName) => {
     const userCount = realProvinceUsers[provinceName].length;
-    
+
     // Distribute votes proportionally based on user count
-    const voteShare = totalVotes > 0 ? (userCount / Object.keys(users).length) * totalVotes : 0;
+    const voteShare =
+      totalVotes > 0 ? (userCount / Object.keys(users).length) * totalVotes : 0;
     const votes = Math.round(voteShare);
-    
+
     provinceData.push({
       name: provinceName,
       votes: votes,
       registered: userCount, // Only show REAL registered users
-      realUsers: userCount
+      realUsers: userCount,
     });
   });
 
@@ -85,23 +89,23 @@ export const mapUsersToProvinces = (users, electionResults) => {
 export const generateTimeBasedVotes = (totalVotes) => {
   const hours = [];
   const peakHours = [10, 11, 14, 15, 16]; // Peak voting hours
-  
+
   for (let h = 8; h <= 18; h++) {
-    const hour = h.toString().padStart(2, '0') + ':00';
-    
+    const hour = h.toString().padStart(2, "0") + ":00";
+
     // Distribute votes with peak during lunch and after work
     let baseVotes = totalVotes / 11; // 11 hours of voting
-    
+
     if (peakHours.includes(h)) {
       baseVotes *= 1.5; // 50% more during peak hours
     }
-    
+
     hours.push({
       time: hour,
-      votes: Math.round(baseVotes)
+      votes: Math.round(baseVotes),
     });
   }
-  
+
   return hours;
 };
 
@@ -113,10 +117,10 @@ export const generateTimeBasedVotes = (totalVotes) => {
 export const generateDemographicBreakdown = (users) => {
   // Since we don't have age data, use realistic Dominican Republic demographics
   return [
-    { age: '18-25', percentage: 22 },
-    { age: '26-35', percentage: 28 },
-    { age: '36-45', percentage: 25 },
-    { age: '46-55', percentage: 15 },
-    { age: '56+', percentage: 10 }
+    { age: "18-25", percentage: 22 },
+    { age: "26-35", percentage: 28 },
+    { age: "36-45", percentage: 25 },
+    { age: "46-55", percentage: 15 },
+    { age: "56+", percentage: 10 },
   ];
 };

@@ -9,21 +9,31 @@ async function checkBalanceAndConfig() {
   try {
     // 1. Verificar variables de entorno
     console.log("📋 Variables de entorno:");
-    console.log("RPC_URL:", process.env.RPC_URL);
-    console.log("CONTRACT_ADDRESS:", process.env.CONTRACT_ADDRESS);
     console.log(
-      "RELAYER_PK:",
-      process.env.RELAYER_PK ? "✅ Configurada" : "❌ No configurada"
+      "BLOCKCHAIN_RPC_URL:",
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
     );
-
-    if (!process.env.RELAYER_PK) {
-      console.log("❌ RELAYER_PK no está configurada en .env");
+    console.log(
+      "VOTING_CONTRACT_ADDRESS:",
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+    );
+    console.log(
+      "RELAYER_PRIVATE_KEY:",
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK
+        ? "✅ Configurada"
+        : "❌ No configurada"
+    );
+    if (!(process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK)) {
+      console.log("❌ RELAYER_PRIVATE_KEY no está configurada en .env");
       return;
-    }
-
-    // 2. Conectar a la red
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-    const relayerWallet = new ethers.Wallet(process.env.RELAYER_PK, provider);
+    } // 2. Conectar a la red
+    const provider = new ethers.JsonRpcProvider(
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+    );
+    const relayerWallet = new ethers.Wallet(
+      process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
+      provider
+    );
 
     console.log("\n🔑 Información del Relayer:");
     console.log("Address:", relayerWallet.address);
@@ -98,13 +108,13 @@ async function checkBalanceAndConfig() {
       }
     } catch (gasError) {
       console.log("⚠️  No se pudo obtener precio de gas:", gasError.message);
-    }
-
-    // 7. Verificar si el contrato existe
-    if (process.env.CONTRACT_ADDRESS) {
+    } // 7. Verificar si el contrato existe
+    if (process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS) {
       console.log("\n📜 Verificando contrato...");
       try {
-        const code = await provider.getCode(process.env.CONTRACT_ADDRESS);
+        const contractAddress =
+          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS;
+        const code = await provider.getCode(contractAddress);
         if (code === "0x") {
           console.log("❌ El contrato no existe en esta dirección");
           console.log("💡 Necesitas hacer deploy del contrato");
@@ -130,8 +140,8 @@ async function checkBalanceAndConfig() {
     }
 
     if (
-      !process.env.CONTRACT_ADDRESS ||
-      process.env.CONTRACT_ADDRESS ===
+      (!process.env.VOTING_CONTRACT_ADDRESS && !process.env.CONTRACT_ADDRESS) ||
+      (process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS) ===
         "0x0760007bC12452cDE51AceE6DaF526260f825B14"
     ) {
       console.log("3. Haz deploy del contrato: npm run deploy");

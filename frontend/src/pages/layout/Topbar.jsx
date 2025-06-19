@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import firewallAqua from '../assets/firewallAqua.png';
+import firewallAqua from '../../assets/firewallAqua.png';
 import {
   Menu,
   X,

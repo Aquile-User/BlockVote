@@ -8,9 +8,9 @@ import {
   Zap,
   Shield
 } from "lucide-react";
-import { validateDominicanID } from "../utils/dominican";
+import { validateDominicanID } from "../../utils/dominicanRepublic";
 
-const Login = ({ setUser, setIsConnected, switchToRegister }) => {
+const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
   const [formData, setFormData] = useState({
     socialId: "",
     name: ""
@@ -53,13 +53,13 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
     }
     try {
       setLoading(true);
-      console.log('Attempting login with:', { socialId: formData.socialId, name: formData.name });
+      // Attempting login with credentials
 
       // First check localStorage
       const userData = localStorage.getItem('currentUser');
       if (userData) {
         const storedUser = JSON.parse(userData);
-        console.log('Found stored user:', storedUser);
+        // Found stored user
 
         // Verify credentials match
         if (storedUser.socialId === formData.socialId &&
@@ -297,4 +297,4 @@ const Login = ({ setUser, setIsConnected, switchToRegister }) => {
   );
 };
 
-export default Login;
+export default UserLogin;
