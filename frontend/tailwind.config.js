@@ -250,11 +250,19 @@ export default {
         shimmer: {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
-        },
-        glow: {
+        },        glow: {
           "0%": { boxShadow: "0 0 5px rgba(20, 184, 166, 0.2)" },
           "100%": { boxShadow: "0 0 20px rgba(20, 184, 166, 0.6)" },
         },
+      },
+      // Custom utility classes for common gradients
+      backgroundImage: {
+        'card-gradient': 'linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to))',
+        'primary-gradient': 'linear-gradient(to bottom right, rgb(240 253 250), rgb(204 251 241))',
+        'secondary-gradient': 'linear-gradient(to bottom right, rgb(245 243 255), rgb(237 233 254))',
+        'emerald-gradient': 'linear-gradient(to bottom right, rgb(236 253 245), rgb(209 250 229))',
+        'violet-gradient': 'linear-gradient(to bottom right, rgb(245 243 255), rgb(237 233 254))',
+        'amber-gradient': 'linear-gradient(to bottom right, rgb(255 251 235), rgb(254 243 199))',
       },
     },
   },
