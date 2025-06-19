@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # Environment variables
 .env
@@ -13,6 +15,10 @@ package-lock.json
 dist/
 build/
 coverage/
+
+# Vite specific
+.vite/
+*.local
 
 # IDE files
 .vscode/
@@ -30,6 +36,15 @@ yarn-error.log*
 # Cache
 .cache/
 .parcel-cache/
+.eslintcache
+.stylelintcache
+
+# Testing
+/coverage
+/cypress/videos/
+/cypress/screenshots/
+/playwright-report/
+/test-results/
 
 # OS generated files
 .DS_Store
@@ -45,6 +60,13 @@ cache/
 artifacts/
 typechain/
 typechain-types/
+
+# Frontend specific
+/frontend/.vscode/
+/frontend/dist/
+/frontend/.env*
+/frontend/stats.html
+/frontend/.vite-ssg-temp/
 
 # Other
 *.tgz
