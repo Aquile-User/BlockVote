@@ -11,6 +11,13 @@ pnpm-lock.yaml
 .env.test.local
 .env.production.local
 
+# Backend env files
+/backend/.env
+/backend/.env.local
+/backend/.env.development.local
+/backend/.env.test.local
+/backend/.env.production.local
+
 # Build outputs
 dist/
 build/
@@ -64,7 +71,11 @@ typechain-types/
 # Frontend specific
 /frontend/.vscode/
 /frontend/dist/
-/frontend/.env*
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
 /frontend/stats.html
 /frontend/.vite-ssg-temp/
 

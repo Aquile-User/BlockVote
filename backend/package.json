@@ -5,6 +5,7 @@
   "main": "api/index.js",
   "scripts": {
     "deploy": "npx hardhat run scripts/deploy.js --network megaeth",
+    "setup:env": "node scripts/setupEnv.js",
     "relayer": "nodemon relayer/index.js",
     "api": "nodemon api/index.js"
   },

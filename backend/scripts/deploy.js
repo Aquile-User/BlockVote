@@ -1,7 +1,42 @@
 // scripts/deploy.js
 
 const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
+
+const envPath = path.resolve(__dirname, "..", ".env");
+
+function updateEnvFile(updates) {
+  const existing = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, "utf8").split(/\r?\n/)
+    : [];
+  const updatedKeys = new Set();
+  const nextLines = existing.map((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) {
+      return line;
+    }
+
+    const equalsIndex = line.indexOf("=");
+    const key = line.slice(0, equalsIndex).trim();
+
+    if (Object.prototype.hasOwnProperty.call(updates, key)) {
+      updatedKeys.add(key);
+      return `${key}=${updates[key]}`;
+    }
+
+    return line;
+  });
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (!updatedKeys.has(key)) {
+      nextLines.push(`${key}=${value}`);
+    }
+  }
+
+  fs.writeFileSync(envPath, `${nextLines.join("\n")}\n`, "utf8");
+}
 
 async function main() {
   // 1) Build a Wallet for the relayer, using RELAYER_PRIVATE_KEY
@@ -24,7 +59,13 @@ async function main() {
   const voting = await Voting.deploy(relayerWallet.address);
   await voting.waitForDeployment(); // ethers v6 style
   console.log("Voting contract deployed at:", voting.target);
-  console.log("⮕ Copy that address into .env as VOTING_CONTRACT_ADDRESS");
+
+  updateEnvFile({
+    VOTING_CONTRACT_ADDRESS: voting.target,
+    CONTRACT_ADDRESS: voting.target,
+  });
+
+  console.log("⮕ La address se guardó automáticamente en .env");
 }
 
 main().catch((error) => {

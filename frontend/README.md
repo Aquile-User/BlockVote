@@ -85,7 +85,8 @@ frontend/
 
 - **Node.js** v16.0.0 o superior
 - **npm** v7.0.0 o superior (incluido con Node.js)
-- **Backend de BlockVote** ejecutándose en http://localhost:3000
+- **Backend de BlockVote** configurado con `npm run setup:env` y, si hace falta, `npm run deploy`
+- La address del contrato en el frontend debe coincidir con la que quedó guardada en el backend
 
 ### **1. Clonar e Instalar**
 
@@ -96,6 +97,42 @@ cd BlockVote/frontend
 # Instalar dependencias
 npm install
 ```
+
+Antes de abrir el frontend, asegúrate de que el backend ya tenga su `.env` creado y el contrato desplegado. El script del backend puede dejarte lista la parte de la configuración y guardar la address del contrato en su `.env`.
+
+### **1.1 Configurar la address del contrato**
+
+Crea un archivo `.env.local` en la raíz de `frontend/` con esta variable:
+
+```env
+VITE_CONTRACT_ADDRESS=0xTU_CONTRACT_ADDRESS_REAL
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+Usa exactamente la misma address que quedó guardada en `backend/.env` como `VOTING_CONTRACT_ADDRESS`. Si redeployas el contrato, actualiza este valor también.
+
+El frontend lee estas variables desde `src/config.js`:
+
+```javascript
+// src/config.js - Configuración principal
+export const CONFIG = {
+  CONTRACT_ADDRESS: import.meta.env.VITE_CONTRACT_ADDRESS || "",
+  API_BASE: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000",
+};
+```
+
+### **1.2 Variables soportadas en el frontend**
+
+- `VITE_CONTRACT_ADDRESS`: address del contrato desplegado en MegaETH
+- `VITE_API_BASE_URL`: URL del backend HTTP
+- `VITE_WS_URL`: opcional, si luego conectas WebSockets
+
+### **1.3 .env vs .env.local**
+
+- `.env`: base compartida para variables generales del proyecto
+- `.env.local`: overrides locales de tu máquina; este proyecto lo usa para el frontend y normalmente no se sube al repositorio
+
+En este proyecto, el frontend debe usar `.env.local` para que cada persona pueda apuntar al contrato real sin tocar `src/config.js`.
 
 ### **2. Ejecutar en Desarrollo**
 
@@ -116,36 +153,7 @@ npm run build
 npm run preview
 ```
 
-La configuración se maneja a través del archivo `src/config.js`:
-
-```javascript
-// src/config.js - Configuración principal
-export const CONFIG = {
-  CONTRACT_ADDRESS: "0xC1a9e2cC2C6c83bf486c17AB16127080A442A461",
-  API_BASE: "http://localhost:3000",
-};
-```
-
-Opcionalmente, puedes crear un archivo `.env.local` para variables de entorno:
-
-```env
-# API Configuration
-VITE_API_BASE_URL=http://localhost:3000
-VITE_WS_URL=ws://localhost:3000
-
-# Blockchain Configuration
-VITE_BLOCKCHAIN_RPC_URL=https://carrot.megaeth.com/rpc
-VITE_CHAIN_ID=6342
-VITE_NETWORK_NAME=MegaETH Testnet
-
-# Application Settings
-VITE_APP_NAME=BlockVote
-VITE_APP_VERSION=2.0.0
-VITE_DEBUG_MODE=false
-
-# MetaMask Integration
-VITE_METAMASK_DEEP_LINK=https://metamask.app.link/dapp/
-```
+Si `VITE_CONTRACT_ADDRESS` no está definida, el frontend no tendrá una address de contrato válida para votar o leer resultados.
 
 ### **3. Configurar Tailwind CSS (ya configurado)**
 

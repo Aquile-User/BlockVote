@@ -48,40 +48,37 @@ cd BlockVote/backend
 npm install
 ```
 
-### 3. Configurar Variables de Entorno
-
-Crea un archivo `.env` en la raíz del directorio backend:
-
-```env
-# Red Blockchain
-BLOCKCHAIN_RPC_URL=https://carrot.megaeth.com/rpc
-RPC_URL=https://carrot.megaeth.com/rpc
-
-# Claves Privadas (SIN el prefijo 0x)
-RELAYER_PRIVATE_KEY=tu_clave_privada_del_relayer_64_caracteres_hex
-RELAYER_PK=tu_clave_privada_del_relayer_64_caracteres_hex
-
-# API Configuration
-PORT=3000
-CORS_ORIGIN=http://localhost:5173
-
-# Contrato (se configurará después del despliegue)
-VOTING_CONTRACT_ADDRESS=direccion_del_contrato_desplegado
-```
-
-### 4. Compilar Contratos
+### 3. Crear y validar la configuración
 
 ```bash
-npx hardhat compile
+npm run setup:env
 ```
 
-### 5. Desplegar Contratos
+Este comando hace la parte pesada por ti:
+
+- crea `.env` desde `.env.example` si todavía no existe
+- genera una clave privada nueva para el relayer si no había una válida
+- valida que tengas RPC y dirección del contrato
+- revisa en red si el relayer tiene fondos y si el contrato existe en esa dirección
+
+Si el script te marca que falta algo, solo completa esos valores en `.env` y vuelve a ejecutarlo.
+La clave del relayer queda guardada localmente en tu `.env`; no se comparte ni se publica.
+
+### 4. Desplegar el contrato si hace falta
 
 ```bash
 npm run deploy
 ```
 
-> **Nota**: Guarda la dirección del contrato desplegado y actualiza `VOTING_CONTRACT_ADDRESS` en tu archivo `.env`
+Cuando termine, la dirección del contrato se escribe automáticamente en `.env` como `VOTING_CONTRACT_ADDRESS` y `CONTRACT_ADDRESS`.
+
+### 5. Verificación final
+
+```bash
+npm run setup:env
+```
+
+Si este segundo pase no muestra errores de red, ya tienes la base lista para arrancar API y relayer.
 
 ## 🏃‍♂️ Ejecución
 
