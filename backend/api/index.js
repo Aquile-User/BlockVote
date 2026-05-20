@@ -66,7 +66,7 @@ app.get("/health", async (req, res) => {
     try {
       blockNumber = await provider.getBlockNumber();
       const contractCode = await provider.getCode(
-        process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+        process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       );
       contractDeployed = contractCode !== "0x";
       blockchainStatus = "connected";
@@ -84,7 +84,7 @@ app.get("/health", async (req, res) => {
         `http://localhost:${process.env.RELAYER_PORT || 3001}/health`,
         {
           timeout: 2000,
-        }
+        },
       );
       relayerStatus = "running";
     } catch (err) {
@@ -141,14 +141,14 @@ app.get("/health", async (req, res) => {
 
 // Read-only provider for contract interactions
 const provider = new ethers.JsonRpcProvider(
-  process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+  process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
 );
 const votingContract = new ethers.Contract(
   process.env.VOTING_CONTRACT_ADDRESS ||
     process.env.VOTING_CONTRACT_ADDRESS ||
     process.env.CONTRACT_ADDRESS,
   abi,
-  provider
+  provider,
 );
 
 // ================= User Management =================
@@ -218,7 +218,7 @@ app.post("/users/register", async (req, res) => {
         ([id, userData]) =>
           userData.authMethod === "metamask" &&
           userData.address &&
-          userData.address.toLowerCase() === metamaskAddress.toLowerCase()
+          userData.address.toLowerCase() === metamaskAddress.toLowerCase(),
       );
 
       if (existingUser) {
@@ -244,11 +244,29 @@ app.post("/users/register", async (req, res) => {
       address = wallet.address; // Fund wallet with small amount for gas
       const relayerWallet = new ethers.Wallet(
         process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-        provider
+        provider,
       );
+      const walletFundingAmount = ethers.parseEther("0.0000001");
+      const feeData = await provider.getFeeData();
+      const estimatedGasPrice =
+        feeData.maxFeePerGas || ethers.parseUnits("0.1", "gwei");
+      const estimatedFundingFee = 21000n * estimatedGasPrice;
+      const requiredBalance = walletFundingAmount + estimatedFundingFee;
+      const relayerBalance = await provider.getBalance(relayerWallet.address);
+
+      if (relayerBalance < requiredBalance) {
+        return res.status(503).json({
+          error:
+            "El relayer no tiene fondos suficientes para generar y financiar una wallet nueva.",
+          relayerAddress: relayerWallet.address,
+          relayerBalance: ethers.formatEther(relayerBalance),
+          requiredBalance: ethers.formatEther(requiredBalance),
+        });
+      }
+
       const fundTx = await relayerWallet.sendTransaction({
         to: address,
-        value: ethers.parseEther("0.0000001"),
+        value: walletFundingAmount,
       });
       await fundTx.wait();
       fundTxHash = fundTx.hash;
@@ -501,7 +519,7 @@ app.get("/elections", async (req, res) => {
 
     // Get total elections with retry
     const nextIdBN = await retryWithBackoff(() =>
-      votingContract.nextElectionId()
+      votingContract.nextElectionId(),
     );
     const nextId = Number(nextIdBN);
 
@@ -509,7 +527,7 @@ app.get("/elections", async (req, res) => {
       try {
         // Get election details with retry and delay
         const [name, _] = await retryWithBackoff(() =>
-          votingContract.getElection(i)
+          votingContract.getElection(i),
         );
 
         // Asegurar que el nombre se maneja correctamente y limpiar caracteres problemáticos
@@ -526,7 +544,7 @@ app.get("/elections", async (req, res) => {
       } catch (error) {
         console.warn(
           `Elections list: Skipping invalid election ${i}:`,
-          error.message
+          error.message,
         );
         // Skip invalid elections instead of breaking the entire list
         continue;
@@ -638,12 +656,12 @@ app.post("/elections/create", async (req, res) => {
 
     const signer = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     const contractWithSigner = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      signer
+      signer,
     );
     const tx = await contractWithSigner.createElection(
       name,
@@ -654,7 +672,7 @@ app.post("/elections/create", async (req, res) => {
         gasLimit: 450_000,
         maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
         maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
-      }
+      },
     );
     const receipt = await tx.wait();
     res.json({
@@ -721,7 +739,7 @@ app.get("/elections/:id", async (req, res) => {
 
     // Check if election exists with retry
     const nextIdBN = await retryWithBackoff(() =>
-      votingContract.nextElectionId()
+      votingContract.nextElectionId(),
     );
     const nextId = Number(nextIdBN);
     if (electionId < 1 || electionId >= nextId) {
@@ -832,12 +850,12 @@ app.put("/elections/:id/disable", async (req, res) => {
 
     const signer = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     const contractWithSigner = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      signer
+      signer,
     );
     const tx = await contractWithSigner.disableElection(electionId, {
       gasLimit: 100_000,
@@ -903,12 +921,12 @@ app.put("/elections/:id/enable", async (req, res) => {
 
     const signer = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     const contractWithSigner = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      signer
+      signer,
     );
     const tx = await contractWithSigner.enableElection(electionId, {
       gasLimit: 100_000,
@@ -977,12 +995,12 @@ app.put("/elections/:id/edit-name", async (req, res) => {
 
     const signer = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     const contractWithSigner = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      signer
+      signer,
     );
     const tx = await contractWithSigner.updateElectionName(electionId, name, {
       gasLimit: 100_000,
@@ -1050,12 +1068,12 @@ app.put("/elections/:id/add-candidate", async (req, res) => {
 
     const signer = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     const contractWithSigner = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      signer
+      signer,
     );
     const tx = await contractWithSigner.addCandidate(electionId, candidate, {
       gasLimit: 100_000,
@@ -1115,7 +1133,7 @@ class CircuitBreaker {
         console.log("Circuit breaker: Transitioning to HALF_OPEN state");
       } else {
         throw new Error(
-          "Circuit breaker is OPEN - service temporarily unavailable"
+          "Circuit breaker is OPEN - service temporarily unavailable",
         );
       }
     }
@@ -1142,7 +1160,7 @@ class CircuitBreaker {
     if (this.failureCount >= this.failureThreshold) {
       this.state = "OPEN";
       console.warn(
-        `Circuit breaker: OPEN state activated after ${this.failureCount} failures`
+        `Circuit breaker: OPEN state activated after ${this.failureCount} failures`,
       );
     }
   }
@@ -1180,7 +1198,7 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
               isRateLimit ? "rate limit" : "node error"
             }), retrying in ${delayMs}ms (attempt ${attempt}/${maxRetries}): ${
               error.message
-            }`
+            }`,
           );
           await delay(delayMs);
           continue;
@@ -1197,7 +1215,7 @@ app.get("/elections/:id/results", async (req, res) => {
 
     // Check if election exists with retry
     const nextIdBN = await retryWithBackoff(() =>
-      votingContract.nextElectionId()
+      votingContract.nextElectionId(),
     );
     const nextId = Number(nextIdBN);
     if (electionId < 1 || electionId >= nextId) {
@@ -1208,7 +1226,7 @@ app.get("/elections/:id/results", async (req, res) => {
 
     // Get candidates with retry
     const candidates = await retryWithBackoff(() =>
-      votingContract.getCandidates(electionId)
+      votingContract.getCandidates(electionId),
     );
     console.log(`Candidatos encontrados: ${JSON.stringify(candidates)}`);
 
@@ -1221,7 +1239,7 @@ app.get("/elections/:id/results", async (req, res) => {
 
       try {
         const countBN = await retryWithBackoff(() =>
-          votingContract.getVoteCount(electionId, name)
+          votingContract.getVoteCount(electionId, name),
         );
         results[name] = Number(countBN);
 
@@ -1321,7 +1339,7 @@ app.post("/vote", async (req, res) => {
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS;
     const messageHash = ethers.solidityPackedKeccak256(
       ["uint256", "string", "address", "address"],
-      [electionId, selectedCandidate, voterAddress, contractAddress]
+      [electionId, selectedCandidate, voterAddress, contractAddress],
     );
 
     console.log("Backend verification data:", {
@@ -1336,7 +1354,7 @@ app.post("/vote", async (req, res) => {
     // Use getBytes() to match how the contract verifies (32-byte data, not string)
     const recovered = ethers.verifyMessage(
       ethers.getBytes(messageHash),
-      signature
+      signature,
     );
     console.log("Recovered address:", recovered);
     console.log("Voter address:", voterAddress);
@@ -1356,7 +1374,7 @@ app.post("/vote", async (req, res) => {
       },
       {
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
     const data = response.data; // axios already parses JSON, no need for .json()
     res.json(data);
@@ -1395,7 +1413,7 @@ app.get("/health", async (req, res) => {
     // Check blockchain connection
     const blockNumber = await provider.getBlockNumber();
     const contractCode = await provider.getCode(
-      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
     );
 
     // Check users
@@ -1455,7 +1473,7 @@ app.listen(PORT, () => {
   console.log(`📚 Documentación: http://localhost:${PORT}/api-docs`);
   console.log(`🌡️ Ambiente: ${process.env.NODE_ENV || "development"}`);
   console.log(
-    `🧠 Memoria: ${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`
+    `🧠 Memoria: ${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`,
   );
   console.log(`🛠️ Para detener el servidor: Ctrl+C`);
   console.log("=".repeat(50) + "\n");
