@@ -2,6 +2,12 @@
 
 require("dotenv").config();
 
+const dns = require("dns");
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
+
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL is required. Configure backend/.env with your Postgres connection string.",

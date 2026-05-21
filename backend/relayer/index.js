@@ -1,8 +1,13 @@
 // relayer/index.js
 
 require("dotenv").config();
+const dns = require("dns");
 const express = require("express");
 const { ethers } = require("ethers");
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 // Configuración de logs
 const logPrefix = "🔄 RELAYER:";
@@ -28,12 +33,12 @@ const requiredEnvVars = [
 ];
 
 const missingEnvVars = requiredEnvVars.filter(
-  (varObj) => !(process.env[varObj.name] || process.env[varObj.fallback])
+  (varObj) => !(process.env[varObj.name] || process.env[varObj.fallback]),
 );
 
 if (missingEnvVars.length > 0) {
   logger.error(
-    `Faltan variables de entorno requeridas: ${missingEnvVars.join(", ")}`
+    `Faltan variables de entorno requeridas: ${missingEnvVars.join(", ")}`,
   );
   process.exit(1);
 }
@@ -50,7 +55,7 @@ let votingContract;
 async function setupBlockchainConnection() {
   try {
     provider = new ethers.JsonRpcProvider(
-      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
     );
 
     // Verificar conexión
@@ -58,24 +63,24 @@ async function setupBlockchainConnection() {
 
     relayerWallet = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
     votingContract = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      relayerWallet
+      relayerWallet,
     );
 
     const balance = await provider.getBalance(relayerWallet.address);
     logger.info(
-      `Conexión establecida. Dirección del relayer: ${relayerWallet.address}`
+      `Conexión establecida. Dirección del relayer: ${relayerWallet.address}`,
     );
     logger.info(`Balance del relayer: ${ethers.formatEther(balance)} ETH`);
 
     // Advertir si el balance es bajo
     if (balance < ethers.parseEther("0.01")) {
       logger.error(
-        "¡ADVERTENCIA! Balance del relayer bajo. Recarga fondos para asegurar operación continua."
+        "¡ADVERTENCIA! Balance del relayer bajo. Recarga fondos para asegurar operación continua.",
       );
     }
 
@@ -91,7 +96,7 @@ async function sendTransactionWithRetry(
   electionId,
   candidate,
   voter,
-  signature
+  signature,
 ) {
   let lastError;
 
@@ -111,7 +116,7 @@ async function sendTransactionWithRetry(
             feeData.maxFeePerGas || ethers.parseUnits("0.1", "gwei"),
           maxPriorityFeePerGas:
             feeData.maxPriorityFeePerGas || ethers.parseUnits("0.01", "gwei"),
-        }
+        },
       );
 
       logger.info(`Transacción enviada: ${tx.hash}`);
@@ -236,12 +241,12 @@ app.post("/meta-vote", async (req, res) => {
       electionId,
       selectedCandidate,
       voter,
-      signature
+      signature,
     );
 
     const processingTime = Date.now() - startTime;
     logger.success(
-      `[${requestId}] Voto procesado en ${processingTime}ms. Hash: ${result.txHash}`
+      `[${requestId}] Voto procesado en ${processingTime}ms. Hash: ${result.txHash}`,
     );
 
     return res.json({
@@ -324,7 +329,7 @@ async function startServer() {
 
   if (!connected) {
     logger.error(
-      "No se pudo establecer conexión inicial con la blockchain. Reintentando en segundo plano..."
+      "No se pudo establecer conexión inicial con la blockchain. Reintentando en segundo plano...",
     );
     // Intentar reconectarse periódicamente
     setInterval(setupBlockchainConnection, 30000);

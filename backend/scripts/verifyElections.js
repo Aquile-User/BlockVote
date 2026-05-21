@@ -1,12 +1,17 @@
 // Script para verificar el estado actual de las elecciones y los resultados
 const ethers = require("ethers");
+const dns = require("dns");
 require("dotenv").config();
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 async function main() {
   try {
     console.log("🔍 Verificando elecciones en la blockchain...");
     const provider = new ethers.JsonRpcProvider(
-      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
     );
     const votingJson = require("../artifacts/contracts/Voting.sol/Voting.json");
     const abi = votingJson.abi;
@@ -15,7 +20,7 @@ async function main() {
     const votingContract = new ethers.Contract(
       process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
       abi,
-      provider
+      provider,
     );
 
     // Obtener el número de elecciones
@@ -62,8 +67,8 @@ async function main() {
         console.log(`Estado: ${status}`);
         console.log(
           `Tiempo: ${new Date(startTime * 1000).toLocaleString()} - ${new Date(
-            endTime * 1000
-          ).toLocaleString()}`
+            endTime * 1000,
+          ).toLocaleString()}`,
         );
         console.log(`Candidatos: ${candidates.join(", ")}`);
         console.log(`Votos totales: ${totalVotes}`);
