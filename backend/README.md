@@ -185,7 +185,8 @@ npx hardhat run scripts/verifyElections.js # Verificar elecciones activas
 ```
 
 Base de datos: Este proyecto usa Prisma con PostgreSQL como almacenamiento por defecto. Las operaciones de migración y generación del cliente están disponibles a través de los scripts definidos en `package.json` y la carpeta `prisma/`. Para instalaciones nuevas no es necesario seguir pasos manuales de migración desde JSON: la base de datos por defecto debe ser PostgreSQL.
-```
+
+````
 
 ## 🧪 Testing
 
@@ -214,7 +215,7 @@ curl -X POST http://localhost:3000/vote \
     "voterAddress": "0x...",
     "signature": "0x..."
   }'
-```
+````
 
 ## 🔍 Solución de Problemas
 

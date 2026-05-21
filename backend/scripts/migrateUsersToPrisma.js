@@ -33,12 +33,18 @@ async function main() {
   let migrated = 0;
 
   for (const [socialId, user] of entries) {
-    if (!user || !user.address || !user.name || !user.province || !user.authMethod) {
+    if (
+      !user ||
+      !user.address ||
+      !user.name ||
+      !user.province ||
+      !user.authMethod
+    ) {
       console.warn(`Saltando usuario invalido: ${socialId}`);
       continue;
     }
 
-    const skipPrivate = process.env.SKIP_PRIVATEKEY === 'true' || false;
+    const skipPrivate = process.env.SKIP_PRIVATEKEY === "true" || false;
     await prisma.user.upsert({
       where: { socialId },
       update: {
@@ -47,7 +53,9 @@ async function main() {
         name: user.name,
         province: user.province,
         authMethod: user.authMethod,
-        registeredAt: user.registeredAt ? new Date(user.registeredAt) : new Date(),
+        registeredAt: user.registeredAt
+          ? new Date(user.registeredAt)
+          : new Date(),
       },
       create: {
         socialId,
@@ -56,7 +64,9 @@ async function main() {
         name: user.name,
         province: user.province,
         authMethod: user.authMethod,
-        registeredAt: user.registeredAt ? new Date(user.registeredAt) : new Date(),
+        registeredAt: user.registeredAt
+          ? new Date(user.registeredAt)
+          : new Date(),
       },
     });
 
