@@ -184,6 +184,9 @@ npx hardhat run scripts/checkBalance.js    # Verificar balance del relayer
 npx hardhat run scripts/verifyElections.js # Verificar elecciones activas
 ```
 
+Base de datos: Este proyecto usa Prisma con PostgreSQL como almacenamiento por defecto. Las operaciones de migración y generación del cliente están disponibles a través de los scripts definidos en `package.json` y la carpeta `prisma/`. Para instalaciones nuevas no es necesario seguir pasos manuales de migración desde JSON: la base de datos por defecto debe ser PostgreSQL.
+```
+
 ## 🧪 Testing
 
 ### Probar API con cURL
@@ -237,21 +240,23 @@ DEBUG=* npm run relayer
 npx hardhat run scripts/checkBalance.js --network megaeth
 ```
 
-## 🛡️ Seguridad
+### 🛡️ Seguridad
 
 ### Consideraciones Importantes
 
-- **Claves Privadas**: Nunca expongas claves privadas en código
-- **Rate Limiting**: Implementado para prevenir spam
-- **Validación**: Todas las firmas son validadas antes de procesamiento
-- **Tiempos**: Las elecciones tienen ventanas de tiempo estrictas
+- **Claves Privadas**: Nunca expongas claves privadas en código o en repositorios. Este proyecto **no** guarda claves privadas de usuarios en la base de datos por defecto. Si necesitas custodiar claves, usa un KMS/HSM o cifra con una clave maestra y almacénala en un secret manager.
+- **Rate Limiting**: Implementado para prevenir spam.
+- **Validación**: Todas las firmas son validadas antes de procesamiento.
+- **Tiempos**: Las elecciones tienen ventanas de tiempo estrictas.
 
 ### Variables Sensibles
 
-Mantén estas variables seguras:
+Mantén estas variables seguras y fuera del repositorio (usa `.env` que está en `.gitignore` o un secret manager):
 
-- `RELAYER_PRIVATE_KEY`
-- `RELAYER_PK`
+- `RELAYER_PRIVATE_KEY` (relayer custodial — proteger con KMS)
+- `DATABASE_URL` (cadena de conexión a Postgres)
+
+Nota: No comitees `.env` ni archivos con secretos. Usa `.env.example` como plantilla y copia a `.env` con valores reales en tu entorno local o en tu CI/CD.
 
 ## 📁 Estructura del Proyecto
 
@@ -270,7 +275,6 @@ backend/
 │   └── verifyElections.js
 ├── hardhat.config.js       # Configuración de Hardhat
 ├── package.json
-├── users.json              # Base de datos local de usuarios
 └── README.md
 ```
 

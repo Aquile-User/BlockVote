@@ -1,13 +1,13 @@
 // api/index.js
 
 require("dotenv").config();
+process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./prisma/dev.db";
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
 const axios = require("axios");
 const { ethers } = require("ethers");
-const fs = require("fs");
-const path = require("path");
+const { PrismaClient } = require("@prisma/client");
 const swaggerUi = require("swagger-ui-express");
 const swaggerJsdoc = require("swagger-jsdoc");
 
@@ -25,15 +25,56 @@ app.use((req, res, next) => {
   next();
 });
 
-// Load or initialize user database (socialId -> wallet {address, privateKey})
-const usersFile = path.resolve(__dirname, "../users.json");
-let users = {};
-if (fs.existsSync(usersFile)) {
-  users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+const prisma = new PrismaClient();
+
+function normalizeUserForResponse(user) {
+  return {
+    address: user.address,
+    name: user.name,
+    province: user.province,
+    authMethod: user.authMethod,
+    registeredAt:
+      user.registeredAt instanceof Date
+        ? user.registeredAt.toISOString()
+        : user.registeredAt,
+  };
 }
 
-function saveUsers() {
-  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+async function getUserBySocialId(socialId) {
+  return prisma.user.findUnique({ where: { socialId } });
+}
+
+async function findUserByAddress(address) {
+  if (!address) {
+    return null;
+  }
+
+  const users = await prisma.user.findMany({
+    where: { authMethod: "metamask" },
+    select: { id: true, address: true },
+  });
+
+  return (
+    users.find(
+      (user) =>
+        user.address && user.address.toLowerCase() === address.toLowerCase(),
+    ) || null
+  );
+}
+
+async function countUsers() {
+  return prisma.user.count();
+}
+
+async function getUsersMap() {
+  const allUsers = await prisma.user.findMany();
+  const map = {};
+
+  for (const user of allUsers) {
+    map[user.socialId] = normalizeUserForResponse(user);
+  }
+
+  return map;
 }
 
 // Swagger setup
@@ -71,11 +112,11 @@ app.get("/health", async (req, res) => {
       contractDeployed = contractCode !== "0x";
       blockchainStatus = "connected";
     } catch (err) {
-      logger.error(`Error al verificar blockchain: ${err.message}`);
+      console.error(`Error al verificar blockchain: ${err.message}`);
     }
 
     // Verificar usuarios
-    const userCount = Object.keys(users).length;
+    const userCount = await countUsers();
 
     // Verificar relayer
     let relayerStatus = "unknown";
@@ -88,7 +129,7 @@ app.get("/health", async (req, res) => {
       );
       relayerStatus = "running";
     } catch (err) {
-      logger.error(`Error al verificar relayer: ${err.message}`);
+      console.error(`Error al verificar relayer: ${err.message}`);
       relayerStatus = "unreachable";
     }
 
@@ -115,7 +156,7 @@ app.get("/health", async (req, res) => {
       },
       users: {
         registered: userCount,
-        storage: "local",
+        storage: "postgres",
       },
       relayer: {
         status: relayerStatus,
@@ -208,18 +249,14 @@ app.post("/users/register", async (req, res) => {
         .json({ error: "Invalid Dominican ID format. Use: 000-0000000-0" });
     }
 
-    if (users[socialId]) {
+    const existingById = await getUserBySocialId(socialId);
+    if (existingById) {
       return res.status(400).json({ error: "User already exists" });
     }
 
     // Check if MetaMask address is already registered by another user
     if (authMethod === "metamask" && metamaskAddress) {
-      const existingUser = Object.entries(users).find(
-        ([id, userData]) =>
-          userData.authMethod === "metamask" &&
-          userData.address &&
-          userData.address.toLowerCase() === metamaskAddress.toLowerCase(),
-      );
+      const existingUser = await findUserByAddress(metamaskAddress);
 
       if (existingUser) {
         return res.status(400).json({
@@ -276,16 +313,17 @@ app.post("/users/register", async (req, res) => {
         .json({ error: "Invalid authMethod. Use 'metamask' or 'generated'" });
     }
 
-    // Store user mapping with extended data
-    users[socialId] = {
-      address,
-      privateKey,
-      name,
-      province,
-      authMethod,
-      registeredAt: new Date().toISOString(),
-    };
-    saveUsers();
+    const createdUser = await prisma.user.create({
+      data: {
+        socialId,
+        address,
+        // Do not persist private keys in the database by default for security.
+        privateKey: null,
+        name,
+        province,
+        authMethod,
+      },
+    });
 
     const response = {
       socialId,
@@ -293,7 +331,7 @@ app.post("/users/register", async (req, res) => {
       name,
       province,
       authMethod,
-      registeredAt: users[socialId].registeredAt,
+      registeredAt: createdUser.registeredAt.toISOString(),
     };
 
     if (privateKey) response.privateKey = privateKey;
@@ -330,9 +368,9 @@ app.post("/users/register", async (req, res) => {
  *                 address:
  *                   type: string
  */
-app.get("/users/:socialId", (req, res) => {
+app.get("/users/:socialId", async (req, res) => {
   const { socialId } = req.params;
-  const user = users[socialId];
+  const user = await getUserBySocialId(socialId);
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ socialId, address: user.address });
 });
@@ -360,7 +398,7 @@ app.get("/users/:socialId", (req, res) => {
 app.get("/elections/:electionId/has-voted/:socialId", async (req, res) => {
   try {
     const { electionId, socialId } = req.params;
-    const user = users[socialId];
+    const user = await getUserBySocialId(socialId);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -408,8 +446,9 @@ app.get("/elections/:electionId/has-voted/:socialId", async (req, res) => {
  *                   authMethod:
  *                     type: string
  */
-app.get("/users", (req, res) => {
+app.get("/users", async (req, res) => {
   try {
+    const users = await getUsersMap();
     res.json(users);
   } catch (error) {
     console.error("Get users error:", error.message);
@@ -441,6 +480,17 @@ app.get("/users", (req, res) => {
  */
 app.get("/health", async (req, res) => {
   try {
+    let userCount = 0;
+    let dbStatus = "online";
+    let dbMessage = "SQLite database accessible";
+
+    try {
+      userCount = await countUsers();
+    } catch (dbError) {
+      dbStatus = "error";
+      dbMessage = `Database unavailable: ${dbError.message}`;
+    }
+
     const health = {
       status: "healthy",
       timestamp: new Date().toISOString(),
@@ -450,11 +500,9 @@ app.get("/health", async (req, res) => {
           message: "API server running",
         },
         database: {
-          status: fs.existsSync(usersFile) ? "online" : "warning",
-          message: fs.existsSync(usersFile)
-            ? "Users database accessible"
-            : "Users file not found",
-          userCount: Object.keys(users).length,
+          status: dbStatus,
+          message: dbMessage,
+          userCount,
         },
         blockchain: {
           status: "checking",
@@ -477,6 +525,10 @@ app.get("/health", async (req, res) => {
         message: "Blockchain connection failed",
         error: blockchainError.message,
       };
+      health.status = "degraded";
+    }
+
+    if (dbStatus !== "online") {
       health.status = "degraded";
     }
 
@@ -1331,7 +1383,7 @@ app.post("/vote", async (req, res) => {
       return res.status(400).json({ error: "Missing fields" });
     }
 
-    const user = users[socialId];
+    const user = await getUserBySocialId(socialId);
     if (!user) return res.status(400).json({ error: "User not registered" });
 
     const voterAddress = user.address; // Build message hash exactly as contract expects
@@ -1384,84 +1436,7 @@ app.post("/vote", async (req, res) => {
   }
 });
 
-// ================= System Health Check =================
-
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: System health check
- *     responses:
- *       200:
- *         description: System status
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                 blockchain:
- *                   type: object
- *                 relayer:
- *                   type: object
- *                 users:
- *                   type: object
- */
-app.get("/health", async (req, res) => {
-  try {
-    // Check blockchain connection
-    const blockNumber = await provider.getBlockNumber();
-    const contractCode = await provider.getCode(
-      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
-    );
-
-    // Check users
-    const userCount = Object.keys(users).length;
-
-    // Check relayer
-    let relayerStatus = "unknown";
-    try {
-      const relayerResponse = await axios.get("http://localhost:3001", {
-        timeout: 2000,
-      });
-      relayerStatus = "running";
-    } catch (error) {
-      relayerStatus = "unreachable";
-    }
-
-    res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      blockchain: {
-        network: "MegaETH Testnet",
-        blockNumber: blockNumber,
-        contractDeployed: contractCode !== "0x",
-        contractAddress:
-          process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
-      },
-      relayer: {
-        status: relayerStatus,
-        port: 3001,
-      },
-      users: {
-        registered: userCount,
-        storage: "local",
-      },
-      api: {
-        version: "2.0.0",
-        port: 3000,
-      },
-    });
-  } catch (error) {
-    console.error("Health check error:", error.message);
-    res.status(500).json({
-      status: "unhealthy",
-      error: error.message,
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
+// (Removed duplicate simple health endpoint; comprehensive health endpoint is declared earlier.)
 
 const PORT = 3000;
 app.listen(PORT, () => {

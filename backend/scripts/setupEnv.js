@@ -47,6 +47,7 @@ function formatLabel(value, fallback = "❌ Falta") {
 
 function serializeEnv(values) {
   const orderedKeys = [
+    "DATABASE_URL",
     "BLOCKCHAIN_RPC_URL",
     "VOTING_CONTRACT_ADDRESS",
     "RELAYER_PRIVATE_KEY",
@@ -134,6 +135,7 @@ async function main() {
     relayerPrivateKey = generatedWallet.privateKey;
     const nextValues = {
       ...fileValues,
+      DATABASE_URL: fileValues.DATABASE_URL || exampleValues.DATABASE_URL || "file:./prisma/dev.db",
       BLOCKCHAIN_RPC_URL: rpcUrl || exampleValues.BLOCKCHAIN_RPC_URL || "https://carrot.megaeth.com/rpc",
       RPC_URL: rpcUrl || exampleValues.RPC_URL || "https://carrot.megaeth.com/rpc",
       RELAYER_PRIVATE_KEY: generatedWallet.privateKey,
