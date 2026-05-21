@@ -17,6 +17,8 @@ pnpm-lock.yaml
 /backend/.env.development.local
 /backend/.env.test.local
 /backend/.env.production.local
+/backend/prisma/dev.db
+/backend/prisma/dev.db-journal
 
 # Build outputs
 dist/

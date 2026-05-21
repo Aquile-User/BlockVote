@@ -3,7 +3,12 @@
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
+const dns = require("dns");
 require("dotenv").config();
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const envPath = path.resolve(__dirname, "..", ".env");
 
@@ -47,7 +52,7 @@ async function main() {
   }
   // Use the same RPC provider configured in hardhat.config.js
   const provider = new hre.ethers.JsonRpcProvider(
-    process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+    process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
   );
   const relayerWallet = new hre.ethers.Wallet(relayerPk, provider);
   console.log("Using relayer:", relayerWallet.address);

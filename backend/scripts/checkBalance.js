@@ -1,7 +1,12 @@
 // scripts/checkBalance.js
 
 const { ethers } = require("ethers");
+const dns = require("dns");
 require("dotenv").config();
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 async function checkBalanceAndConfig() {
   console.log("🔍 Verificando configuración y balances...\n");
@@ -11,28 +16,28 @@ async function checkBalanceAndConfig() {
     console.log("📋 Variables de entorno:");
     console.log(
       "BLOCKCHAIN_RPC_URL:",
-      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
     );
     console.log(
       "VOTING_CONTRACT_ADDRESS:",
-      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS
+      process.env.VOTING_CONTRACT_ADDRESS || process.env.CONTRACT_ADDRESS,
     );
     console.log(
       "RELAYER_PRIVATE_KEY:",
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK
         ? "✅ Configurada"
-        : "❌ No configurada"
+        : "❌ No configurada",
     );
     if (!(process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK)) {
       console.log("❌ RELAYER_PRIVATE_KEY no está configurada en .env");
       return;
     } // 2. Conectar a la red
     const provider = new ethers.JsonRpcProvider(
-      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL
+      process.env.BLOCKCHAIN_RPC_URL || process.env.RPC_URL,
     );
     const relayerWallet = new ethers.Wallet(
       process.env.RELAYER_PRIVATE_KEY || process.env.RELAYER_PK,
-      provider
+      provider,
     );
 
     console.log("\n🔑 Información del Relayer:");
@@ -60,7 +65,7 @@ async function checkBalanceAndConfig() {
     if (balanceFloat === 0) {
       console.log("❌ Balance es CERO - necesitas fondos");
       console.log(
-        "💡 Obtén ETH del faucet: https://faucet.trade/megaeth-testnet-eth-faucet"
+        "💡 Obtén ETH del faucet: https://faucet.trade/megaeth-testnet-eth-faucet",
       );
     } else if (balanceFloat < 0.001) {
       console.log("⚠️  Balance muy bajo para múltiples transacciones");
@@ -85,7 +90,7 @@ async function checkBalanceAndConfig() {
         console.log(
           "Costo estimado crear elección:",
           estimatedCost.toFixed(8),
-          "ETH"
+          "ETH",
         );
 
         // Estimar con los parámetros configurados
@@ -95,7 +100,7 @@ async function checkBalanceAndConfig() {
         console.log(
           "Costo con gas configurado (0.1 gwei):",
           configuredCost.toFixed(8),
-          "ETH"
+          "ETH",
         );
 
         if (balanceFloat < estimatedCost * 2) {
@@ -103,7 +108,7 @@ async function checkBalanceAndConfig() {
         }
       } else {
         console.log(
-          "Gas Price: No disponible (usando configuración por defecto)"
+          "Gas Price: No disponible (usando configuración por defecto)",
         );
       }
     } catch (gasError) {
@@ -126,7 +131,7 @@ async function checkBalanceAndConfig() {
       }
     } else {
       console.log(
-        "\n⚠️  CONTRACT_ADDRESS no configurada - necesitas hacer deploy"
+        "\n⚠️  CONTRACT_ADDRESS no configurada - necesitas hacer deploy",
       );
     }
 
@@ -135,7 +140,7 @@ async function checkBalanceAndConfig() {
     if (balanceFloat < 0.001) {
       console.log("1. Obtén más ETH del faucet de MegaETH");
       console.log(
-        "2. URL del faucet: https://faucet.trade/megaeth-testnet-eth-faucet"
+        "2. URL del faucet: https://faucet.trade/megaeth-testnet-eth-faucet",
       );
     }
 
