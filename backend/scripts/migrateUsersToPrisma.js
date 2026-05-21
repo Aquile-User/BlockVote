@@ -1,5 +1,10 @@
 require("dotenv").config();
-process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./prisma/dev.db";
+
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is required. Configure backend/.env with your Postgres connection string.",
+  );
+}
 const fs = require("fs");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");

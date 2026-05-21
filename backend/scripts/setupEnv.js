@@ -43,6 +43,10 @@ function firstDefined(...values) {
   );
 }
 
+function isPlaceholderDatabaseUrl(value) {
+  return !value || value.includes("<") || value.includes(">");
+}
+
 function formatLabel(value, fallback = "❌ Falta") {
   return value ? "✅ OK" : fallback;
 }
@@ -135,16 +139,16 @@ async function main() {
   );
   const relayerNeedsGeneration =
     !relayerPrivateKey || relayerPrivateKey === relayerPlaceholder;
+  const databaseUrl = isPlaceholderDatabaseUrl(fileValues.DATABASE_URL)
+    ? process.env.DATABASE_URL || ""
+    : fileValues.DATABASE_URL;
 
   if (relayerNeedsGeneration) {
     const generatedWallet = ethers.Wallet.createRandom();
     relayerPrivateKey = generatedWallet.privateKey;
     const nextValues = {
       ...fileValues,
-      DATABASE_URL:
-        fileValues.DATABASE_URL ||
-        exampleValues.DATABASE_URL ||
-        "file:./prisma/dev.db",
+      DATABASE_URL: databaseUrl,
       BLOCKCHAIN_RPC_URL:
         rpcUrl ||
         exampleValues.BLOCKCHAIN_RPC_URL ||
@@ -185,6 +189,12 @@ async function main() {
 
   if (!rpcUrl) {
     localErrors.push("Falta BLOCKCHAIN_RPC_URL o RPC_URL");
+  }
+
+  if (isPlaceholderDatabaseUrl(fileValues.DATABASE_URL)) {
+    localErrors.push(
+      "Falta DATABASE_URL real. Configura la cadena de conexión a Postgres en .env",
+    );
   }
 
   if (

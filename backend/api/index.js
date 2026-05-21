@@ -1,7 +1,12 @@
 // api/index.js
 
 require("dotenv").config();
-process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./prisma/dev.db";
+
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is required. Configure backend/.env with your Postgres connection string.",
+  );
+}
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
