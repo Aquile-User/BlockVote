@@ -7,6 +7,7 @@ import {
   Database,
   Activity,
   Vote,
+  Users,
   RefreshCw,
   LogOut,
   Globe,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import AdminLogin from "../auth/AdminLogin";
 import ElectionManagement from "./ElectionManagement";
+import AdminManagement from "./AdminManagement";
 
 // Componente reutilizable para las cards de estado del sistema
 const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay = 0 }) => (
@@ -58,6 +60,7 @@ const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay 
 const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [currentAdmin, setCurrentAdmin] = useState(null);
   const [systemHealth, setSystemHealth] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -105,6 +108,7 @@ const AdminPage = () => {
         // store admin info client-side (non-sensitive)
         localStorage.setItem('admin', JSON.stringify(admin));
         localStorage.setItem('adminAuthenticated', 'true');
+        setCurrentAdmin(admin);
         setIsAuthenticated(true);
         fetchSystemHealth();
       } catch (err) {
@@ -144,6 +148,7 @@ const AdminPage = () => {
     localStorage.removeItem('adminSession');
     localStorage.removeItem('admin');
     localStorage.removeItem('admin_bound_to');
+    setCurrentAdmin(null);
     setIsAuthenticated(false);
     setActiveTab('overview');
   };
@@ -200,7 +205,8 @@ const AdminPage = () => {
 
   const tabs = [
     { id: 'overview', label: 'Vista General', icon: Activity },
-    { id: 'elections', label: 'Gestión de Elecciones', icon: Vote }
+    { id: 'elections', label: 'Gestión de Elecciones', icon: Vote },
+    { id: 'admins', label: 'Gestión de Admins', icon: Users }
   ]; const renderOverview = () => (
     <div className="space-y-8">
       {/* System Health Dashboard */}
@@ -432,6 +438,7 @@ const AdminPage = () => {
         >
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'elections' && <ElectionManagement />}
+          {activeTab === 'admins' && <AdminManagement currentAdmin={currentAdmin} />}
         </motion.div>
       </div>
     </div>

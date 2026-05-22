@@ -225,3 +225,36 @@ export async function getProvinceMetrics() {
   const resp = await axios.get(`${API_BASE}/metrics/provinces?_t=${timestamp}`);
   return resp.data;
 }
+
+// Admin management API functions (cookie-based auth)
+export async function getAdmins() {
+  const resp = await axios.get(`${API_BASE}/admin/admins`, {
+    withCredentials: true,
+  });
+  return resp.data;
+}
+
+export async function createAdmin(adminData) {
+  const resp = await axios.post(`${API_BASE}/admin/admins`, adminData, {
+    withCredentials: true,
+  });
+  return resp.data;
+}
+
+export async function updateAdmin(adminId, updates) {
+  const resp = await axios.patch(
+    `${API_BASE}/admin/admins/${adminId}`,
+    updates,
+    {
+      withCredentials: true,
+    },
+  );
+  return resp.data;
+}
+
+export async function deleteAdmin(adminId) {
+  await axios.delete(`${API_BASE}/admin/admins/${adminId}`, {
+    withCredentials: true,
+  });
+  return { success: true };
+}
