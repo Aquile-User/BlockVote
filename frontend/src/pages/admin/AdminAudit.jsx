@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx/xlsx.mjs';
 import { getAudits, getAdmins, recordAuditExport } from '../../api';
 import toast from 'react-hot-toast';
 
@@ -156,6 +157,114 @@ const AdminAudit = ({ currentAdmin }) => {
     return '"' + flattenText(value).replace(/"/g, '""') + '"';
   }
 
+  function buildExportColumns() {
+    const cols = [];
+    if (visibleColumns.id) cols.push({ key: 'id', label: 'ID' });
+    if (visibleColumns.actor) cols.push({ key: 'actor', label: 'Actor' });
+    if (visibleColumns.action) cols.push({ key: 'action', label: 'Acción' });
+    if (visibleColumns.target) cols.push({ key: 'target', label: 'Target' });
+    if (visibleColumns.details) cols.push({ key: 'details', label: 'Detalles' });
+    if (visibleColumns.ip) cols.push({ key: 'ip', label: 'IP' });
+    if (visibleColumns.userAgent) {
+      cols.push({ key: 'browser', label: 'Navegador' });
+      cols.push({ key: 'os', label: 'SO' });
+    }
+    if (visibleColumns.created) cols.push({ key: 'created', label: 'Creado' });
+    return cols;
+  }
+
+  function buildExportRow(it, cols) {
+    const { browser, os } = parseUserAgent(it.userAgent);
+    return cols.map((c) => {
+      switch (c.key) {
+        case 'id':
+          return `#${it.id}`;
+        case 'actor':
+          return adminMap[it.actorAdminId] ?? it.actorAdminId ?? '';
+        case 'action':
+          return humanAction(it.action, it.details);
+        case 'target':
+          return adminMap[it.targetAdminId] ?? it.targetAdminId ?? '';
+        case 'details':
+          return formatDetailsForCsv(it.details);
+        case 'ip':
+          return it.ip ?? '';
+        case 'browser':
+          return browser;
+        case 'os':
+          return os;
+        case 'created':
+          return formatDateForCsv(it.createdAt);
+        default:
+          return '';
+      }
+    });
+  }
+
+  function applyWorkbookStyles(worksheet, rowCount, colCount) {
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    const evenFill = { fgColor: { rgb: 'F7FBFF' } };
+    const oddFill = { fgColor: { rgb: 'FFFFFF' } };
+    const headerPalette = [
+      '1F4E78',
+      '2F75B5',
+      '5B9BD5',
+      '70AD47',
+      'ED7D31',
+      'A5A5A5',
+      '4472C4',
+      'C55A11',
+      '548235',
+    ];
+
+    for (let c = range.s.c; c <= range.e.c; c += 1) {
+      const headerCell = worksheet[XLSX.utils.encode_cell({ r: 0, c })];
+      if (headerCell) {
+        const fillColor = headerPalette[c % headerPalette.length];
+        headerCell.s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: fillColor } },
+          border: {
+            bottom: { style: 'thin', color: { rgb: 'D9E2F3' } },
+            top: { style: 'thin', color: { rgb: 'D9E2F3' } },
+            left: { style: 'thin', color: { rgb: 'D9E2F3' } },
+            right: { style: 'thin', color: { rgb: 'D9E2F3' } },
+          },
+          alignment: { vertical: 'center', horizontal: 'center' },
+        };
+      }
+    }
+
+    for (let r = 1; r <= range.e.r; r += 1) {
+      const fill = r % 2 === 1 ? oddFill : evenFill;
+      for (let c = range.s.c; c <= range.e.c; c += 1) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r, c })];
+        if (cell) {
+          cell.s = {
+            ...(cell.s || {}),
+            fill,
+            alignment: { vertical: 'top', wrapText: true },
+          };
+        }
+      }
+    }
+
+    worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+    worksheet['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+
+    const widths = Array.from({ length: colCount }, (_, colIndex) => {
+      let maxLen = 0;
+      for (let r = 0; r <= rowCount; r += 1) {
+        const cell = worksheet[XLSX.utils.encode_cell({ r, c: colIndex })];
+        const text = cell ? flattenText(cell.v) : '';
+        maxLen = Math.max(maxLen, text.length);
+      }
+      return { wch: Math.min(Math.max(maxLen + 2, 12), 45) };
+    });
+
+    worksheet['!cols'] = widths;
+  }
+
   return (
     <div className="space-y-4">
       <div className="glass-card p-6">
@@ -192,75 +301,20 @@ const AdminAudit = ({ currentAdmin }) => {
               <button
                 onClick={async () => {
                   try {
-                    const cols = [];
-                    if (visibleColumns.id) cols.push({ key: 'id', label: 'ID' });
-                    if (visibleColumns.actor) cols.push({ key: 'actor', label: 'Actor' });
-                    if (visibleColumns.action) cols.push({ key: 'action', label: 'Acción' });
-                    if (visibleColumns.target) cols.push({ key: 'target', label: 'Target' });
-                    if (visibleColumns.details) cols.push({ key: 'details', label: 'Detalles' });
-                    if (visibleColumns.ip) cols.push({ key: 'ip', label: 'IP' });
-                    if (visibleColumns.userAgent) {
-                      cols.push({ key: 'browser', label: 'Navegador' });
-                      cols.push({ key: 'os', label: 'SO' });
-                    }
-                    if (visibleColumns.created) cols.push({ key: 'created', label: 'Creado' });
+                    const cols = buildExportColumns();
+                    const data = [cols.map((c) => c.label), ...items.map((it) => buildExportRow(it, cols))];
+                    const workbook = XLSX.utils.book_new();
+                    const worksheet = XLSX.utils.aoa_to_sheet(data);
 
-                    const rows = items.map((it) => {
-                      const { browser, os } = parseUserAgent(it.userAgent);
-                      const row = [];
-                      cols.forEach((c) => {
-                        switch (c.key) {
-                          case 'id':
-                            row.push(csvCell(`#${it.id}`));
-                            break;
-                          case 'actor':
-                            row.push(csvCell(adminMap[it.actorAdminId] ?? it.actorAdminId ?? ''));
-                            break;
-                          case 'action':
-                            row.push(csvCell(humanAction(it.action, it.details)));
-                            break;
-                          case 'target':
-                            row.push(csvCell(adminMap[it.targetAdminId] ?? it.targetAdminId ?? ''));
-                            break;
-                          case 'details':
-                            row.push(csvCell(formatDetailsForCsv(it.details)));
-                            break;
-                          case 'ip':
-                            row.push(csvCell(it.ip ?? ''));
-                            break;
-                          case 'browser':
-                            row.push(csvCell(browser));
-                            break;
-                          case 'os':
-                            row.push(csvCell(os));
-                            break;
-                          case 'created':
-                            row.push(csvCell(formatDateForCsv(it.createdAt)));
-                            break;
-                          default:
-                            row.push('');
-                        }
-                      });
-                      return row.join(',');
-                    });
+                    applyWorkbookStyles(worksheet, data.length - 1, cols.length);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Auditoría');
+                    XLSX.writeFile(workbook, 'auditoria_admins.xlsx', { bookType: 'xlsx', cellStyles: true });
 
-                    const header = cols.map((c) => csvCell(c.label)).join(',');
-                    const csv = '\uFEFF' + header + '\n' + rows.join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `admin_audits_${Date.now()}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-
-                    toast.success('Exportación preparada. Descargando...');
+                    toast.success('Exportación preparada. Descargando Excel...');
 
                     // record export action server-side for auditing
                     try {
-                      await recordAuditExport({ filters: { page, pageSize }, count: items.length, format: 'csv' });
+                      await recordAuditExport({ filters: { page, pageSize }, count: items.length, format: 'xlsx' });
                     } catch (e) {
                       console.warn('Export audit log failed', e);
                     }
@@ -271,7 +325,7 @@ const AdminAudit = ({ currentAdmin }) => {
                 }}
                 className="px-3 py-2 bg-white border rounded-lg text-sm"
               >
-                Exportar CSV
+                Exportar XLSX
               </button>
             </div>
           </div>
