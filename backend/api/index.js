@@ -27,7 +27,12 @@ const votingJson = require("../artifacts/contracts/Voting.sol/Voting.json");
 const abi = votingJson.abi;
 
 const app = express();
-app.use(cors());
+const cookieParser = require("cookie-parser");
+
+// CORS: allow frontend origin and cookies
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "http://localhost:5173";
+app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Establecer la codificación correcta para todas las respuestas
@@ -159,6 +164,11 @@ app.post("/admin/admins/:id/revoke", requireAdmin, async (req, res) => {
       data: { tokenVersion: { increment: 1 } },
     });
 
+    // Also clear cookie for current session so revoked token can't be used
+    res.clearCookie("admin_token", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
     res.json({ message: `Revoked tokens for admin ${id}` });
   } catch (err) {
     console.error("Revoke admin tokens error:", err.message || err);
@@ -182,10 +192,15 @@ if (!ADMIN_JWT_SECRET) {
 // Middleware to protect admin routes
 async function requireAdmin(req, res, next) {
   try {
+    // Accept token from Authorization header or from httpOnly cookie
+    let token = null;
     const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith("Bearer "))
-      return res.status(401).json({ error: "Missing token" });
-    const token = auth.split(" ")[1];
+    if (auth && auth.startsWith("Bearer ")) {
+      token = auth.split(" ")[1];
+    } else if (req.cookies && req.cookies.admin_token) {
+      token = req.cookies.admin_token;
+    }
+    if (!token) return res.status(401).json({ error: "Missing token" });
     const payload = jwt.verify(token, ADMIN_JWT_SECRET);
     if (!payload || !payload.adminId)
       return res.status(401).json({ error: "Invalid token" });
@@ -288,6 +303,20 @@ const options = {
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Return current admin if authenticated (used by frontend to validate cookie-based session)
+app.get("/admin/me", requireAdmin, async (req, res) => {
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { id: Number(req.admin.id) },
+    });
+    if (!admin) return res.status(404).json({ error: "Admin not found" });
+    res.json({ id: admin.id, username: admin.username, role: admin.role });
+  } catch (err) {
+    console.error("Admin me error:", err.message || err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
 
 // Health check endpoint
 app.get("/health", async (req, res) => {
@@ -674,13 +703,34 @@ app.post("/admin/login", async (req, res) => {
       ADMIN_JWT_SECRET,
       { expiresIn: "8h" },
     );
+    // Set token as httpOnly secure cookie
+    res.cookie("admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    });
+
     res.json({
-      token,
       admin: { id: admin.id, username: admin.username, role: admin.role },
     });
   } catch (err) {
     console.error("Admin login error:", err.message || err);
     res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Admin logout - clears cookie
+app.post("/admin/logout", async (req, res) => {
+  try {
+    res.clearCookie("admin_token", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Admin logout error:", err.message || err);
+    res.status(500).json({ error: "Failed to logout" });
   }
 });
 

@@ -128,6 +128,7 @@ const AdminLogin = ({ onLogin }) => {
       const res = await fetch(`${CONFIG.API_BASE}/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username: credentials.username, password: credentials.password })
       });
 
@@ -136,10 +137,7 @@ const AdminLogin = ({ onLogin }) => {
         const msg = data?.error || data?.message || `Login failed (${res.status})`;
         toast.error(`⚠️ ${msg}`);
       } else {
-        // Guardar token y meta del admin
-        if (data.token) {
-          localStorage.setItem('admin_token', data.token);
-        }
+        // Do not store token in localStorage; token is in httpOnly cookie
         if (data.admin) {
           localStorage.setItem('admin', JSON.stringify(data.admin));
         }

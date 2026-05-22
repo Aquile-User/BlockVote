@@ -9,6 +9,7 @@ import {
   Shield
 } from "lucide-react";
 import { validateDominicanID } from "../../utils/dominicanRepublic";
+import { CONFIG } from "../../config";
 
 const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
   const [formData, setFormData] = useState({
@@ -53,6 +54,15 @@ const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
     }
     try {
       setLoading(true);
+      // Clear any admin cookie/session before setting a new normal user session.
+      try {
+        await fetch(`${CONFIG.API_BASE}/admin/logout`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch (logoutError) {
+        console.error('Pre-login admin logout failed:', logoutError);
+      }
       // Attempting login with credentials
 
       // First check localStorage
@@ -65,7 +75,6 @@ const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
         if (storedUser.socialId === formData.socialId &&
           storedUser.name.toLowerCase() === formData.name.toLowerCase()) {
           // Clean any admin session leftover before setting a new current user
-          localStorage.removeItem('admin_token');
           localStorage.removeItem('admin');
           localStorage.removeItem('adminAuthenticated');
           localStorage.removeItem('admin_bound_to');
@@ -106,7 +115,6 @@ const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
           console.log('Complete user object:', completeUser);
 
           // Clean any admin session leftover before setting a new current user
-          localStorage.removeItem('admin_token');
           localStorage.removeItem('admin');
           localStorage.removeItem('adminAuthenticated');
           localStorage.removeItem('admin_bound_to');
