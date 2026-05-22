@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Crown,
   Filter,
+  KeyRound,
   Plus,
   RefreshCw,
   Search,
@@ -23,6 +24,11 @@ const initialCreateForm = {
   role: "admin",
 };
 
+const initialPasswordForm = {
+  password: "",
+  confirmPassword: "",
+};
+
 const AdminManagement = ({ currentAdmin }) => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +36,9 @@ const AdminManagement = ({ currentAdmin }) => {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [passwordCandidate, setPasswordCandidate] = useState(null);
+  const [passwordForm, setPasswordForm] = useState(initialPasswordForm);
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -91,6 +100,26 @@ const AdminManagement = ({ currentAdmin }) => {
   const resetCreateForm = () => {
     setCreateForm(initialCreateForm);
     setShowCreateModal(false);
+  };
+
+  const canChangePassword = (admin) => {
+    return isSuperadmin || currentAdmin?.id === admin.id;
+  };
+
+  const openPasswordModal = (admin) => {
+    if (!canChangePassword(admin)) {
+      toast.error("No tienes permisos para cambiar esta contraseña.");
+      return;
+    }
+
+    setPasswordCandidate(admin);
+    setPasswordForm(initialPasswordForm);
+  };
+
+  const closePasswordModal = (force = false) => {
+    if (passwordSubmitting && !force) return;
+    setPasswordCandidate(null);
+    setPasswordForm(initialPasswordForm);
   };
 
   const handleCreateAdmin = async (e) => {
@@ -194,6 +223,49 @@ const AdminManagement = ({ currentAdmin }) => {
       else toast.error(message || "No se pudo eliminar el administrador.");
     } finally {
       setActionLoadingId(null);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (!passwordCandidate) return;
+
+    const nextPassword = passwordForm.password.trim();
+    const confirmPassword = passwordForm.confirmPassword.trim();
+
+    if (!nextPassword) {
+      toast.error("La nueva contraseña es obligatoria.");
+      return;
+    }
+
+    if (nextPassword.length < 8) {
+      toast.error("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden.");
+      return;
+    }
+
+    try {
+      setPasswordSubmitting(true);
+      await updateAdmin(passwordCandidate.id, { password: nextPassword });
+      toast.success(`Contraseña actualizada para ${passwordCandidate.username}.`);
+      closePasswordModal(true);
+    } catch (error) {
+      console.error("Error updating admin password:", error);
+      const status = error?.response?.status;
+      const message = error?.response?.data?.error;
+
+      if (status === 403) {
+        toast.error("No tienes permisos para cambiar esta contraseña.");
+      } else {
+        toast.error(message || "No se pudo actualizar la contraseña.");
+      }
+    } finally {
+      setPasswordSubmitting(false);
     }
   };
 
@@ -373,6 +445,20 @@ const AdminManagement = ({ currentAdmin }) => {
                       <td className="py-3 px-2">
                         <div className="flex justify-end gap-2">
                           <button
+                            onClick={() => openPasswordModal(admin)}
+                            disabled={!canChangePassword(admin) || actionLoadingId === admin.id}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-indigo-100 text-indigo-700 hover:bg-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={
+                              canChangePassword(admin)
+                                ? "Cambiar contraseña"
+                                : "Sin permisos"
+                            }
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                            Contraseña
+                          </button>
+
+                          <button
                             onClick={() => handleToggleAdmin(admin)}
                             disabled={!isSuperadmin || currentAdmin?.id === admin.id || actionLoadingId === admin.id}
                             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${admin.isActive
@@ -421,6 +507,13 @@ const AdminManagement = ({ currentAdmin }) => {
 
                   <div className="flex gap-2 mt-3">
                     <button
+                      onClick={() => openPasswordModal(admin)}
+                      disabled={!canChangePassword(admin) || actionLoadingId === admin.id}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm bg-indigo-100 text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Contraseña
+                    </button>
+                    <button
                       onClick={() => handleToggleAdmin(admin)}
                       disabled={!isSuperadmin || currentAdmin?.id === admin.id || actionLoadingId === admin.id}
                       className="flex-1 px-3 py-2 rounded-lg text-sm bg-slate-100 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -443,6 +536,90 @@ const AdminManagement = ({ currentAdmin }) => {
       </div>
 
       <AnimatePresence>
+        {passwordCandidate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closePasswordModal}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Cambiar Contraseña</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Administrador: <strong>{passwordCandidate.username}</strong>
+                  </p>
+                </div>
+                <button
+                  onClick={closePasswordModal}
+                  className="p-1 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                  disabled={passwordSubmitting}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Nueva contraseña</label>
+                  <input
+                    type="password"
+                    value={passwordForm.password}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    placeholder="Mínimo 8 caracteres"
+                    minLength={8}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Confirmar contraseña</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    placeholder="Repite la contraseña"
+                    minLength={8}
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={closePasswordModal}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+                    disabled={passwordSubmitting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={passwordSubmitting}
+                    className="px-4 py-2 rounded-lg bg-primary-500 hover:bg-primary-600 text-white disabled:opacity-50"
+                  >
+                    {passwordSubmitting ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
         {deleteCandidate && (
           <motion.div
             initial={{ opacity: 0 }}
