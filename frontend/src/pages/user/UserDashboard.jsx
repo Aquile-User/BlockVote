@@ -154,6 +154,22 @@ const Dashboard = ({ user }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [electionsPerPage] = useState(ELECTIONS_PER_PAGE);
 
+  const memberSinceLabel = (() => {
+    if (!user?.registeredAt) {
+      return 'N/D';
+    }
+
+    const registrationDate = new Date(user.registeredAt);
+    if (Number.isNaN(registrationDate.getTime())) {
+      return 'N/D';
+    }
+
+    return registrationDate.toLocaleDateString('es-DO', {
+      year: 'numeric',
+      month: 'short'
+    });
+  })();
+
   useEffect(() => {
     loadDashboardData();
   }, [timeframe]);
@@ -1211,7 +1227,7 @@ const Dashboard = ({ user }) => {
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <Calendar className="w-6 h-6 text-white" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mb-1">2024</p>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{memberSinceLabel}</p>
                       <p className="text-xs text-gray-600 font-medium">Miembro desde</p>
                     </div>                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 border border-purple-200/50 text-center hover:shadow-soft transition-all duration-200">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
