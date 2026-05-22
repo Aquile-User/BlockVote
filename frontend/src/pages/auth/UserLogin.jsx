@@ -64,6 +64,13 @@ const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
         // Verify credentials match
         if (storedUser.socialId === formData.socialId &&
           storedUser.name.toLowerCase() === formData.name.toLowerCase()) {
+          // Clean any admin session leftover before setting a new current user
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin');
+          localStorage.removeItem('adminAuthenticated');
+          localStorage.removeItem('admin_bound_to');
+          localStorage.removeItem('adminSession');
+
           setUser(storedUser);
           setIsConnected(true);
           toast.success(`Welcome back, ${storedUser.name}!`);
@@ -97,6 +104,13 @@ const UserLogin = ({ setUser, setIsConnected, switchToRegister }) => {
           };
 
           console.log('Complete user object:', completeUser);
+
+          // Clean any admin session leftover before setting a new current user
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin');
+          localStorage.removeItem('adminAuthenticated');
+          localStorage.removeItem('admin_bound_to');
+          localStorage.removeItem('adminSession');
 
           // Store user in localStorage and set current user
           localStorage.setItem('currentUser', JSON.stringify(completeUser));

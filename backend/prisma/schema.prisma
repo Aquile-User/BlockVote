@@ -36,3 +36,15 @@ model Vote {
   @@index([electionId])
   @@index([createdAt])
 }
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  tokenVersion Int      @default(0)
+  role         String   @default("admin")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([username])
+}

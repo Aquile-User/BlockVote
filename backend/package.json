@@ -12,7 +12,8 @@
     "db:copy-sqlite-to-postgres": "node scripts/copySqliteToPostgres.js",
     "db:clear-private-keys": "node scripts/clearPrivateKeys.js",
     "relayer": "nodemon relayer/index.js",
-    "api": "nodemon api/index.js"
+    "api": "nodemon api/index.js",
+    "create:admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
@@ -25,6 +26,8 @@
     "node-fetch": "^3.3.2",
     "pg": "^8.21.0",
     "prisma": "^6.12.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcrypt": "^5.1.0",
     "sqlite3": "^6.0.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3"

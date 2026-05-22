@@ -19,9 +19,16 @@ const Topbar = ({ user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = () => {
+    // Remove current user and any admin session tied to this browser
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('adminAuthenticated');
+    localStorage.removeItem('adminSession');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin');
     window.location.reload();
-  }; const navItems = [
+  };
+
+  const navItems = [
     {
       path: '/dashboard',
       label: 'Dashboard',
