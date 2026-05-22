@@ -76,6 +76,11 @@ app.post("/admin/admins", requireAdmin, async (req, res) => {
     const created = await prisma.admin.create({
       data: { username, passwordHash: hash, role: role || "admin" },
     });
+    // Audit: record admin creation
+    await recordAdminAudit(req, "create_admin", created.id, {
+      username: created.username,
+      role: created.role,
+    });
     res.status(201).json({
       id: created.id,
       username: created.username,
@@ -114,12 +119,19 @@ app.patch("/admin/admins/:id", requireAdmin, async (req, res) => {
         where: { id },
         data: { passwordHash: hash },
       });
+      // Record password change
+      await recordAdminAudit(req, "update_admin", id, {
+        password_changed: true,
+      });
     }
 
     if (isActive !== undefined) {
       await prisma.admin.update({
         where: { id },
         data: { isActive: Boolean(isActive) },
+      });
+      await recordAdminAudit(req, "update_admin", id, {
+        isActive: Boolean(isActive),
       });
     }
 
@@ -143,6 +155,10 @@ app.delete("/admin/admins/:id", requireAdmin, async (req, res) => {
     const target = await prisma.admin.findUnique({ where: { id } });
     if (!target) return res.status(404).json({ error: "Admin not found" });
     await prisma.admin.delete({ where: { id } });
+    // Audit: record deletion
+    await recordAdminAudit(req, "delete_admin", id, {
+      username: target.username,
+    });
     res.status(204).send();
   } catch (err) {
     console.error("Delete admin error:", err.message || err);
@@ -169,6 +185,10 @@ app.post("/admin/admins/:id/revoke", requireAdmin, async (req, res) => {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
+    // Audit: record token revocation
+    await recordAdminAudit(req, "revoke_tokens", id, {
+      username: target.username,
+    });
     res.json({ message: `Revoked tokens for admin ${id}` });
   } catch (err) {
     console.error("Revoke admin tokens error:", err.message || err);
@@ -177,6 +197,31 @@ app.post("/admin/admins/:id/revoke", requireAdmin, async (req, res) => {
 });
 
 const prisma = new PrismaClient();
+
+// Helper to record admin audit events
+async function recordAdminAudit(
+  req,
+  action,
+  targetAdminId = null,
+  details = null,
+) {
+  try {
+    const ip = req.headers["x-forwarded-for"] || req.ip || null;
+    const userAgent = req.headers["user-agent"] || null;
+    await prisma.adminAudit.create({
+      data: {
+        actorAdminId: req?.admin?.id || null,
+        action: String(action),
+        targetAdminId: targetAdminId || null,
+        details: details || null,
+        ip,
+        userAgent,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to record admin audit:", err?.message || err);
+  }
+}
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -315,6 +360,64 @@ app.get("/admin/me", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Admin me error:", err.message || err);
     res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Get admin audits (superadmin only)
+app.get("/admin/audits", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin")
+      return res.status(403).json({ error: "Requires superadmin" });
+
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.min(
+      200,
+      Math.max(1, Number(req.query.pageSize) || 50),
+    );
+
+    const where = {};
+    if (req.query.actorId) where.actorAdminId = Number(req.query.actorId);
+    if (req.query.targetId) where.targetAdminId = Number(req.query.targetId);
+    if (req.query.action) where.action = String(req.query.action);
+    if (req.query.since || req.query.until) {
+      where.createdAt = {};
+      if (req.query.since) where.createdAt.gte = new Date(req.query.since);
+      if (req.query.until) where.createdAt.lte = new Date(req.query.until);
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.adminAudit.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.adminAudit.count({ where }),
+    ]);
+
+    res.json({ items, total, page, pageSize });
+  } catch (err) {
+    console.error("Get audits error:", err?.message || err);
+    res.status(500).json({ error: "Failed to fetch audits" });
+  }
+});
+
+// Record an export action (so exports are audited). Body: { filters, count, format }
+app.post("/admin/audits/export-log", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin")
+      return res.status(403).json({ error: "Requires superadmin" });
+
+    const { filters, count, format } = req.body || {};
+    await recordAdminAudit(req, "export_audits", null, {
+      filters: filters || null,
+      exportedCount: Number(count || 0),
+      format: format || "csv",
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Export log error:", err?.message || err);
+    res.status(500).json({ error: "Failed to record export" });
   }
 });
 
@@ -710,6 +813,15 @@ app.post("/admin/login", async (req, res) => {
       sameSite: "lax",
       maxAge: 8 * 60 * 60 * 1000, // 8 hours
     });
+    // Audit: record successful login
+    await recordAdminAudit(
+      { headers: req.headers, ip: req.ip, admin: { id: admin.id } },
+      "login",
+      admin.id,
+      {
+        username: admin.username,
+      },
+    );
 
     res.json({
       admin: { id: admin.id, username: admin.username, role: admin.role },

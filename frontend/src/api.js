@@ -258,3 +258,24 @@ export async function deleteAdmin(adminId) {
   });
   return { success: true };
 }
+
+// Audit logs (superadmin only)
+export async function getAudits(params = {}) {
+  const resp = await axios.get(`${API_BASE}/admin/audits`, {
+    params,
+    withCredentials: true,
+  });
+  return resp.data;
+}
+
+// Record that an admin exported audits (for server-side audit logging)
+export async function recordAuditExport(payload = {}) {
+  const resp = await axios.post(
+    `${API_BASE}/admin/audits/export-log`,
+    payload,
+    {
+      withCredentials: true,
+    },
+  );
+  return resp.data;
+}

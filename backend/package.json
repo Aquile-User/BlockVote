@@ -13,6 +13,7 @@
     "db:clear-private-keys": "node scripts/clearPrivateKeys.js",
     "relayer": "nodemon relayer/index.js",
     "api": "nodemon api/index.js",
+    "test:audit": "node scripts/validateAudit.js",
     "create:admin": "node scripts/createAdmin.js"
   },
   "dependencies": {

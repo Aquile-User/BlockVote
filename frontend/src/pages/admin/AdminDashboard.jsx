@@ -19,6 +19,7 @@ import {
 import AdminLogin from "../auth/AdminLogin";
 import ElectionManagement from "./ElectionManagement";
 import AdminManagement from "./AdminManagement";
+import AdminAudit from "./AdminAudit";
 
 // Componente reutilizable para las cards de estado del sistema
 const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay = 0 }) => (
@@ -206,7 +207,8 @@ const AdminPage = () => {
   const tabs = [
     { id: 'overview', label: 'Vista General', icon: Activity },
     { id: 'elections', label: 'Gestión de Elecciones', icon: Vote },
-    { id: 'admins', label: 'Gestión de Admins', icon: Users }
+    { id: 'admins', label: 'Gestión de Admins', icon: Users },
+    { id: 'audits', label: 'Auditoría', icon: Activity },
   ]; const renderOverview = () => (
     <div className="space-y-8">
       {/* System Health Dashboard */}
@@ -439,6 +441,7 @@ const AdminPage = () => {
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'elections' && <ElectionManagement />}
           {activeTab === 'admins' && <AdminManagement currentAdmin={currentAdmin} />}
+          {activeTab === 'audits' && <AdminAudit currentAdmin={currentAdmin} />}
         </motion.div>
       </div>
     </div>
