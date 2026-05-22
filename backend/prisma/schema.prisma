@@ -16,6 +16,23 @@ model User {
   province     String
   authMethod   String
   registeredAt DateTime @default(now())
+  votes        Vote[]
 
   @@index([address])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  userId    Int
+  province  String
+  electionId String
+  txHash    String?  @unique
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([province])
+  @@index([electionId])
+  @@index([createdAt])
 }
