@@ -23,7 +23,7 @@ import {
   Eye
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { getElections, getResults, getElectionById, hasVoted } from '../../api';
+import { getElections, getResults, getElectionById, hasVoted, getProvinceMetrics } from '../../api';
 import { mapUsersToProvinces } from '../../utils/demographics';
 
 // Configuraciones constantes
@@ -387,42 +387,39 @@ const Dashboard = ({ user }) => {
         console.log('Dashboard: No user or socialId available for vote counting');
       }
 
-      // Real Dominican Republic province data based on actual registered users
+      // Province metrics based on the DB projection of votes
       let realProvinceData = [];
 
       try {
+        const provinceMetrics = await getProvinceMetrics();
+        realProvinceData = (provinceMetrics.provinces || []).map((item) => ({
+          name: item.name,
+          votes: item.votesCast || 0,
+          registered: item.registeredUsers || 0,
+          participatingUsers: item.participatingUsers || 0,
+          participationRate: item.participationRate || 0
+        }));
+      } catch (error) {
+        console.error('Error fetching province metrics:', error);
         const usersResponse = await fetch('http://localhost:3000/users');
         const usersData = await usersResponse.json();
 
         // Combine all election results for province mapping using el resultsMap
         const combinedResults = {};
         for (const election of validElections) {
-          // Usar el mapa de resultados en lugar de llamar a getResults nuevamente
           const results = resultsMap[election.electionId];
           Object.entries(results || {}).forEach(([candidate, votes]) => {
             combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
           });
         }
 
-        // Use the standardized function
-        realProvinceData = mapUsersToProvinces(usersData, combinedResults);
-
-        // Convert to the format expected by the Dashboard
-        realProvinceData = realProvinceData.map(item => ({
+        realProvinceData = mapUsersToProvinces(usersData, combinedResults).map(item => ({
           name: item.name || item.province,
           votes: item.votes,
           registered: item.registered || item.realUsers,
+          participatingUsers: item.participatingUsers || item.voters || 0,
           participationRate: item.participationRate || (item.registered > 0 ? (item.votes / item.registered * 100).toFixed(1) : 0)
         }));
-      } catch (error) {
-        console.error('Error fetching real user data:', error);
-        // Fallback data
-        realProvinceData = [
-          { name: 'San Pedro de Macorís', votes: 2, registered: 2, participationRate: 100 },
-          { name: 'Monte Plata', votes: 2, registered: 2, participationRate: 100 },
-          { name: 'Sánchez Ramírez', votes: 1, registered: 1, participationRate: 100 },
-          { name: 'María Trinidad Sánchez', votes: 1, registered: 1, participationRate: 100 }
-        ];
       } setProvinceData(realProvinceData);
 
       // Cargar datos de elecciones para la lista
@@ -466,15 +463,17 @@ const Dashboard = ({ user }) => {
         color: '#111827'
       },
       formatter: function (params) {
-        const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
-        const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
+        const totalRegistered = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
+        const percentage = totalRegistered > 0 ? ((params.value / totalRegistered) * 100).toFixed(1) : 0;
         const data = provinceData.find(item => item.name === params.name);
         return `
           <strong>${params.name}</strong><br/>
-          Usuarios Registrados: <span style="color: #14b8a6">${params.value}</span><br/>
-          Porcentaje: <span style="color: #0891b2">${percentage}%</span><br/>
-          Votos Emitidos: ${data?.votes || 0}<br/>
-          Participación: ${data?.participationRate || 0}%        `;
+          Usuarios registrados: <span style="color: #14b8a6">${params.value}</span><br/>
+          Porcentaje del total: <span style="color: #0891b2">${percentage}%</span><br/>
+          Votos emitidos: ${data?.votes || 0}<br/>
+          Votantes únicos: ${data?.participatingUsers || 0}<br/>
+          Participación: ${data?.participationRate || 0}%
+        `;
       }
     },
     series: [
@@ -503,8 +502,8 @@ const Dashboard = ({ user }) => {
           fontSize: 11,
           fontWeight: 600,
           formatter: function (params) {
-            const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
-            const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
+            const totalRegistered = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
+            const percentage = totalRegistered > 0 ? ((params.value / totalRegistered) * 100).toFixed(1) : 0;
             return `${params.name}\n${percentage}%`;
           }
         },
