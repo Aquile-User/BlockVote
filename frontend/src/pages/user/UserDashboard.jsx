@@ -78,6 +78,42 @@ const MetricCard = ({ label, value, gradient, center = false, size = 'normal' })
   );
 };
 
+const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
+  const pastelColors = {
+    emerald: 'from-emerald-50 to-emerald-100',
+    amber: 'from-amber-50 to-amber-100',
+    violet: 'from-violet-50 to-violet-100'
+  };
+
+  const borderColors = {
+    emerald: 'border-emerald-200',
+    amber: 'border-amber-200',
+    violet: 'border-violet-200'
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      className="relative group h-full"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
+      <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
+        <div className="flex items-center justify-between mb-3 flex-1">
+          <div className="flex-1">
+            <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+            {subtitle && (
+              <p className="text-gray-700 text-xs">{subtitle}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // Función para determinar el estado de una elección
 const determineElectionStatus = (election, currentTime) => {
   if (election.disabled) return 'disabled';
@@ -537,41 +573,6 @@ const Dashboard = ({ user }) => {
         }
       }
     ]
-  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
-    // Define pastel background colors based on the original icon colors
-    const pastelColors = {
-      emerald: 'from-emerald-50 to-emerald-100',
-      amber: 'from-amber-50 to-amber-100',
-      violet: 'from-violet-50 to-violet-100'
-    };
-
-    const borderColors = {
-      emerald: 'border-emerald-200',
-      amber: 'border-amber-200',
-      violet: 'border-violet-200'
-    };
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.4 }}
-        className="relative group h-full"
-      >
-        <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
-        <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
-          <div className="flex items-center justify-between mb-3 flex-1">
-            <div className="flex-1">
-              <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-              {subtitle && (
-                <p className="text-gray-700 text-xs">{subtitle}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
   };
 
   if (loading) {
