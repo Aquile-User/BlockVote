@@ -106,6 +106,7 @@ const Dashboard = ({ user }) => {
     disabledElections: 0
   });
   const [provinceData, setProvinceData] = useState([]);
+  const [hiddenProvinces, setHiddenProvinces] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('7d');
@@ -447,6 +448,31 @@ const Dashboard = ({ user }) => {
     }
   };
 
+  const provinceChartData = provinceData
+    .filter(item => (item.registered || 0) > 0)
+    .map((item, index) => ({
+      value: item.registered || 0,
+      name: item.name,
+      color: `hsl(${170 + index * 25}, 70%, 55%)`,
+      itemStyle: {
+        color: `hsl(${170 + index * 25}, 70%, 55%)`,
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const visibleProvinceChartData = provinceChartData.filter(
+    (item) => !hiddenProvinces[item.name],
+  );
+
+  const toggleProvince = (provinceName) => {
+    setHiddenProvinces((prev) => ({
+      ...prev,
+      [provinceName]: !prev[provinceName],
+    }));
+  };
+
   const provinceVotesOption = {
     backgroundColor: 'transparent',
     title: {
@@ -481,40 +507,14 @@ const Dashboard = ({ user }) => {
         name: 'Usuarios por Provincia',
         type: 'pie',
         radius: ['35%', '75%'],
-        center: ['50%', '50%'],
-        data: provinceData
-          .filter(item => (item.registered || 0) > 0)
-          .map((item, index) => ({
-            value: item.registered || 0,
-            name: item.name,
-            itemStyle: {
-              color: `hsl(${170 + index * 25}, 70%, 55%)`,
-              borderWidth: 2,
-              borderColor: '#ffffff'
-            }
-          }))
-          .sort((a, b) => b.value - a.value),
+        center: ['42%', '50%'],
+        data: visibleProvinceChartData,
         avoidLabelOverlap: false,
         label: {
-          show: true,
-          position: 'outside',
-          color: '#374151',
-          fontSize: 11,
-          fontWeight: 600,
-          formatter: function (params) {
-            const totalRegistered = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
-            const percentage = totalRegistered > 0 ? ((params.value / totalRegistered) * 100).toFixed(1) : 0;
-            return `${params.name}\n${percentage}%`;
-          }
+          show: false
         },
         labelLine: {
-          show: true,
-          length: 15,
-          length2: 8,
-          lineStyle: {
-            color: '#d1d5db',
-            width: 1
-          }
+          show: false
         },
         emphasis: {
           itemStyle: {
@@ -524,8 +524,10 @@ const Dashboard = ({ user }) => {
             borderWidth: 3
           },
           label: {
-            fontSize: 12,
-            fontWeight: 700
+            show: false
+          },
+          labelLine: {
+            show: false
           }
         },
         animationType: 'scale',
@@ -879,11 +881,47 @@ const Dashboard = ({ user }) => {
               </div>
             </div>
 
-            <ReactECharts
-              option={provinceVotesOption}
-              style={{ height: '320px' }}
-              opts={{ renderer: 'svg' }}
-            />            {/* Province Stats - Enhanced for Ring Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] gap-4 items-start">
+              <ReactECharts
+                option={provinceVotesOption}
+                style={{ height: '320px' }}
+                opts={{ renderer: 'svg' }}
+              />
+
+              <div className="h-[320px] overflow-y-auto scrollbar-hide rounded-2xl border border-cyan-200/70 bg-white/60 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-700 mb-3">
+                  Provincias registradas
+                </p>
+                <div className="space-y-2">
+                  {provinceChartData.map((item) => (
+                    <button
+                      type="button"
+                      key={item.name}
+                      onClick={() => toggleProvince(item.name)}
+                      className={`inline-flex w-full items-center justify-between rounded-xl border px-3 py-2 transition-all duration-200 ${hiddenProvinces[item.name]
+                        ? 'border-gray-200 bg-gray-100/70 opacity-70'
+                        : 'border-cyan-200/70 bg-cyan-50/70 hover:bg-cyan-100/70'
+                        }`}
+                    >
+                      <div className="flex items-center min-w-0 mr-3">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full mr-2 flex-shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        ></span>
+                        <span className={`text-xs font-medium truncate ${hiddenProvinces[item.name] ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className={`text-xs font-semibold ${hiddenProvinces[item.name] ? 'text-gray-500' : 'text-cyan-700'}`}>
+                        {item.value}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Province Stats - Enhanced for Ring Chart */}
             <div className="mt-6 grid grid-cols-3 gap-4">
               <MetricCard
                 label="Total Usuarios"
