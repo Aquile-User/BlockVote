@@ -88,6 +88,17 @@ async function getUsersMap() {
   return map;
 }
 
+async function recordVoteInDatabase({ user, electionId, txHash }) {
+  return prisma.vote.create({
+    data: {
+      userId: user.id,
+      province: user.province,
+      electionId: String(electionId),
+      txHash: txHash || null,
+    },
+  });
+}
+
 // Swagger setup
 const swaggerDefinition = {
   openapi: "3.0.0",
@@ -464,6 +475,112 @@ app.get("/users", async (req, res) => {
   } catch (error) {
     console.error("Get users error:", error.message);
     res.status(500).json({ error: "Failed to retrieve users" });
+  }
+});
+
+/**
+ * @swagger
+ * /metrics/provinces:
+ *   get:
+ *     summary: Get global province vote metrics from the database
+ *     responses:
+ *       200:
+ *         description: Province metrics grouped from users and votes
+ */
+app.get("/metrics/provinces", async (req, res) => {
+  try {
+    const [registeredUsersByProvince, voteMetricsByProvince, totals] =
+      await Promise.all([
+        prisma.user.groupBy({
+          by: ["province"],
+          _count: { _all: true },
+        }),
+        prisma.$queryRaw`
+        SELECT
+          "province",
+          COUNT(*)::int AS "votesCast",
+          COUNT(DISTINCT "userId")::int AS "participatingUsers"
+        FROM "Vote"
+        GROUP BY "province"
+      `,
+        Promise.all([
+          prisma.user.count(),
+          prisma.vote.count(),
+          prisma.vote.groupBy({
+            by: ["userId"],
+            _count: { _all: true },
+          }),
+        ]),
+      ]);
+
+    const registeredMap = new Map(
+      registeredUsersByProvince.map((item) => [
+        item.province,
+        item._count._all,
+      ]),
+    );
+    const votesMap = new Map(
+      voteMetricsByProvince.map((item) => [
+        item.province,
+        {
+          votesCast: Number(item.votesCast) || 0,
+          participatingUsers: Number(item.participatingUsers) || 0,
+        },
+      ]),
+    );
+
+    const provinceNames = new Set([
+      ...registeredUsersByProvince.map((item) => item.province),
+      ...voteMetricsByProvince.map((item) => item.province),
+    ]);
+
+    const provinces = [...provinceNames]
+      .map((province) => {
+        const registeredUsers = registeredMap.get(province) || 0;
+        const voteMetrics = votesMap.get(province) || {
+          votesCast: 0,
+          participatingUsers: 0,
+        };
+
+        return {
+          name: province,
+          registeredUsers,
+          votesCast: voteMetrics.votesCast,
+          participatingUsers: voteMetrics.participatingUsers,
+          participationRate:
+            registeredUsers > 0
+              ? Number(
+                  (
+                    (voteMetrics.participatingUsers / registeredUsers) *
+                    100
+                  ).toFixed(1),
+                )
+              : 0,
+        };
+      })
+      .sort((a, b) => b.votesCast - a.votesCast);
+
+    const [registeredUsers, totalVotesCast, distinctVotersByProvince] = totals;
+    const globalParticipatingUsers = distinctVotersByProvince.length;
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      totals: {
+        registeredUsers,
+        votesCast: totalVotesCast,
+        participatingUsers: globalParticipatingUsers,
+        participationRate:
+          registeredUsers > 0
+            ? Number(
+                ((globalParticipatingUsers / registeredUsers) * 100).toFixed(1),
+              )
+            : 0,
+      },
+      provinces,
+    });
+  } catch (error) {
+    console.error("Get province metrics error:", error.message || error);
+    res.status(500).json({ error: "Failed to retrieve province metrics" });
   }
 });
 
@@ -1440,9 +1557,24 @@ app.post("/vote", async (req, res) => {
       },
     );
     const data = response.data; // axios already parses JSON, no need for .json()
+
+    try {
+      await recordVoteInDatabase({
+        user,
+        electionId,
+        txHash: data?.txHash,
+      });
+    } catch (dbError) {
+      console.error("Vote DB write error:", dbError.message || dbError);
+    }
+
     res.json(data);
   } catch (error) {
     console.error("Vote error:", error.message || error);
+    if (error.response?.status && error.response?.data) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+
     res.status(500).json({ error: error.message });
   }
 });

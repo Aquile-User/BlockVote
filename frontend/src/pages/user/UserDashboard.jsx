@@ -23,7 +23,7 @@ import {
   Eye
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { getElections, getResults, getElectionById, hasVoted } from '../../api';
+import { getElections, getResults, getElectionById, hasVoted, getProvinceMetrics } from '../../api';
 import { mapUsersToProvinces } from '../../utils/demographics';
 
 // Configuraciones constantes
@@ -66,7 +66,7 @@ const MetricCard = ({ label, value, gradient, center = false, size = 'normal' })
   const containerClasses = center ? 'text-center' : '';
 
   return (
-    <div className={`bg-white/60 rounded-xl p-4 border border-gray-200/50 ${containerClasses}`}>
+    <div className={`bg-white/85 rounded-xl p-4 border border-gray-300/70 shadow-sm ${containerClasses}`}>
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className={`${textSize} font-bold text-gray-900`}>
         {value}
@@ -75,6 +75,42 @@ const MetricCard = ({ label, value, gradient, center = false, size = 'normal' })
         <div className={`w-8 h-1 ${gradient} rounded-full mx-auto mt-2`}></div>
       )}
     </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
+  const pastelColors = {
+    emerald: 'from-emerald-50 to-emerald-100',
+    amber: 'from-amber-50 to-amber-100',
+    violet: 'from-violet-50 to-violet-100'
+  };
+
+  const borderColors = {
+    emerald: 'border-emerald-200',
+    amber: 'border-amber-200',
+    violet: 'border-violet-200'
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      className="relative group h-full"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
+      <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
+        <div className="flex items-center justify-between mb-3 flex-1">
+          <div className="flex-1">
+            <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+            {subtitle && (
+              <p className="text-gray-700 text-xs">{subtitle}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -106,6 +142,7 @@ const Dashboard = ({ user }) => {
     disabledElections: 0
   });
   const [provinceData, setProvinceData] = useState([]);
+  const [hiddenProvinces, setHiddenProvinces] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeframe, setTimeframe] = useState('7d');
@@ -116,6 +153,22 @@ const Dashboard = ({ user }) => {
   const [selectedElection, setSelectedElection] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [electionsPerPage] = useState(ELECTIONS_PER_PAGE);
+
+  const memberSinceLabel = (() => {
+    if (!user?.registeredAt) {
+      return 'N/D';
+    }
+
+    const registrationDate = new Date(user.registeredAt);
+    if (Number.isNaN(registrationDate.getTime())) {
+      return 'N/D';
+    }
+
+    return registrationDate.toLocaleDateString('es-DO', {
+      year: 'numeric',
+      month: 'short'
+    });
+  })();
 
   useEffect(() => {
     loadDashboardData();
@@ -387,42 +440,39 @@ const Dashboard = ({ user }) => {
         console.log('Dashboard: No user or socialId available for vote counting');
       }
 
-      // Real Dominican Republic province data based on actual registered users
+      // Province metrics based on the DB projection of votes
       let realProvinceData = [];
 
       try {
+        const provinceMetrics = await getProvinceMetrics();
+        realProvinceData = (provinceMetrics.provinces || []).map((item) => ({
+          name: item.name,
+          votes: item.votesCast || 0,
+          registered: item.registeredUsers || 0,
+          participatingUsers: item.participatingUsers || 0,
+          participationRate: item.participationRate || 0
+        }));
+      } catch (error) {
+        console.error('Error fetching province metrics:', error);
         const usersResponse = await fetch('http://localhost:3000/users');
         const usersData = await usersResponse.json();
 
         // Combine all election results for province mapping using el resultsMap
         const combinedResults = {};
         for (const election of validElections) {
-          // Usar el mapa de resultados en lugar de llamar a getResults nuevamente
           const results = resultsMap[election.electionId];
           Object.entries(results || {}).forEach(([candidate, votes]) => {
             combinedResults[candidate] = (combinedResults[candidate] || 0) + votes;
           });
         }
 
-        // Use the standardized function
-        realProvinceData = mapUsersToProvinces(usersData, combinedResults);
-
-        // Convert to the format expected by the Dashboard
-        realProvinceData = realProvinceData.map(item => ({
+        realProvinceData = mapUsersToProvinces(usersData, combinedResults).map(item => ({
           name: item.name || item.province,
           votes: item.votes,
           registered: item.registered || item.realUsers,
+          participatingUsers: item.participatingUsers || item.voters || 0,
           participationRate: item.participationRate || (item.registered > 0 ? (item.votes / item.registered * 100).toFixed(1) : 0)
         }));
-      } catch (error) {
-        console.error('Error fetching real user data:', error);
-        // Fallback data
-        realProvinceData = [
-          { name: 'San Pedro de Macorís', votes: 2, registered: 2, participationRate: 100 },
-          { name: 'Monte Plata', votes: 2, registered: 2, participationRate: 100 },
-          { name: 'Sánchez Ramírez', votes: 1, registered: 1, participationRate: 100 },
-          { name: 'María Trinidad Sánchez', votes: 1, registered: 1, participationRate: 100 }
-        ];
       } setProvinceData(realProvinceData);
 
       // Cargar datos de elecciones para la lista
@@ -450,6 +500,31 @@ const Dashboard = ({ user }) => {
     }
   };
 
+  const provinceChartData = provinceData
+    .filter(item => (item.registered || 0) > 0)
+    .map((item, index) => ({
+      value: item.registered || 0,
+      name: item.name,
+      color: `hsl(${170 + index * 25}, 70%, 55%)`,
+      itemStyle: {
+        color: `hsl(${170 + index * 25}, 70%, 55%)`,
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const visibleProvinceChartData = provinceChartData.filter(
+    (item) => !hiddenProvinces[item.name],
+  );
+
+  const toggleProvince = (provinceName) => {
+    setHiddenProvinces((prev) => ({
+      ...prev,
+      [provinceName]: !prev[provinceName],
+    }));
+  };
+
   const provinceVotesOption = {
     backgroundColor: 'transparent',
     title: {
@@ -466,15 +541,17 @@ const Dashboard = ({ user }) => {
         color: '#111827'
       },
       formatter: function (params) {
-        const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
-        const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
+        const totalRegistered = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
+        const percentage = totalRegistered > 0 ? ((params.value / totalRegistered) * 100).toFixed(1) : 0;
         const data = provinceData.find(item => item.name === params.name);
         return `
           <strong>${params.name}</strong><br/>
-          Usuarios Registrados: <span style="color: #14b8a6">${params.value}</span><br/>
-          Porcentaje: <span style="color: #0891b2">${percentage}%</span><br/>
-          Votos Emitidos: ${data?.votes || 0}<br/>
-          Participación: ${data?.participationRate || 0}%        `;
+          Usuarios registrados: <span style="color: #14b8a6">${params.value}</span><br/>
+          Porcentaje del total: <span style="color: #0891b2">${percentage}%</span><br/>
+          Votos emitidos: ${data?.votes || 0}<br/>
+          Votantes únicos: ${data?.participatingUsers || 0}<br/>
+          Participación: ${data?.participationRate || 0}%
+        `;
       }
     },
     series: [
@@ -482,40 +559,14 @@ const Dashboard = ({ user }) => {
         name: 'Usuarios por Provincia',
         type: 'pie',
         radius: ['35%', '75%'],
-        center: ['50%', '50%'],
-        data: provinceData
-          .filter(item => (item.registered || 0) > 0)
-          .map((item, index) => ({
-            value: item.registered || 0,
-            name: item.name,
-            itemStyle: {
-              color: `hsl(${170 + index * 25}, 70%, 55%)`,
-              borderWidth: 2,
-              borderColor: '#ffffff'
-            }
-          }))
-          .sort((a, b) => b.value - a.value),
+        center: ['42%', '50%'],
+        data: visibleProvinceChartData,
         avoidLabelOverlap: false,
         label: {
-          show: true,
-          position: 'outside',
-          color: '#374151',
-          fontSize: 11,
-          fontWeight: 600,
-          formatter: function (params) {
-            const totalUsers = provinceData.reduce((sum, item) => sum + (item.registered || 0), 0);
-            const percentage = totalUsers > 0 ? ((params.value / totalUsers) * 100).toFixed(1) : 0;
-            return `${params.name}\n${percentage}%`;
-          }
+          show: false
         },
         labelLine: {
-          show: true,
-          length: 15,
-          length2: 8,
-          lineStyle: {
-            color: '#d1d5db',
-            width: 1
-          }
+          show: false
         },
         emphasis: {
           itemStyle: {
@@ -525,8 +576,10 @@ const Dashboard = ({ user }) => {
             borderWidth: 3
           },
           label: {
-            fontSize: 12,
-            fontWeight: 700
+            show: false
+          },
+          labelLine: {
+            show: false
           }
         },
         animationType: 'scale',
@@ -536,41 +589,6 @@ const Dashboard = ({ user }) => {
         }
       }
     ]
-  }; const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', bgColor = 'primary', delay = 0 }) => {
-    // Define pastel background colors based on the original icon colors
-    const pastelColors = {
-      emerald: 'from-emerald-50 to-emerald-100',
-      amber: 'from-amber-50 to-amber-100',
-      violet: 'from-violet-50 to-violet-100'
-    };
-
-    const borderColors = {
-      emerald: 'border-emerald-200',
-      amber: 'border-amber-200',
-      violet: 'border-violet-200'
-    };
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.4 }}
-        className="relative group h-full"
-      >
-        <div className={`absolute inset-0 bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl transform group-hover:scale-[1.02] transition-transform duration-300`}></div>
-        <div className={`relative bg-gradient-to-br ${pastelColors[color] || pastelColors.emerald} rounded-2xl border ${borderColors[color] || borderColors.emerald} p-5 shadow-soft hover:shadow-medium transition-all duration-300 h-full min-h-[140px] flex flex-col`}>
-          <div className="flex items-center justify-between mb-3 flex-1">
-            <div className="flex-1">
-              <p className="text-gray-600 text-xs font-medium mb-1">{title}</p>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-              {subtitle && (
-                <p className="text-gray-700 text-xs">{subtitle}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
   };
 
   if (loading) {
@@ -717,16 +735,16 @@ const Dashboard = ({ user }) => {
         />      </div>
 
       {/* Advanced Analytics Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch">
         {/* Elections List */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.8 }}
-          className="relative group"
+          className="relative group h-full"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-violet-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-violet-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
@@ -841,14 +859,18 @@ const Dashboard = ({ user }) => {
                 </button>
               </div>
             )}            {/* Elections Stats */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-auto pt-6 grid grid-cols-2 gap-4">
               <MetricCard
                 label="Total Elecciones"
                 value={elections.length}
+                gradient="bg-gradient-to-r from-violet-400 to-purple-500"
+                center={true}
               />
               <MetricCard
                 label="Elecciones Activas"
                 value={elections.filter(e => e.status === 'active').length}
+                gradient="bg-gradient-to-r from-emerald-400 to-teal-500"
+                center={true}
               />
             </div>
           </div>
@@ -859,10 +881,10 @@ const Dashboard = ({ user }) => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.9 }}
-          className="relative group"
+          className="relative group h-full"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-cyan-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-cyan-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="space-y-2">                <div className="flex items-center space-x-3">
                 <h3 className="text-2xl font-bold text-gray-900">Usuarios por Provincia</h3>
@@ -880,11 +902,47 @@ const Dashboard = ({ user }) => {
               </div>
             </div>
 
-            <ReactECharts
-              option={provinceVotesOption}
-              style={{ height: '320px' }}
-              opts={{ renderer: 'svg' }}
-            />            {/* Province Stats - Enhanced for Ring Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] gap-4 items-start">
+              <ReactECharts
+                option={provinceVotesOption}
+                style={{ height: '320px' }}
+                opts={{ renderer: 'svg' }}
+              />
+
+              <div className="h-[320px] overflow-y-auto scrollbar-hide rounded-2xl border border-cyan-200/70 bg-white/60 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-700 mb-3">
+                  Provincias registradas
+                </p>
+                <div className="space-y-2">
+                  {provinceChartData.map((item) => (
+                    <button
+                      type="button"
+                      key={item.name}
+                      onClick={() => toggleProvince(item.name)}
+                      className={`inline-flex w-full items-center justify-between rounded-xl border px-3 py-2 transition-all duration-200 ${hiddenProvinces[item.name]
+                        ? 'border-gray-200 bg-gray-100/70 opacity-70'
+                        : 'border-cyan-200/70 bg-cyan-50/70 hover:bg-cyan-100/70'
+                        }`}
+                    >
+                      <div className="flex items-center min-w-0 mr-3">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full mr-2 flex-shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        ></span>
+                        <span className={`text-xs font-medium truncate ${hiddenProvinces[item.name] ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className={`text-xs font-semibold ${hiddenProvinces[item.name] ? 'text-gray-500' : 'text-cyan-700'}`}>
+                        {item.value}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Province Stats - Enhanced for Ring Chart */}
             <div className="mt-6 grid grid-cols-3 gap-4">
               <MetricCard
                 label="Total Usuarios"
@@ -1169,7 +1227,7 @@ const Dashboard = ({ user }) => {
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                         <Calendar className="w-6 h-6 text-white" />
                       </div>
-                      <p className="text-2xl font-bold text-gray-900 mb-1">2024</p>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{memberSinceLabel}</p>
                       <p className="text-xs text-gray-600 font-medium">Miembro desde</p>
                     </div>                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 border border-purple-200/50 text-center hover:shadow-soft transition-all duration-200">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">

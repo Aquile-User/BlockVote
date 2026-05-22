@@ -25,7 +25,7 @@ axios.interceptors.response.use(
         const waitTime = retryAfter * 1000 + Math.random() * 2000; // Add jitter
 
         console.warn(
-          `Rate limit hit, retrying in ${waitTime}ms (attempt ${config._retryCount}/3)`
+          `Rate limit hit, retrying in ${waitTime}ms (attempt ${config._retryCount}/3)`,
         );
         await delay(waitTime);
 
@@ -40,12 +40,12 @@ axios.interceptors.response.use(
     ) {
       console.warn("Service temporarily unavailable due to circuit breaker");
       throw new Error(
-        "Service temporarily unavailable. Please try again in a few moments."
+        "Service temporarily unavailable. Please try again in a few moments.",
       );
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Caché para almacenar resultados de elecciones
@@ -135,7 +135,7 @@ export async function getResults(id) {
     // Si no están en caché o expiraron, hacer la petición con cache busting
     const timestamp = Date.now();
     const resp = await axios.get(
-      `${API_BASE}/elections/${id}/results?_t=${timestamp}`
+      `${API_BASE}/elections/${id}/results?_t=${timestamp}`,
     );
 
     // Guardar los resultados en caché
@@ -148,7 +148,7 @@ export async function getResults(id) {
     // Manejar específicamente errores de rate limiting
     if (error.response?.status === 429) {
       console.warn(
-        `Rate limit exceeded for election ${id}. Results may be delayed.`
+        `Rate limit exceeded for election ${id}. Results may be delayed.`,
       );
     }
 
@@ -196,7 +196,7 @@ export async function enableElection(electionId) {
 export async function updateElectionName(electionId, name) {
   const resp = await axios.put(
     `${API_BASE}/elections/${electionId}/edit-name`,
-    { name }
+    { name },
   );
   return resp.data;
 }
@@ -204,7 +204,7 @@ export async function updateElectionName(electionId, name) {
 export async function addCandidate(electionId, candidate) {
   const resp = await axios.put(
     `${API_BASE}/elections/${electionId}/add-candidate`,
-    { candidate }
+    { candidate },
   );
   // Invalidar caché para esta elección al añadir un candidato
   invalidateResultsCache(electionId);
@@ -214,7 +214,14 @@ export async function addCandidate(electionId, candidate) {
 // Check if user has voted in an election
 export async function hasVoted(electionId, socialId) {
   const resp = await axios.get(
-    `${API_BASE}/elections/${electionId}/has-voted/${socialId}`
+    `${API_BASE}/elections/${electionId}/has-voted/${socialId}`,
   );
+  return resp.data;
+}
+
+// Global province metrics for the dashboard
+export async function getProvinceMetrics() {
+  const timestamp = Date.now();
+  const resp = await axios.get(`${API_BASE}/metrics/provinces?_t=${timestamp}`);
   return resp.data;
 }
