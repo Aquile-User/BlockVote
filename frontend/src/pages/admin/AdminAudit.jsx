@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import * as XLSX from 'xlsx/xlsx.mjs';
-import { getAudits, getAdmins, recordAuditExport } from '../../api';
+import { getAudits, getAdmins, exportAuditsExcel } from '../../api';
 import toast from 'react-hot-toast';
 
 const AdminAudit = ({ currentAdmin }) => {
@@ -301,23 +300,22 @@ const AdminAudit = ({ currentAdmin }) => {
               <button
                 onClick={async () => {
                   try {
-                    const cols = buildExportColumns();
-                    const data = [cols.map((c) => c.label), ...items.map((it) => buildExportRow(it, cols))];
-                    const workbook = XLSX.utils.book_new();
-                    const worksheet = XLSX.utils.aoa_to_sheet(data);
+                    const blob = await exportAuditsExcel({
+                      page,
+                      pageSize,
+                      visibleColumns,
+                    });
 
-                    applyWorkbookStyles(worksheet, data.length - 1, cols.length);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Auditoría');
-                    XLSX.writeFile(workbook, 'auditoria_admins.xlsx', { bookType: 'xlsx', cellStyles: true });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'auditoria_admins.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
 
                     toast.success('Exportación preparada. Descargando Excel...');
-
-                    // record export action server-side for auditing
-                    try {
-                      await recordAuditExport({ filters: { page, pageSize }, count: items.length, format: 'xlsx' });
-                    } catch (e) {
-                      console.warn('Export audit log failed', e);
-                    }
                   } catch (err) {
                     console.error('Export failed', err);
                     toast.error('No se pudo exportar las auditorías.');

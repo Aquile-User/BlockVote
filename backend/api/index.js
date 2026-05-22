@@ -17,6 +17,7 @@ const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
 const axios = require("axios");
+const ExcelJS = require("exceljs");
 const { ethers } = require("ethers");
 const { PrismaClient } = require("@prisma/client");
 const swaggerUi = require("swagger-ui-express");
@@ -223,6 +224,193 @@ async function recordAdminAudit(
   }
 }
 
+function flattenAuditText(value) {
+  if (value === null || value === undefined) return "";
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  return String(text)
+    .replace(/\r?\n|\r/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatAuditDetails(details) {
+  if (details === null || details === undefined || details === "") {
+    return "";
+  }
+
+  if (typeof details === "string") {
+    return flattenAuditText(details);
+  }
+
+  if (Array.isArray(details)) {
+    return details
+      .map((item) => formatAuditDetails(item))
+      .filter(Boolean)
+      .join("; ");
+  }
+
+  if (typeof details === "object") {
+    return Object.entries(details)
+      .map(([key, value]) => {
+        if (value && typeof value === "object") {
+          return `${key}: ${formatAuditDetails(value)}`;
+        }
+        return `${key}: ${flattenAuditText(value)}`;
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return flattenAuditText(details);
+}
+
+function formatAuditDate(value) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return flattenAuditText(value);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(
+    date.getMonth() + 1,
+  )}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function parseAuditUserAgent(userAgent) {
+  const ua = flattenAuditText(userAgent);
+  if (!ua) return { browser: "", os: "" };
+
+  const browserPatterns = [
+    { label: "Edge", pattern: /Edg(?:e|A|iOS)?\/([\d.]+)/i },
+    { label: "Opera", pattern: /OPR\/([\d.]+)/i },
+    { label: "Brave", pattern: /Brave\/([\d.]+)/i },
+    { label: "Chrome", pattern: /Chrome\/([\d.]+)/i },
+    { label: "Firefox", pattern: /Firefox\/([\d.]+)/i },
+    { label: "Safari", pattern: /Version\/([\d.]+).*Safari/i },
+  ];
+
+  const osPatterns = [
+    { label: "Windows", pattern: /Windows NT/i },
+    { label: "macOS", pattern: /Mac OS X/i },
+    { label: "iOS", pattern: /iPhone|iPad|iPod/i },
+    { label: "Android", pattern: /Android/i },
+    { label: "Linux", pattern: /Linux/i },
+    { label: "Chrome OS", pattern: /CrOS/i },
+  ];
+
+  const browser =
+    browserPatterns.find((item) => item.pattern.test(ua))?.label ||
+    "Desconocido";
+  const os =
+    osPatterns.find((item) => item.pattern.test(ua))?.label || "Desconocido";
+
+  return { browser, os };
+}
+
+function buildAuditExportColumns(visibleColumns = {}) {
+  const columns = [];
+  if (visibleColumns.id !== false) columns.push({ key: "id", label: "ID" });
+  if (visibleColumns.actor !== false)
+    columns.push({ key: "actor", label: "Actor" });
+  if (visibleColumns.action !== false)
+    columns.push({ key: "action", label: "Acción" });
+  if (visibleColumns.target !== false)
+    columns.push({ key: "target", label: "Target" });
+  if (visibleColumns.details !== false)
+    columns.push({ key: "details", label: "Detalles" });
+  if (visibleColumns.ip !== false) columns.push({ key: "ip", label: "IP" });
+  if (visibleColumns.userAgent) {
+    columns.push({ key: "browser", label: "Navegador" });
+    columns.push({ key: "os", label: "SO" });
+  }
+  if (visibleColumns.created !== false)
+    columns.push({ key: "created", label: "Creado" });
+  return columns;
+}
+
+function buildAuditExportRow(audit, columns, adminMap) {
+  const { browser, os } = parseAuditUserAgent(audit.userAgent);
+  return columns.map((column) => {
+    switch (column.key) {
+      case "id":
+        return `#${audit.id}`;
+      case "actor":
+        return adminMap.get(audit.actorAdminId) || audit.actorAdminId || "";
+      case "action":
+        return audit.action || "";
+      case "target":
+        return adminMap.get(audit.targetAdminId) || audit.targetAdminId || "";
+      case "details":
+        return formatAuditDetails(audit.details);
+      case "ip":
+        return audit.ip || "";
+      case "browser":
+        return browser;
+      case "os":
+        return os;
+      case "created":
+        return formatAuditDate(audit.createdAt);
+      default:
+        return "";
+    }
+  });
+}
+
+function styleAuditWorksheet(worksheet, columnCount, rowCount) {
+  const headerFillColor = "1A7A6E";
+  const evenFill = "FFFFFF";
+  const oddFill = "F0FAF9";
+  const border = {
+    top: { style: "thin", color: { argb: "FFD9E2E3" } },
+    left: { style: "thin", color: { argb: "FFD9E2E3" } },
+    bottom: { style: "thin", color: { argb: "FFD9E2E3" } },
+    right: { style: "thin", color: { argb: "FFD9E2E3" } },
+  };
+
+  worksheet.views = [{ state: "frozen", ySplit: 1 }];
+  worksheet.autoFilter = {
+    from: { row: 1, column: 1 },
+    to: { row: Math.max(rowCount, 1), column: columnCount },
+  };
+
+  worksheet.columns.forEach((column, index) => {
+    let maxLength = 0;
+    column.eachCell({ includeEmpty: true }, (cell) => {
+      const cellText = flattenAuditText(cell.value);
+      maxLength = Math.max(maxLength, cellText.length);
+      cell.border = border;
+      cell.alignment = { vertical: "top", wrapText: true };
+    });
+    column.width = Math.min(Math.max(maxLength + 2, 12), 45);
+
+    const headerCell = worksheet.getRow(1).getCell(index + 1);
+    headerCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: `FF${headerFillColor}` },
+    };
+    headerCell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    headerCell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
+    headerCell.border = border;
+  });
+
+  for (let rowIndex = 2; rowIndex <= rowCount; rowIndex += 1) {
+    const row = worksheet.getRow(rowIndex);
+    const fillColor = rowIndex % 2 === 0 ? oddFill : evenFill;
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: `FF${fillColor}` },
+      };
+      cell.border = border;
+      cell.alignment = { vertical: "top", wrapText: true };
+    });
+  }
+}
+
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
@@ -399,6 +587,93 @@ app.get("/admin/audits", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("Get audits error:", err?.message || err);
     res.status(500).json({ error: "Failed to fetch audits" });
+  }
+});
+
+// Export admin audits as styled Excel (.xlsx)
+app.post("/admin/audits/export", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin") {
+      return res.status(403).json({ error: "Requires superadmin" });
+    }
+
+    const body = req.body || {};
+    const filters = body.filters || body;
+    const page = Math.max(1, Number(body.page || filters.page) || 1);
+    const pageSize = Math.min(
+      200,
+      Math.max(1, Number(body.pageSize || filters.pageSize) || 50),
+    );
+    const visibleColumns = body.visibleColumns || filters.visibleColumns || {};
+
+    const where = {};
+    if (filters.actorId) where.actorAdminId = Number(filters.actorId);
+    if (filters.targetId) where.targetAdminId = Number(filters.targetId);
+    if (filters.action) where.action = String(filters.action);
+    if (filters.since || filters.until) {
+      where.createdAt = {};
+      if (filters.since) where.createdAt.gte = new Date(filters.since);
+      if (filters.until) where.createdAt.lte = new Date(filters.until);
+    }
+
+    const [audits, adminRows] = await Promise.all([
+      prisma.adminAudit.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.admin.findMany({
+        select: { id: true, username: true },
+      }),
+    ]);
+
+    const adminMap = new Map(
+      adminRows.map((admin) => [admin.id, admin.username]),
+    );
+    const columns = buildAuditExportColumns(visibleColumns);
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "BlockVote";
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const worksheet = workbook.addWorksheet("Auditoría", {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+
+    worksheet.columns = columns.map((column) => ({
+      header: column.label,
+      key: column.key,
+    }));
+    audits.forEach((audit) => {
+      worksheet.addRow(buildAuditExportRow(audit, columns, adminMap));
+    });
+
+    styleAuditWorksheet(worksheet, columns.length, worksheet.rowCount);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    await recordAdminAudit(req, "export_audits", null, {
+      filters: filters || null,
+      exportedCount: audits.length,
+      format: "xlsx",
+      page,
+      pageSize,
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="auditoria_admins.xlsx"',
+    );
+    res.setHeader("Content-Length", buffer.length);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error("Export audits error:", err?.message || err);
+    res.status(500).json({ error: "Failed to export audits" });
   }
 });
 
