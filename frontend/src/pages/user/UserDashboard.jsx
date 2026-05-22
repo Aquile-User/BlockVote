@@ -66,7 +66,7 @@ const MetricCard = ({ label, value, gradient, center = false, size = 'normal' })
   const containerClasses = center ? 'text-center' : '';
 
   return (
-    <div className={`bg-white/60 rounded-xl p-4 border border-gray-200/50 ${containerClasses}`}>
+    <div className={`bg-white/85 rounded-xl p-4 border border-gray-300/70 shadow-sm ${containerClasses}`}>
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className={`${textSize} font-bold text-gray-900`}>
         {value}
@@ -718,16 +718,16 @@ const Dashboard = ({ user }) => {
         />      </div>
 
       {/* Advanced Analytics Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch">
         {/* Elections List */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.8 }}
-          className="relative group"
+          className="relative group h-full"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-violet-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-violet-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
@@ -842,14 +842,18 @@ const Dashboard = ({ user }) => {
                 </button>
               </div>
             )}            {/* Elections Stats */}
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-auto pt-6 grid grid-cols-2 gap-4">
               <MetricCard
                 label="Total Elecciones"
                 value={elections.length}
+                gradient="bg-gradient-to-r from-violet-400 to-purple-500"
+                center={true}
               />
               <MetricCard
                 label="Elecciones Activas"
                 value={elections.filter(e => e.status === 'active').length}
+                gradient="bg-gradient-to-r from-emerald-400 to-teal-500"
+                center={true}
               />
             </div>
           </div>
@@ -860,10 +864,10 @@ const Dashboard = ({ user }) => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.9 }}
-          className="relative group"
+          className="relative group h-full"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-3xl transform group-hover:scale-[1.01] transition-transform duration-300"></div>
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-cyan-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300">
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl border border-cyan-200/50 p-8 shadow-soft hover:shadow-medium transition-all duration-300 h-full flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="space-y-2">                <div className="flex items-center space-x-3">
                 <h3 className="text-2xl font-bold text-gray-900">Usuarios por Provincia</h3>
