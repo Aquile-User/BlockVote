@@ -2,56 +2,121 @@ import React, { useEffect, useState } from 'react';
 import { getAudits, getAdmins, exportAuditsExcel } from '../../api';
 import toast from 'react-hot-toast';
 
-const AdminAudit = ({ currentAdmin }) => {
+const ACTION_OPTIONS = [
+  { value: 'login', label: 'login' },
+  { value: 'create_admin', label: 'create_admin' },
+  { value: 'update_admin', label: 'update_admin' },
+  { value: 'delete_admin', label: 'delete_admin' },
+  { value: 'revoke_tokens', label: 'revoke_tokens' },
+  { value: 'export_audits', label: 'export_audits' },
+];
+
+const DEFAULT_FILTERS = {
+  actorId: '',
+  targetId: '',
+  action: '',
+  since: '',
+  until: '',
+};
+
+const DEFAULT_VISIBLE_COLUMNS = {
+  id: true,
+  actor: true,
+  action: true,
+  target: true,
+  details: true,
+  ip: true,
+  userAgent: false,
+  created: true,
+};
+
+const VISIBLE_COLUMNS_STORAGE_KEY = 'blockvote.adminAudit.visibleColumns';
+
+const AdminAudit = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(50);
   const [adminMap, setAdminMap] = useState({});
+  const [adminOptions, setAdminOptions] = useState([]);
   const [openDetailsId, setOpenDetailsId] = useState(null);
   const [showColumnsMenu, setShowColumnsMenu] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState({
-    id: true,
-    actor: true,
-    action: true,
-    target: true,
-    details: true,
-    ip: true,
-    userAgent: false,
-    created: true,
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_VISIBLE_COLUMNS;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(VISIBLE_COLUMNS_STORAGE_KEY);
+      if (!stored) {
+        return DEFAULT_VISIBLE_COLUMNS;
+      }
+
+      const parsed = JSON.parse(stored);
+      return { ...DEFAULT_VISIBLE_COLUMNS, ...(parsed || {}) };
+    } catch (error) {
+      console.warn('Failed to load audit column preferences', error);
+      return DEFAULT_VISIBLE_COLUMNS;
+    }
   });
   const rowPaddingClass = 'py-2';
 
   useEffect(() => {
-    load(1);
+    loadAudits(1, DEFAULT_FILTERS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function load(p = 1) {
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify(visibleColumns));
+    } catch (error) {
+      console.warn('Failed to save audit column preferences', error);
+    }
+  }, [visibleColumns]);
+
+  function buildQueryParams(currentPage = 1, currentFilters = filters) {
+    const params = { page: currentPage, pageSize };
+    if (currentFilters.actorId) params.actorId = currentFilters.actorId;
+    if (currentFilters.targetId) params.targetId = currentFilters.targetId;
+    if (currentFilters.action) params.action = currentFilters.action;
+    if (currentFilters.since) params.since = currentFilters.since;
+    if (currentFilters.until) params.until = currentFilters.until;
+    return params;
+  }
+
+  async function loadAudits(currentPage = 1, currentFilters = filters) {
     setLoading(true);
     try {
-      const resp = await getAudits({ page: p, pageSize });
-      const admins = await getAdmins();
+      const [auditResponse, admins] = await Promise.all([
+        getAudits(buildQueryParams(currentPage, currentFilters)),
+        getAdmins(),
+      ]);
+
       const map = {};
-      if (Array.isArray(admins)) {
-        admins.forEach((a) => {
-          map[a.id] = a.username;
-        });
-      }
+      const options = Array.isArray(admins) ? admins : [];
+      options.forEach((admin) => {
+        map[admin.id] = admin.username;
+      });
+
       setAdminMap(map);
-      setItems(resp?.items || []);
-      setPage(resp?.page || p);
-    } catch (err) {
-      console.error('Failed to load audits', err);
+      setAdminOptions(options);
+      setItems(auditResponse?.items || []);
+      setPage(auditResponse?.page || currentPage);
+    } catch (error) {
+      console.error('Failed to load audits', error);
       toast.error('No se pudieron cargar las auditorías.');
     } finally {
       setLoading(false);
     }
   }
 
-  function humanAction(action, details) {
-    if (!action) return '';
-    const map = {
+  function humanAction(action) {
+    const labels = {
       login: 'Inicio de sesión',
       create_admin: 'Creó administrador',
       update_admin: 'Actualizó administrador',
@@ -59,231 +124,83 @@ const AdminAudit = ({ currentAdmin }) => {
       revoke_tokens: 'Revocó tokens',
       export_audits: 'Exportó auditorías',
     };
-    return map[action] || action;
+
+    return labels[action] || action || '';
   }
 
   function prettyDetails(details) {
     if (!details) return '';
+    if (typeof details === 'string') return details;
+
     try {
-      if (typeof details === 'string') return details;
       return JSON.stringify(details, null, 2);
-    } catch (err) {
+    } catch (error) {
       return String(details);
     }
   }
 
-  function formatDetailsForCsv(details) {
-    if (details === null || details === undefined || details === '') {
-      return '';
-    }
-
-    if (typeof details === 'string') {
-      return flattenText(details);
-    }
-
-    if (Array.isArray(details)) {
-      return details.map((item) => formatDetailsForCsv(item)).filter(Boolean).join('; ');
-    }
-
-    if (typeof details === 'object') {
-      return Object.entries(details)
-        .map(([key, value]) => {
-          if (value && typeof value === 'object') {
-            return `${key}: ${formatDetailsForCsv(value)}`;
-          }
-
-          return `${key}: ${flattenText(value)}`;
-        })
-        .filter(Boolean)
-        .join(', ');
-    }
-
-    return flattenText(details);
+  function formatDateTime(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString();
   }
 
-  function formatDateForCsv(value) {
-    if (!value) return '';
-
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return flattenText(value);
+  async function handleExport() {
+    try {
+      const blob = await exportAuditsExcel({ filters, visibleColumns });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'auditoria_admins.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Exportación preparada. Descargando Excel...');
+    } catch (error) {
+      console.error('Export failed', error);
+      toast.error('No se pudo exportar las auditorías.');
     }
-
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function flattenText(value) {
-    if (value === null || value === undefined) return '';
-    const text = typeof value === 'string' ? value : prettyDetails(value);
-    return String(text)
-      .replace(/\r?\n|\r/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+  function applyFilters() {
+    setPage(1);
+    loadAudits(1, filters);
   }
 
-  function parseUserAgent(userAgent) {
-    const ua = flattenText(userAgent);
-    if (!ua) {
-      return { browser: '', os: '' };
-    }
-
-    const browserPatterns = [
-      { label: 'Edge', pattern: /Edg(?:e|A|iOS)?\/([\d.]+)/i },
-      { label: 'Opera', pattern: /OPR\/([\d.]+)/i },
-      { label: 'Brave', pattern: /Brave\/([\d.]+)/i },
-      { label: 'Chrome', pattern: /Chrome\/([\d.]+)/i },
-      { label: 'Firefox', pattern: /Firefox\/([\d.]+)/i },
-      { label: 'Safari', pattern: /Version\/([\d.]+).*Safari/i },
-    ];
-
-    const osPatterns = [
-      { label: 'Windows', pattern: /Windows NT/i },
-      { label: 'macOS', pattern: /Mac OS X/i },
-      { label: 'iOS', pattern: /iPhone|iPad|iPod/i },
-      { label: 'Android', pattern: /Android/i },
-      { label: 'Linux', pattern: /Linux/i },
-      { label: 'Chrome OS', pattern: /CrOS/i },
-    ];
-
-    const browser = browserPatterns.find((item) => item.pattern.test(ua))?.label || 'Desconocido';
-    const os = osPatterns.find((item) => item.pattern.test(ua))?.label || 'Desconocido';
-
-    return { browser, os };
-  }
-
-  function csvCell(value) {
-    return '"' + flattenText(value).replace(/"/g, '""') + '"';
-  }
-
-  function buildExportColumns() {
-    const cols = [];
-    if (visibleColumns.id) cols.push({ key: 'id', label: 'ID' });
-    if (visibleColumns.actor) cols.push({ key: 'actor', label: 'Actor' });
-    if (visibleColumns.action) cols.push({ key: 'action', label: 'Acción' });
-    if (visibleColumns.target) cols.push({ key: 'target', label: 'Target' });
-    if (visibleColumns.details) cols.push({ key: 'details', label: 'Detalles' });
-    if (visibleColumns.ip) cols.push({ key: 'ip', label: 'IP' });
-    if (visibleColumns.userAgent) {
-      cols.push({ key: 'browser', label: 'Navegador' });
-      cols.push({ key: 'os', label: 'SO' });
-    }
-    if (visibleColumns.created) cols.push({ key: 'created', label: 'Creado' });
-    return cols;
-  }
-
-  function buildExportRow(it, cols) {
-    const { browser, os } = parseUserAgent(it.userAgent);
-    return cols.map((c) => {
-      switch (c.key) {
-        case 'id':
-          return `#${it.id}`;
-        case 'actor':
-          return adminMap[it.actorAdminId] ?? it.actorAdminId ?? '';
-        case 'action':
-          return humanAction(it.action, it.details);
-        case 'target':
-          return adminMap[it.targetAdminId] ?? it.targetAdminId ?? '';
-        case 'details':
-          return formatDetailsForCsv(it.details);
-        case 'ip':
-          return it.ip ?? '';
-        case 'browser':
-          return browser;
-        case 'os':
-          return os;
-        case 'created':
-          return formatDateForCsv(it.createdAt);
-        default:
-          return '';
-      }
-    });
-  }
-
-  function applyWorkbookStyles(worksheet, rowCount, colCount) {
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
-    const evenFill = { fgColor: { rgb: 'F7FBFF' } };
-    const oddFill = { fgColor: { rgb: 'FFFFFF' } };
-    const headerPalette = [
-      '1F4E78',
-      '2F75B5',
-      '5B9BD5',
-      '70AD47',
-      'ED7D31',
-      'A5A5A5',
-      '4472C4',
-      'C55A11',
-      '548235',
-    ];
-
-    for (let c = range.s.c; c <= range.e.c; c += 1) {
-      const headerCell = worksheet[XLSX.utils.encode_cell({ r: 0, c })];
-      if (headerCell) {
-        const fillColor = headerPalette[c % headerPalette.length];
-        headerCell.s = {
-          font: { bold: true, color: { rgb: 'FFFFFF' } },
-          fill: { fgColor: { rgb: fillColor } },
-          border: {
-            bottom: { style: 'thin', color: { rgb: 'D9E2F3' } },
-            top: { style: 'thin', color: { rgb: 'D9E2F3' } },
-            left: { style: 'thin', color: { rgb: 'D9E2F3' } },
-            right: { style: 'thin', color: { rgb: 'D9E2F3' } },
-          },
-          alignment: { vertical: 'center', horizontal: 'center' },
-        };
-      }
-    }
-
-    for (let r = 1; r <= range.e.r; r += 1) {
-      const fill = r % 2 === 1 ? oddFill : evenFill;
-      for (let c = range.s.c; c <= range.e.c; c += 1) {
-        const cell = worksheet[XLSX.utils.encode_cell({ r, c })];
-        if (cell) {
-          cell.s = {
-            ...(cell.s || {}),
-            fill,
-            alignment: { vertical: 'top', wrapText: true },
-          };
-        }
-      }
-    }
-
-    worksheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
-    worksheet['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
-
-    const widths = Array.from({ length: colCount }, (_, colIndex) => {
-      let maxLen = 0;
-      for (let r = 0; r <= rowCount; r += 1) {
-        const cell = worksheet[XLSX.utils.encode_cell({ r, c: colIndex })];
-        const text = cell ? flattenText(cell.v) : '';
-        maxLen = Math.max(maxLen, text.length);
-      }
-      return { wch: Math.min(Math.max(maxLen + 2, 12), 45) };
-    });
-
-    worksheet['!cols'] = widths;
+  function resetFilters() {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+    loadAudits(1, DEFAULT_FILTERS);
   }
 
   return (
     <div className="space-y-4">
       <div className="glass-card p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-2xl font-bold">Auditoría</h2>
-            <p className="text-gray-600 mt-1">Registros de acciones administrativas (login, creación, cambios, eliminación).</p>
+            <p className="text-gray-600 mt-1">Registros de acciones administrativas.</p>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
-              <button onClick={() => setShowColumnsMenu((s) => !s)} className="px-3 py-2 bg-gray-100 rounded-lg text-sm">Columnas</button>
+              <button
+                onClick={() => setShowColumnsMenu((state) => !state)}
+                className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
+              >
+                Columnas
+              </button>
               {showColumnsMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow p-3 z-20">
+                <div className="absolute right-0 mt-2 w-52 bg-white border rounded shadow p-3 z-20">
                   <div className="text-sm font-medium mb-2">Mostrar columnas</div>
                   {Object.keys(visibleColumns).map((key) => (
                     <label key={key} className="flex items-center text-sm mb-1">
                       <input
                         type="checkbox"
                         checked={visibleColumns[key]}
-                        onChange={() => setVisibleColumns((v) => ({ ...v, [key]: !v[key] }))}
+                        onChange={() => setVisibleColumns((current) => ({ ...current, [key]: !current[key] }))}
                         className="mr-2"
                       />
                       <span className="capitalize">{key}</span>
@@ -293,37 +210,91 @@ const AdminAudit = ({ currentAdmin }) => {
               )}
             </div>
 
-            {/* espacio reservado para controles futuros (densidad quitada) */}
+            <button onClick={() => loadAudits(page, filters)} className="px-3 py-2 bg-primary-500 text-white rounded-lg text-sm">
+              Actualizar
+            </button>
+            <button onClick={handleExport} className="px-3 py-2 bg-white border rounded-lg text-sm">
+              Exportar XLSX
+            </button>
+          </div>
+        </div>
 
-            <div className="flex items-center gap-2">
-              <button onClick={() => load(page)} className="px-3 py-2 bg-primary-500 text-white rounded-lg">Actualizar</button>
-              <button
-                onClick={async () => {
-                  try {
-                    const blob = await exportAuditsExcel({
-                      page,
-                      pageSize,
-                      visibleColumns,
-                    });
-
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'auditoria_admins.xlsx';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-
-                    toast.success('Exportación preparada. Descargando Excel...');
-                  } catch (err) {
-                    console.error('Export failed', err);
-                    toast.error('No se pudo exportar las auditorías.');
-                  }
-                }}
-                className="px-3 py-2 bg-white border rounded-lg text-sm"
+        <div className="mt-8 rounded-2xl border border-gray-200 bg-slate-50/70 p-4 md:p-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Acción</label>
+            <select
+              value={filters.action}
+              onChange={(event) => setFilters((current) => ({ ...current, action: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
-                Exportar XLSX
+                <option value="">Todas</option>
+                {ACTION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Actor</label>
+              <select
+                value={filters.actorId}
+                onChange={(event) => setFilters((current) => ({ ...current, actorId: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              >
+                <option value="">Todos</option>
+                {adminOptions.map((admin) => (
+                  <option key={admin.id} value={admin.id}>
+                    {admin.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Target</label>
+              <select
+                value={filters.targetId}
+                onChange={(event) => setFilters((current) => ({ ...current, targetId: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              >
+                <option value="">Todos</option>
+                {adminOptions.map((admin) => (
+                  <option key={admin.id} value={admin.id}>
+                    {admin.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Desde</label>
+              <input
+                type="date"
+                value={filters.since}
+                onChange={(event) => setFilters((current) => ({ ...current, since: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Hasta</label>
+              <input
+                type="date"
+                value={filters.until}
+                onChange={(event) => setFilters((current) => ({ ...current, until: event.target.value }))}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              />
+            </div>
+
+            <div className="md:col-span-2 xl:col-span-5 flex flex-wrap items-center gap-3 pt-1">
+              <button onClick={applyFilters} className="px-4 py-2.5 bg-primary-500 text-white rounded-xl text-sm font-medium shadow-sm transition-colors hover:bg-primary-600">
+                Aplicar filtros
+              </button>
+              <button onClick={resetFilters} className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium shadow-sm transition-colors hover:bg-gray-50">
+                Limpiar
               </button>
             </div>
           </div>
@@ -350,33 +321,35 @@ const AdminAudit = ({ currentAdmin }) => {
               </tr>
             </thead>
             <tbody>
-              {items.map((it) => (
-                <React.Fragment key={it.id}>
+              {items.map((audit) => (
+                <React.Fragment key={audit.id}>
                   <tr className="border-b border-gray-100 text-sm">
-                    {visibleColumns.id && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>#{it.id}</td>}
-                    {visibleColumns.actor && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{adminMap[it.actorAdminId] ?? (it.actorAdminId ?? '-')}</td>}
-                    {visibleColumns.action && <td className={`${rowPaddingClass} px-2 align-top font-medium whitespace-nowrap`}>{humanAction(it.action, it.details)}</td>}
-                    {visibleColumns.target && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{adminMap[it.targetAdminId] ?? (it.targetAdminId ?? '-')}</td>}
-                    {visibleColumns.details && <td className={`${rowPaddingClass} px-2 align-top min-w-[320px]`}>
-                      {it.details ? (
-                        <div>
-                          <button
-                            onClick={() => setOpenDetailsId(openDetailsId === it.id ? null : it.id)}
-                            className="text-sm text-primary-600 underline"
-                          >
-                            {openDetailsId === it.id ? 'Ocultar detalles' : 'Mostrar detalles'}
-                          </button>
-                          {openDetailsId === it.id && (
-                            <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto min-w-[600px]">{prettyDetails(it.details)}</pre>
-                          )}
-                        </div>
-                      ) : (
-                        '-'
-                      )}
-                    </td>}
-                    {visibleColumns.ip && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{it.ip ?? '-'}</td>}
-                    {visibleColumns.userAgent && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{it.userAgent ?? '-'}</td>}
-                    {visibleColumns.created && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{it.createdAt ? new Date(it.createdAt).toLocaleString() : '-'}</td>}
+                    {visibleColumns.id && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>#{audit.id}</td>}
+                    {visibleColumns.actor && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{adminMap[audit.actorAdminId] ?? (audit.actorAdminId ?? '-')}</td>}
+                    {visibleColumns.action && <td className={`${rowPaddingClass} px-2 align-top font-medium whitespace-nowrap`}>{humanAction(audit.action)}</td>}
+                    {visibleColumns.target && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{adminMap[audit.targetAdminId] ?? (audit.targetAdminId ?? '-')}</td>}
+                    {visibleColumns.details && (
+                      <td className={`${rowPaddingClass} px-2 align-top min-w-[320px]`}>
+                        {audit.details ? (
+                          <div>
+                            <button
+                              onClick={() => setOpenDetailsId(openDetailsId === audit.id ? null : audit.id)}
+                              className="text-sm text-primary-600 underline"
+                            >
+                              {openDetailsId === audit.id ? 'Ocultar detalles' : 'Mostrar detalles'}
+                            </button>
+                            {openDetailsId === audit.id && (
+                              <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto min-w-[600px]">{prettyDetails(audit.details)}</pre>
+                            )}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    )}
+                    {visibleColumns.ip && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{audit.ip ?? '-'}</td>}
+                    {visibleColumns.userAgent && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{audit.userAgent ?? '-'}</td>}
+                    {visibleColumns.created && <td className={`${rowPaddingClass} px-2 align-top whitespace-nowrap`}>{formatDateTime(audit.createdAt)}</td>}
                   </tr>
                 </React.Fragment>
               ))}

@@ -599,11 +599,6 @@ app.post("/admin/audits/export", requireAdmin, async (req, res) => {
 
     const body = req.body || {};
     const filters = body.filters || body;
-    const page = Math.max(1, Number(body.page || filters.page) || 1);
-    const pageSize = Math.min(
-      200,
-      Math.max(1, Number(body.pageSize || filters.pageSize) || 50),
-    );
     const visibleColumns = body.visibleColumns || filters.visibleColumns || {};
 
     const where = {};
@@ -620,8 +615,6 @@ app.post("/admin/audits/export", requireAdmin, async (req, res) => {
       prisma.adminAudit.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
       }),
       prisma.admin.findMany({
         select: { id: true, username: true },
@@ -657,8 +650,6 @@ app.post("/admin/audits/export", requireAdmin, async (req, res) => {
       filters: filters || null,
       exportedCount: audits.length,
       format: "xlsx",
-      page,
-      pageSize,
     });
 
     res.setHeader(
