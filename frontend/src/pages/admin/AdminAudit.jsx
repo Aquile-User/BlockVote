@@ -223,9 +223,9 @@ const AdminAudit = () => {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Acción</label>
-            <select
-              value={filters.action}
-              onChange={(event) => setFilters((current) => ({ ...current, action: event.target.value }))}
+              <select
+                value={filters.action}
+                onChange={(event) => setFilters((current) => ({ ...current, action: event.target.value }))}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 <option value="">Todas</option>
