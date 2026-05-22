@@ -1443,6 +1443,10 @@ app.post("/vote", async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error("Vote error:", error.message || error);
+    if (error.response?.status && error.response?.data) {
+      return res.status(error.response.status).json(error.response.data);
+    }
+
     res.status(500).json({ error: error.message });
   }
 });

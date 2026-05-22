@@ -19,7 +19,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import ReactECharts from 'echarts-for-react';
-import { getElectionById, getResults, submitVote, hasVoted } from "../../api";
+import { getElectionById, getResults, submitVote, hasVoted as checkHasVoted } from "../../api";
 import { CONFIG } from "../../config";
 
 // Utility function to get total registered users
@@ -44,7 +44,7 @@ const ElectionDetail = ({ user }) => {
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [userHasVoted, setUserHasVoted] = useState(false);
   const [showConfirmVote, setShowConfirmVote] = useState(false);
   useEffect(() => {
     loadElectionData();
@@ -95,8 +95,8 @@ const ElectionDetail = ({ user }) => {
       // Check if user has already voted using blockchain data (priority)
       if (user?.socialId) {
         try {
-          const votingStatus = await hasVoted(electionId, user.socialId);
-          setHasVoted(votingStatus.hasVoted);
+          const votingStatus = await checkHasVoted(electionId, user.socialId);
+          setUserHasVoted(votingStatus.hasVoted);
           // Clear localStorage if blockchain says not voted (contract might have been redeployed)
           if (!votingStatus.hasVoted) {
             const votedKey = `voted-${user.socialId}-${electionId}`;
@@ -111,11 +111,11 @@ const ElectionDetail = ({ user }) => {
           // If we have local storage indicating the user voted, trust it
           // since blockchain verification failed (network issues, etc.)
           if (localVoted) {
-            setHasVoted(true);
+            setUserHasVoted(true);
             console.log('Using localStorage voting status due to blockchain verification failure');
           } else {
             // Only set to false if localStorage also says not voted
-            setHasVoted(false);
+            setUserHasVoted(false);
           }
         }
       }
@@ -250,7 +250,7 @@ const ElectionDetail = ({ user }) => {
       }
 
       // Update voting status immediately 
-      setHasVoted(true);// Show success message with transaction hash
+      setUserHasVoted(true);// Show success message with transaction hash
       const txHash = response.txHash || 'Transaction submitted';
       if (response.txHash) {
         // Create a custom toast with clickable explorer link
@@ -480,7 +480,7 @@ const ElectionDetail = ({ user }) => {
           </motion.div>
 
           {/* Voting Form */}
-          {!hasVoted && election.status === 'active' && (
+          {!userHasVoted && election.status === 'active' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -552,7 +552,7 @@ const ElectionDetail = ({ user }) => {
               </form>
             </motion.div>
           )}          {/* Vote Confirmation */}
-          {hasVoted && (
+          {userHasVoted && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

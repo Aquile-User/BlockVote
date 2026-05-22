@@ -104,6 +104,16 @@ async function sendTransactionWithRetry(
     try {
       // Ajustar gas dinámicamente basado en la red
       const feeData = await provider.getFeeData();
+      const maxFeePerGas =
+        feeData.maxFeePerGas || ethers.parseUnits("0.1", "gwei");
+      const suggestedPriorityFee =
+        feeData.maxPriorityFeePerGas || ethers.parseUnits("0.01", "gwei");
+      const maxPriorityFeePerGas =
+        suggestedPriorityFee > maxFeePerGas
+          ? maxFeePerGas > 0n
+            ? maxFeePerGas / 2n
+            : 0n
+          : suggestedPriorityFee;
 
       const tx = await votingContract.voteMeta(
         electionId,
@@ -112,10 +122,8 @@ async function sendTransactionWithRetry(
         signature,
         {
           gasLimit: DEFAULT_GAS_LIMIT,
-          maxFeePerGas:
-            feeData.maxFeePerGas || ethers.parseUnits("0.1", "gwei"),
-          maxPriorityFeePerGas:
-            feeData.maxPriorityFeePerGas || ethers.parseUnits("0.01", "gwei"),
+          maxFeePerGas,
+          maxPriorityFeePerGas,
         },
       );
 
