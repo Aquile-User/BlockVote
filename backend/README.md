@@ -104,10 +104,26 @@ npm run relayer
 
 ### 🔐 Autenticación
 
-| Método | Endpoint    | Descripción             |
-| ------ | ----------- | ----------------------- |
-| `POST` | `/register` | Registrar nuevo usuario |
-| `POST` | `/login`    | Iniciar sesión          |
+Este servicio provee dos tipos de autenticación: usuarios (wallets) y administradores (panel/API).
+
+Usuarios (wallets):
+
+- `POST /register` — Registrar nuevo usuario (firma + datos)
+- `POST /login` — Iniciar sesión de usuario (wallet)
+
+Administradores (panel/API):
+
+- `POST /admin/login` — Inicia sesión de admin; el servidor devuelve una cookie `admin_token` HttpOnly (no accesible por JavaScript).
+- `GET /admin/me` — Devuelve datos del admin autenticado (usa cookie o header `Authorization: Bearer ...`).
+- `POST /admin/logout` — Borra la cookie `admin_token` en el servidor.
+- `POST /admin/revoke` — (protegido) Invalida tokens incrementando `tokenVersion` en la base de datos.
+
+Notas de seguridad importantes:
+
+- El JWT de admin se firma con la variable de entorno `ADMIN_JWT_SECRET`.
+- La cookie `admin_token` se entrega con atributos `HttpOnly` y `SameSite=Lax`.
+- El middleware `requireAdmin` valida el token y compara `tokenVersion` para permitir revocación de sesiones.
+- Las llamadas desde el frontend a rutas de administración deben usar `fetch(..., { credentials: 'include' })`.
 
 ### 🗳️ Gestión de Elecciones
 
@@ -184,7 +200,45 @@ npx hardhat run scripts/checkBalance.js    # Verificar balance del relayer
 npx hardhat run scripts/verifyElections.js # Verificar elecciones activas
 ```
 
-Base de datos: Este proyecto usa Prisma con PostgreSQL como almacenamiento por defecto. Las operaciones de migración y generación del cliente están disponibles a través de los scripts definidos en `package.json` y la carpeta `prisma/`. Para instalaciones nuevas no es necesario seguir pasos manuales de migración desde JSON: la base de datos por defecto debe ser PostgreSQL.
+Además disponibles:
+
+```bash
+# Crear el primer admin desde CLI
+npm run create:admin        # Ejecuta scripts/createAdmin.js
+
+# Prisma
+npm run prisma:generate     # Generar cliente Prisma
+npm run prisma:migrate      # Flujo local de migraciones (usar con precaución)
+```
+
+Base de datos — migraciones Prisma
+
+Este proyecto usa Prisma con PostgreSQL. En desarrollo se puede usar `prisma db push` para sincronizar el esquema rápidamente, pero para entornos de staging/producción es recomendable usar migraciones versionadas en `prisma/migrations`.
+
+Pasos recomendados:
+
+1. Haz un backup de la base de datos antes de aplicar migraciones en staging/producción (`pg_dump`).
+2. En desarrollo, generar y aplicar migración:
+
+```bash
+cd backend
+npx prisma migrate dev --name add_admin_table
+```
+
+3. En staging/producción, aplicar migraciones ya generadas:
+
+```bash
+cd backend
+npx prisma migrate deploy
+```
+
+4. Generar el cliente Prisma tras cambios de esquema:
+
+```bash
+npx prisma generate
+```
+
+Si el historial de migraciones en `prisma/migrations` no coincide con el estado real de la BD, `migrate dev` puede pedir un reset — no hagas reset en producción sin respaldo.
 
 ````
 
