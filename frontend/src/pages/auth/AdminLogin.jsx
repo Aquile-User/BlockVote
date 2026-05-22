@@ -17,6 +17,7 @@ import {
   Server,
   Fingerprint
 } from "lucide-react";
+import { CONFIG } from "../../config";
 
 // Configuraciones constantes
 const TYPING_TEXT = "ADMINISTRATIVE_PROTOCOL_INITIATED";
@@ -66,8 +67,8 @@ const FormInput = ({ label, type, value, onChange, placeholder, icon: Icon, isPa
         onFocus={() => setFocusedField(type)}
         onBlur={() => setFocusedField(null)}
         className={`w-full pl-12 ${isPassword ? 'pr-16' : 'pr-4'} py-4 bg-slate-50/80 border-2 rounded-xl text-slate-800 placeholder-slate-500 transition-all duration-300 focus:outline-none ${focusedField === type
-            ? 'border-primary-500 bg-white shadow-glow'
-            : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
+          ? 'border-primary-500 bg-white shadow-glow'
+          : 'border-slate-300 hover:border-slate-400 hover:bg-white/60'
           }`}
         placeholder={placeholder}
         required
@@ -123,19 +124,47 @@ const AdminLogin = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    try {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: credentials.username, password: credentials.password })
+      });
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data?.error || data?.message || `Login failed (${res.status})`;
+        toast.error(`⚠️ ${msg}`);
+      } else {
+        // Do not store token in localStorage; token is in httpOnly cookie
+        if (data.admin) {
+          localStorage.setItem('admin', JSON.stringify(data.admin));
+        }
+        // Bind admin session to the currently logged-in regular user (if any)
+        try {
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+          const bound = currentUser?.socialId || null;
+          if (bound) {
+            localStorage.setItem('admin_bound_to', bound);
+          } else {
+            // mark explicitly as not bound
+            localStorage.removeItem('admin_bound_to');
+          }
+        } catch (e) {
+          localStorage.removeItem('admin_bound_to');
+        }
 
-    if (credentials.username === "eljefe" && credentials.password === "123456") {
-      localStorage.setItem('adminSession', 'true');
-      localStorage.setItem('adminAuthenticated', 'true');
-      toast.success("🔐 Access Granted - Administrator Portal Activated");
-      onLogin();
-    } else {
-      toast.error("⚠️ Authentication Failed - Access Denied");
+        localStorage.setItem('adminAuthenticated', 'true');
+        toast.success("🔐 Access Granted - Administrator Portal Activated");
+        onLogin();
+      }
+    } catch (err) {
+      console.error('Login error', err);
+      toast.error('⚠️ Network error during login');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   // Usar las constantes para generar elementos

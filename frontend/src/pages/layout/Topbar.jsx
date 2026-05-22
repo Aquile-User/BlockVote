@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import firewallAqua from '../../assets/firewallAqua.png';
+import { CONFIG } from '../../config';
 import {
   Menu,
   X,
@@ -18,10 +19,25 @@ const Topbar = ({ user }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch(`${CONFIG.API_BASE}/admin/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Admin cookie logout failed:', error);
+    }
+
+    // Remove current user and any admin session tied to this browser
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('adminAuthenticated');
+    localStorage.removeItem('adminSession');
+    localStorage.removeItem('admin');
     window.location.reload();
-  }; const navItems = [
+  };
+
+  const navItems = [
     {
       path: '/dashboard',
       label: 'Dashboard',

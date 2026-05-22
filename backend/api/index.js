@@ -27,7 +27,12 @@ const votingJson = require("../artifacts/contracts/Voting.sol/Voting.json");
 const abi = votingJson.abi;
 
 const app = express();
-app.use(cors());
+const cookieParser = require("cookie-parser");
+
+// CORS: allow frontend origin and cookies
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "http://localhost:5173";
+app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Establecer la codificación correcta para todas las respuestas
@@ -35,8 +40,189 @@ app.use((req, res, next) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   next();
 });
+// Admin management endpoints
+// List admins
+app.get("/admin/admins", requireAdmin, async (req, res) => {
+  try {
+    const admins = await prisma.admin.findMany({
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+      orderBy: { id: "asc" },
+    });
+    res.json(admins);
+  } catch (err) {
+    console.error("Get admins error:", err.message || err);
+    res.status(500).json({ error: "Failed to list admins" });
+  }
+});
+
+// Create admin (only superadmin)
+app.post("/admin/admins", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin")
+      return res.status(403).json({ error: "Requires superadmin" });
+    const { username, password, role } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: "Missing username or password" });
+    const existing = await prisma.admin.findUnique({ where: { username } });
+    if (existing)
+      return res.status(409).json({ error: "Username already exists" });
+    const hash = await bcrypt.hash(password, 12);
+    const created = await prisma.admin.create({
+      data: { username, passwordHash: hash, role: role || "admin" },
+    });
+    res.status(201).json({
+      id: created.id,
+      username: created.username,
+      role: created.role,
+      isActive: created.isActive,
+    });
+  } catch (err) {
+    console.error("Create admin error:", err.message || err);
+    res.status(500).json({ error: "Failed to create admin" });
+  }
+});
+
+// Update admin: change password or toggle active. Admins can change their own password; superadmin can change others.
+app.patch("/admin/admins/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { password, isActive } = req.body;
+    const target = await prisma.admin.findUnique({ where: { id } });
+    if (!target) return res.status(404).json({ error: "Admin not found" });
+
+    // Only superadmin can change isActive or change other admins' passwords
+    if (isActive !== undefined && req.admin.role !== "superadmin") {
+      return res
+        .status(403)
+        .json({ error: "Requires superadmin to change active state" });
+    }
+
+    if (password) {
+      if (req.admin.role !== "superadmin" && req.admin.id !== id) {
+        return res
+          .status(403)
+          .json({ error: "Can only change your own password" });
+      }
+      const hash = await bcrypt.hash(password, 12);
+      await prisma.admin.update({
+        where: { id },
+        data: { passwordHash: hash },
+      });
+    }
+
+    if (isActive !== undefined) {
+      await prisma.admin.update({
+        where: { id },
+        data: { isActive: Boolean(isActive) },
+      });
+    }
+
+    const updated = await prisma.admin.findUnique({
+      where: { id },
+      select: { id: true, username: true, role: true, isActive: true },
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error("Update admin error:", err.message || err);
+    res.status(500).json({ error: "Failed to update admin" });
+  }
+});
+
+// Delete admin (only superadmin)
+app.delete("/admin/admins/:id", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin")
+      return res.status(403).json({ error: "Requires superadmin" });
+    const id = Number(req.params.id);
+    const target = await prisma.admin.findUnique({ where: { id } });
+    if (!target) return res.status(404).json({ error: "Admin not found" });
+    await prisma.admin.delete({ where: { id } });
+    res.status(204).send();
+  } catch (err) {
+    console.error("Delete admin error:", err.message || err);
+    res.status(500).json({ error: "Failed to delete admin" });
+  }
+});
+
+// Revoke admin tokens (increment tokenVersion) - only superadmin
+app.post("/admin/admins/:id/revoke", requireAdmin, async (req, res) => {
+  try {
+    if (req.admin.role !== "superadmin")
+      return res.status(403).json({ error: "Requires superadmin" });
+    const id = Number(req.params.id);
+    const target = await prisma.admin.findUnique({ where: { id } });
+    if (!target) return res.status(404).json({ error: "Admin not found" });
+
+    await prisma.admin.update({
+      where: { id },
+      data: { tokenVersion: { increment: 1 } },
+    });
+
+    // Also clear cookie for current session so revoked token can't be used
+    res.clearCookie("admin_token", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    res.json({ message: `Revoked tokens for admin ${id}` });
+  } catch (err) {
+    console.error("Revoke admin tokens error:", err.message || err);
+    res.status(500).json({ error: "Failed to revoke tokens" });
+  }
+});
 
 const prisma = new PrismaClient();
+
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
+const ADMIN_JWT_SECRET =
+  process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET || null;
+if (!ADMIN_JWT_SECRET) {
+  console.warn(
+    "Warning: ADMIN_JWT_SECRET not set. Set ADMIN_JWT_SECRET in backend/.env for secure JWTs.",
+  );
+}
+
+// Middleware to protect admin routes
+async function requireAdmin(req, res, next) {
+  try {
+    // Accept token from Authorization header or from httpOnly cookie
+    let token = null;
+    const auth = req.headers.authorization;
+    if (auth && auth.startsWith("Bearer ")) {
+      token = auth.split(" ")[1];
+    } else if (req.cookies && req.cookies.admin_token) {
+      token = req.cookies.admin_token;
+    }
+    if (!token) return res.status(401).json({ error: "Missing token" });
+    const payload = jwt.verify(token, ADMIN_JWT_SECRET);
+    if (!payload || !payload.adminId)
+      return res.status(401).json({ error: "Invalid token" });
+    const admin = await prisma.admin.findUnique({
+      where: { id: Number(payload.adminId) },
+    });
+    if (!admin || !admin.isActive)
+      return res.status(403).json({ error: "Admin not active" });
+    // tokenVersion check: if tokenVersion in token doesn't match current, token revoked
+    if (
+      typeof payload.tokenVersion === "number" &&
+      payload.tokenVersion !== admin.tokenVersion
+    ) {
+      return res.status(401).json({ error: "Token revoked" });
+    }
+    req.admin = { id: admin.id, username: admin.username, role: admin.role };
+    next();
+  } catch (err) {
+    console.error("Admin auth error:", err.message || err);
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+}
 
 function normalizeUserForResponse(user) {
   return {
@@ -117,6 +303,20 @@ const options = {
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Return current admin if authenticated (used by frontend to validate cookie-based session)
+app.get("/admin/me", requireAdmin, async (req, res) => {
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { id: Number(req.admin.id) },
+    });
+    if (!admin) return res.status(404).json({ error: "Admin not found" });
+    res.json({ id: admin.id, username: admin.username, role: admin.role });
+  } catch (err) {
+    console.error("Admin me error:", err.message || err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
 
 // Health check endpoint
 app.get("/health", async (req, res) => {
@@ -475,6 +675,62 @@ app.get("/users", async (req, res) => {
   } catch (error) {
     console.error("Get users error:", error.message);
     res.status(500).json({ error: "Failed to retrieve users" });
+  }
+});
+
+/**
+ * Admin login
+ * POST /admin/login
+ * body: { username, password }
+ */
+app.post("/admin/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: "Missing credentials" });
+    const admin = await prisma.admin.findUnique({ where: { username } });
+    if (!admin) return res.status(401).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(password, admin.passwordHash);
+    if (!match) return res.status(401).json({ error: "Invalid credentials" });
+    if (!admin.isActive)
+      return res.status(403).json({ error: "Admin inactive" });
+    const token = jwt.sign(
+      {
+        adminId: admin.id,
+        role: admin.role,
+        tokenVersion: admin.tokenVersion || 0,
+      },
+      ADMIN_JWT_SECRET,
+      { expiresIn: "8h" },
+    );
+    // Set token as httpOnly secure cookie
+    res.cookie("admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    });
+
+    res.json({
+      admin: { id: admin.id, username: admin.username, role: admin.role },
+    });
+  } catch (err) {
+    console.error("Admin login error:", err.message || err);
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// Admin logout - clears cookie
+app.post("/admin/logout", async (req, res) => {
+  try {
+    res.clearCookie("admin_token", {
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Admin logout error:", err.message || err);
+    res.status(500).json({ error: "Failed to logout" });
   }
 });
 

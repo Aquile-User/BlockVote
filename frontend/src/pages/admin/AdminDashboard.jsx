@@ -33,21 +33,21 @@ const StatusCard = ({ icon: Icon, title, status, description, colorClass, delay 
           colorClass.includes('blue') ? 'text-blue-600' :
             colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'}`} />
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${colorClass.includes('indigo') ? 'bg-indigo-100 text-indigo-700' :
-            colorClass.includes('blue') ? 'bg-blue-100 text-blue-700' :
-              colorClass.includes('purple') ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
+          colorClass.includes('blue') ? 'bg-blue-100 text-blue-700' :
+            colorClass.includes('purple') ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'
           }`}>
           {status}
         </span>
       </div>
       <h3 className={`font-bold mb-1 ${colorClass.includes('indigo') ? 'text-indigo-800' :
-          colorClass.includes('blue') ? 'text-blue-800' :
-            colorClass.includes('purple') ? 'text-purple-800' : 'text-amber-800'
+        colorClass.includes('blue') ? 'text-blue-800' :
+          colorClass.includes('purple') ? 'text-purple-800' : 'text-amber-800'
         }`}>
         {title}
       </h3>
       <p className={`text-sm ${colorClass.includes('indigo') ? 'text-indigo-600' :
-          colorClass.includes('blue') ? 'text-blue-600' :
-            colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'
+        colorClass.includes('blue') ? 'text-blue-600' :
+          colorClass.includes('purple') ? 'text-purple-600' : 'text-amber-600'
         }`}>
         {description}
       </p>
@@ -74,12 +74,46 @@ const AdminPage = () => {
   };
 
   useEffect(() => {
-    const adminAuth = localStorage.getItem('adminAuthenticated');
-    const adminSession = localStorage.getItem('adminSession');
-    if (adminAuth === 'true' || adminSession === 'true') {
-      setIsAuthenticated(true);
-      fetchSystemHealth();
-    }
+    // Validate admin cookie-based session by calling /admin/me
+    (async () => {
+      const adminBound = localStorage.getItem('admin_bound_to');
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+      // If the admin session was bound to a specific logged-in user, require that the
+      // current user matches that binding. If mismatch, clear admin session and return.
+      if (adminBound) {
+        const currentId = currentUser?.socialId || null;
+        if (!currentId || currentId !== adminBound) {
+          localStorage.removeItem('adminAuthenticated');
+          localStorage.removeItem('admin');
+          localStorage.removeItem('admin_bound_to');
+          setIsAuthenticated(false);
+          return;
+        }
+      }
+
+      try {
+        const resp = await fetch(`${CONFIG.API_BASE}/admin/me`, { credentials: 'include' });
+        if (!resp.ok) {
+          // Not authenticated as admin
+          localStorage.removeItem('adminAuthenticated');
+          localStorage.removeItem('admin');
+          setIsAuthenticated(false);
+          return;
+        }
+        const admin = await resp.json();
+        // store admin info client-side (non-sensitive)
+        localStorage.setItem('admin', JSON.stringify(admin));
+        localStorage.setItem('adminAuthenticated', 'true');
+        setIsAuthenticated(true);
+        fetchSystemHealth();
+      } catch (err) {
+        console.error('Error validating admin session:', err);
+        localStorage.removeItem('adminAuthenticated');
+        localStorage.removeItem('admin');
+        setIsAuthenticated(false);
+      }
+    })();
   }, []);
 
   const fetchSystemHealth = async () => {
@@ -96,9 +130,20 @@ const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  }; const handleLogout = () => {
+  };
+
+  const handleLogout = () => {
+    fetch(`${CONFIG.API_BASE}/admin/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch((error) => {
+      console.error('Admin logout request failed:', error);
+    });
+
     localStorage.removeItem('adminAuthenticated');
     localStorage.removeItem('adminSession');
+    localStorage.removeItem('admin');
+    localStorage.removeItem('admin_bound_to');
     setIsAuthenticated(false);
     setActiveTab('overview');
   };
