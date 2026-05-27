@@ -6,7 +6,26 @@ require("dotenv").config();
 const rootDir = path.resolve(__dirname, "..");
 const envPath = path.join(rootDir, ".env");
 const examplePath = path.join(rootDir, ".env.example");
-const exampleValues = readEnvFile(examplePath);
+
+const DEFAULTS = {
+  DATABASE_URL: "",
+  BLOCKCHAIN_RPC_URL: "https://carrot.megaeth.com/rpc",
+  VOTING_CONTRACT_ADDRESS: "",
+  RELAYER_PRIVATE_KEY: "",
+  API_PORT: "3000",
+  RELAYER_PORT: "3001",
+  NODE_ENV: "development",
+  FRONTEND_URL: "http://localhost:5173",
+  MAX_RPC_RETRIES: "3",
+  ADMIN_JWT_SECRET: "",
+};
+
+const ENV_SECTIONS = [
+  ["DATABASE_URL"],
+  ["BLOCKCHAIN_RPC_URL", "VOTING_CONTRACT_ADDRESS", "RELAYER_PRIVATE_KEY"],
+  ["API_PORT", "RELAYER_PORT", "NODE_ENV", "FRONTEND_URL"],
+  ["MAX_RPC_RETRIES", "ADMIN_JWT_SECRET"],
+];
 
 function readEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -47,43 +66,53 @@ function isPlaceholderDatabaseUrl(value) {
   return !value || value.includes("<") || value.includes(">");
 }
 
+function isPlaceholderValue(value) {
+  return !value || value.includes("<") || value.includes(">");
+}
+
+function normalizeValue(primary, fallback, defaultValue = "") {
+  return firstDefined(primary, fallback, defaultValue) || "";
+}
+
+function generateSecret() {
+  return ethers.Wallet.createRandom().privateKey;
+}
+
 function formatLabel(value, fallback = "❌ Falta") {
   return value ? "✅ OK" : fallback;
 }
 
 function serializeEnv(values) {
-  const orderedKeys = [
-    "DATABASE_URL",
-    "BLOCKCHAIN_RPC_URL",
-    "VOTING_CONTRACT_ADDRESS",
-    "RELAYER_PRIVATE_KEY",
-    "API_PORT",
-    "RELAYER_PORT",
-    "NODE_ENV",
-    "DEBUG",
-    "CACHE_TTL",
-    "MAX_RPC_RETRIES",
-    "RPC_URL",
-    "CONTRACT_ADDRESS",
-    "RELAYER_PK",
-  ];
-
   const lines = [];
+  const emitted = new Set();
 
-  for (const key of orderedKeys) {
-    if (values[key] !== undefined && values[key] !== "") {
-      lines.push(`${key}=${values[key]}`);
+  for (const section of ENV_SECTIONS) {
+    if (lines.length > 0) {
+      lines.push("");
+    }
+
+    for (const key of section) {
+      const value = values[key];
+      emitted.add(key);
+
+      if (value === undefined || value === "") {
+        continue;
+      }
+
+      lines.push(`${key}=${value}`);
     }
   }
 
   for (const key of Object.keys(values)) {
-    if (
-      !orderedKeys.includes(key) &&
-      values[key] !== undefined &&
-      values[key] !== ""
-    ) {
-      lines.push(`${key}=${values[key]}`);
+    if (emitted.has(key) || values[key] === undefined || values[key] === "") {
+      continue;
     }
+
+    if (lines.length > 0 && lines[lines.length - 1] !== "") {
+      lines.push("");
+    }
+
+    lines.push(`${key}=${values[key]}`);
   }
 
   return `${lines.join("\n")}\n`;
@@ -109,132 +138,141 @@ async function main() {
   }
 
   const fileValues = readEnvFile(envPath);
-  const rpcUrl = firstDefined(
+  const rpcUrl = normalizeValue(
     process.env.BLOCKCHAIN_RPC_URL,
-    process.env.RPC_URL,
     fileValues.BLOCKCHAIN_RPC_URL,
-    fileValues.RPC_URL,
+    DEFAULTS.BLOCKCHAIN_RPC_URL,
   );
-  let relayerPrivateKey = firstDefined(
-    process.env.RELAYER_PRIVATE_KEY,
-    process.env.RELAYER_PK,
-    fileValues.RELAYER_PRIVATE_KEY,
-    fileValues.RELAYER_PK,
-  );
-  const contractAddress = firstDefined(
+  const contractAddress = normalizeValue(
     process.env.VOTING_CONTRACT_ADDRESS,
-    process.env.CONTRACT_ADDRESS,
     fileValues.VOTING_CONTRACT_ADDRESS,
-    fileValues.CONTRACT_ADDRESS,
+    DEFAULTS.VOTING_CONTRACT_ADDRESS,
+  );
+  const relayerPrivateKeyInput = normalizeValue(
+    process.env.RELAYER_PRIVATE_KEY,
+    fileValues.RELAYER_PRIVATE_KEY,
+    DEFAULTS.RELAYER_PRIVATE_KEY,
+  );
+  const adminJwtSecretInput = normalizeValue(
+    process.env.ADMIN_JWT_SECRET,
+    fileValues.ADMIN_JWT_SECRET,
+    DEFAULTS.ADMIN_JWT_SECRET,
+  );
+  const frontendUrl = normalizeValue(
+    process.env.FRONTEND_URL,
+    fileValues.FRONTEND_URL,
+    DEFAULTS.FRONTEND_URL,
   );
 
   console.log("\n📋 Revisión local:");
   console.log("- RPC:", formatLabel(rpcUrl));
-  console.log("- Relayer private key:", formatLabel(relayerPrivateKey));
+  console.log("- Relayer private key:", formatLabel(relayerPrivateKeyInput));
   console.log("- Contract address:", formatLabel(contractAddress));
+  console.log("- Frontend URL:", formatLabel(frontendUrl));
+  console.log("- Admin JWT secret:", formatLabel(adminJwtSecretInput));
 
-  const relayerPlaceholder = firstDefined(
-    exampleValues.RELAYER_PRIVATE_KEY,
-    exampleValues.RELAYER_PK,
-  );
-  const relayerNeedsGeneration =
-    !relayerPrivateKey || relayerPrivateKey === relayerPlaceholder;
-  const databaseUrl = isPlaceholderDatabaseUrl(fileValues.DATABASE_URL)
-    ? process.env.DATABASE_URL || ""
-    : fileValues.DATABASE_URL;
+  const needsRelayerGeneration = isPlaceholderValue(relayerPrivateKeyInput);
+  const needsAdminJwtSecret = isPlaceholderValue(adminJwtSecretInput);
+  const needsDatabaseUrl = isPlaceholderDatabaseUrl(fileValues.DATABASE_URL);
+  const needsContractAddress = isPlaceholderValue(contractAddress);
 
-  if (relayerNeedsGeneration) {
-    const generatedWallet = ethers.Wallet.createRandom();
-    relayerPrivateKey = generatedWallet.privateKey;
-    const nextValues = {
-      ...fileValues,
-      DATABASE_URL: databaseUrl,
-      BLOCKCHAIN_RPC_URL:
-        rpcUrl ||
-        exampleValues.BLOCKCHAIN_RPC_URL ||
-        "https://carrot.megaeth.com/rpc",
-      RPC_URL:
-        rpcUrl || exampleValues.RPC_URL || "https://carrot.megaeth.com/rpc",
-      RELAYER_PRIVATE_KEY: generatedWallet.privateKey,
-      RELAYER_PK: generatedWallet.privateKey,
-      VOTING_CONTRACT_ADDRESS:
-        contractAddress ||
-        fileValues.VOTING_CONTRACT_ADDRESS ||
-        exampleValues.VOTING_CONTRACT_ADDRESS ||
-        "",
-      CONTRACT_ADDRESS:
-        contractAddress ||
-        fileValues.CONTRACT_ADDRESS ||
-        exampleValues.CONTRACT_ADDRESS ||
-        "",
-      API_PORT: fileValues.API_PORT || exampleValues.API_PORT || "3000",
-      RELAYER_PORT:
-        fileValues.RELAYER_PORT || exampleValues.RELAYER_PORT || "3001",
-      NODE_ENV: fileValues.NODE_ENV || exampleValues.NODE_ENV || "development",
-      DEBUG: fileValues.DEBUG || exampleValues.DEBUG || "true",
-      CACHE_TTL: fileValues.CACHE_TTL || exampleValues.CACHE_TTL || "30",
-      MAX_RPC_RETRIES:
-        fileValues.MAX_RPC_RETRIES || exampleValues.MAX_RPC_RETRIES || "3",
-    };
+  const nextValues = {
+    ...fileValues,
+    DATABASE_URL: needsDatabaseUrl
+      ? process.env.DATABASE_URL || ""
+      : fileValues.DATABASE_URL,
+    BLOCKCHAIN_RPC_URL: rpcUrl,
+    VOTING_CONTRACT_ADDRESS: contractAddress,
+    API_PORT: normalizeValue(fileValues.API_PORT, undefined, DEFAULTS.API_PORT),
+    RELAYER_PORT: normalizeValue(
+      fileValues.RELAYER_PORT,
+      undefined,
+      DEFAULTS.RELAYER_PORT,
+    ),
+    NODE_ENV: normalizeValue(fileValues.NODE_ENV, undefined, DEFAULTS.NODE_ENV),
+    FRONTEND_URL: frontendUrl,
+    MAX_RPC_RETRIES: normalizeValue(
+      fileValues.MAX_RPC_RETRIES,
+      undefined,
+      DEFAULTS.MAX_RPC_RETRIES,
+    ),
+  };
 
+  let relayerWallet = null;
+  if (needsRelayerGeneration) {
+    relayerWallet = ethers.Wallet.createRandom();
+    nextValues.RELAYER_PRIVATE_KEY = relayerWallet.privateKey;
+    console.log("\n🆕 Se generó una nueva clave privada para el relayer.");
+    console.log("- Relayer address:", relayerWallet.address);
+  } else {
+    nextValues.RELAYER_PRIVATE_KEY = relayerPrivateKeyInput;
+  }
+
+  if (needsAdminJwtSecret) {
+    nextValues.ADMIN_JWT_SECRET = generateSecret();
+    console.log("🆕 Se generó un ADMIN_JWT_SECRET nuevo.");
+  } else {
+    nextValues.ADMIN_JWT_SECRET = adminJwtSecretInput;
+  }
+
+  if (
+    needsDatabaseUrl ||
+    needsContractAddress ||
+    needsRelayerGeneration ||
+    needsAdminJwtSecret
+  ) {
     writeEnvFile(envPath, nextValues);
-    console.log(
-      "\n🆕 No había relayer válido, se generó uno nuevo y se guardó en .env",
-    );
-    console.log("- Relayer address:", generatedWallet.address);
-    console.log("- Private key guardada en .env");
+    console.log("✅ .env actualizado con los valores necesarios.");
+  } else {
+    console.log("ℹ️  .env ya estaba completo; no fue necesario reescribirlo.");
   }
 
   const localErrors = [];
 
-  if (!rpcUrl) {
-    localErrors.push("Falta BLOCKCHAIN_RPC_URL o RPC_URL");
-  }
-
-  if (isPlaceholderDatabaseUrl(fileValues.DATABASE_URL)) {
+  if (needsDatabaseUrl) {
     localErrors.push(
       "Falta DATABASE_URL real. Configura la cadena de conexión a Postgres en .env",
     );
   }
 
-  if (
-    !relayerNeedsGeneration &&
-    !/^0x[a-fA-F0-9]{64}$/.test(relayerPrivateKey || "")
-  ) {
-    localErrors.push("La clave privada del relayer no tiene formato válido");
-  }
-
-  if (!contractAddress) {
-    localErrors.push("Falta VOTING_CONTRACT_ADDRESS o CONTRACT_ADDRESS");
+  if (needsContractAddress) {
+    localErrors.push(
+      "Falta VOTING_CONTRACT_ADDRESS. Debe ser una dirección de contrato válida.",
+    );
   } else if (!ethers.isAddress(contractAddress)) {
     localErrors.push("La dirección del contrato no tiene formato válido");
   }
 
+  if (needsRelayerGeneration) {
+    localErrors.push(
+      "Falta RELAYER_PRIVATE_KEY. Se generó una nueva para continuar.",
+    );
+  } else if (!/^0x[a-fA-F0-9]{64}$/.test(relayerPrivateKeyInput || "")) {
+    localErrors.push("La clave privada del relayer no tiene formato válido");
+  }
+
   if (localErrors.length > 0) {
-    console.log("\n❌ Problemas encontrados:");
+    console.log("\n⚠️  Revisión del entorno:");
     for (const error of localErrors) {
       console.log("-", error);
     }
-    console.log(
-      "\n💡 Usa .env.example como base y completa los valores necesarios.",
-    );
-    process.exitCode = 1;
-    return;
   }
 
   console.log("\n🌐 Verificación en red...");
 
   try {
     const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const relayerWallet = new ethers.Wallet(relayerPrivateKey, provider);
+    const walletToCheck =
+      relayerWallet ||
+      new ethers.Wallet(nextValues.RELAYER_PRIVATE_KEY, provider);
 
     const [blockNumber, balance, code] = await Promise.all([
       provider.getBlockNumber(),
-      provider.getBalance(relayerWallet.address),
+      provider.getBalance(walletToCheck.address),
       provider.getCode(contractAddress),
     ]);
 
-    console.log("- Relayer address:", relayerWallet.address);
+    console.log("- Relayer address:", walletToCheck.address);
     console.log("- Current block:", blockNumber);
     console.log("- Relayer balance:", ethers.formatEther(balance), "ETH");
     console.log(
@@ -254,9 +292,7 @@ async function main() {
       );
     }
 
-    console.log(
-      "\n✅ Configuración base lista. Si faltan fondos o despliegue, el script ya te indicó qué corregir.",
-    );
+    console.log("\n✅ Configuración base lista.");
   } catch (error) {
     console.error("\n❌ No se pudo verificar la red:");
     console.error(error.message);
