@@ -15,7 +15,6 @@ if (!process.env.DATABASE_URL) {
 }
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch");
 const axios = require("axios");
 const ExcelJS = require("exceljs");
 const { ethers } = require("ethers");
@@ -1244,7 +1243,7 @@ app.get("/health", async (req, res) => {
   try {
     let userCount = 0;
     let dbStatus = "online";
-    let dbMessage = "SQLite database accessible";
+    let dbMessage = "PostgreSQL database accessible";
 
     try {
       userCount = await countUsers();

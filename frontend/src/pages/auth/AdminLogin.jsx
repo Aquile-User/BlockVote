@@ -157,7 +157,7 @@ const AdminLogin = ({ onLogin }) => {
 
         localStorage.setItem('adminAuthenticated', 'true');
         toast.success("🔐 Access Granted - Administrator Portal Activated");
-        onLogin();
+        onLogin(data.admin || null);
       }
     } catch (err) {
       console.error('Login error', err);
