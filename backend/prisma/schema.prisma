@@ -46,5 +46,27 @@ model Admin {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 
+  // Relations for audits
+  auditsAsActor  AdminAudit[] @relation("actor")
+  auditsAsTarget AdminAudit[] @relation("target")
+
   @@index([username])
+}
+
+model AdminAudit {
+  id            Int      @id @default(autoincrement())
+  actorAdminId  Int?
+  action        String
+  targetAdminId Int?
+  details       Json?
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  actor  Admin? @relation("actor", fields: [actorAdminId], references: [id], onDelete: SetNull)
+  target Admin? @relation("target", fields: [targetAdminId], references: [id], onDelete: SetNull)
+
+  @@index([actorAdminId])
+  @@index([targetAdminId])
+  @@index([createdAt])
 }

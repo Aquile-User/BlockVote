@@ -13,6 +13,7 @@
     "db:clear-private-keys": "node scripts/clearPrivateKeys.js",
     "relayer": "nodemon relayer/index.js",
     "api": "nodemon api/index.js",
+    "test:audit": "node scripts/validateAudit.js",
     "create:admin": "node scripts/createAdmin.js"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "ethers": "^6.7.0",
+    "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
     "node-fetch": "^3.3.2",
@@ -31,7 +33,8 @@
     "prisma": "^6.12.0",
     "sqlite3": "^6.0.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.3"
+    "swagger-ui-express": "^4.6.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "hardhat": "^2.16.0",
