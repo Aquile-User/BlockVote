@@ -6,6 +6,7 @@
   "scripts": {
     "deploy": "npx hardhat run scripts/deploy.js --network megaeth",
     "setup:env": "node scripts/setupEnv.js",
+    "db:check": "node scripts/checkDatabaseConnection.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "db:migrate:users": "node scripts/migrateUsersToPrisma.js",

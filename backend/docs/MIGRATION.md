@@ -1,54 +1,86 @@
-# Migración de Datos (Legacy / Opcional)
+# Migración de datos
 
-Este documento contiene instrucciones detalladas para migrar datos desde la antigua base local (`users.json` o SQLite `dev.db`) hacia PostgreSQL usando Prisma. Estas instrucciones son opcionales y se mantienen solo para equipos que necesiten reproducir migraciones históricas. Para instalaciones nuevas, la base de datos por defecto es PostgreSQL y no es necesario seguir estos pasos.
+Este documento explica cómo preparar y ejecutar las migraciones del backend. El flujo normal usa Prisma + PostgreSQL. Las rutas desde SQLite o `users.json` son opcionales y sólo aplican si estás rescatando datos antiguos.
 
-## Consideraciones
+## Antes de empezar
 
-- No se recomienda almacenar claves privadas en la base de datos en claro. Usa `SKIP_PRIVATEKEY=true` en los scripts si no quieres migrar private keys.
-- Asegura `DATABASE_URL` y `RELAYER_PRIVATE_KEY` en un secret manager; no las comitees.
+- Trabaja desde la carpeta `backend/`.
+- Verifica que `DATABASE_URL` apunte a PostgreSQL.
+- No guardes `RELAYER_PRIVATE_KEY` ni `ADMIN_JWT_SECRET` en repositorios públicos.
+- Si no quieres migrar claves privadas, usa `SKIP_PRIVATEKEY=true` en los scripts que lo soportan.
 
-## Generar cliente Prisma
+## Flujo normal de migración
+
+### 1. Generar el cliente de Prisma
+
+Ejecuta esto después de instalar dependencias o cuando cambie `schema.prisma`:
 
 ```bash
 npm run prisma:generate
 ```
 
-## Aplicar migraciones (Postgres)
+### 2. Aplicar las migraciones a PostgreSQL
 
-Asegúrate de tener `DATABASE_URL` apuntando a tu base de datos Postgres y luego:
+Asegúrate de que `DATABASE_URL` ya apunta a la base correcta y luego ejecuta:
 
 ```bash
 npm run prisma:migrate
 ```
 
-## Copiar datos desde SQLite (opcional)
+Esto crea o actualiza las tablas definidas en `backend/prisma/schema.prisma`.
 
-Si tienes una base de desarrollo `prisma/dev.db`, puedes copiar registros a Postgres con el script incluido:
+### 3. Verificar que la base quedó lista
+
+Después de migrar, revisa que el backend pueda conectar y que Prisma responda sin errores. Si el proyecto ya está levantado, una comprobación rápida es iniciar el API y revisar el healthcheck.
+
+## Migrar datos antiguos desde SQLite
+
+Usa esta ruta sólo si aún tienes una base local heredada en `prisma/dev.db` y quieres copiarla a PostgreSQL.
+
+### Paso a paso
+
+1. Confirma que PostgreSQL ya está migrado con `npm run prisma:migrate`.
+2. Revisa que `DATABASE_URL` apunte al destino final.
+3. Ejecuta el script de copia:
 
 ```bash
 npm run db:copy-sqlite-to-postgres
-# Para evitar importar private keys:
+```
+
+4. Si no quieres copiar claves privadas, ejecuta la misma orden con:
+
+```bash
 SKIP_PRIVATEKEY=true npm run db:copy-sqlite-to-postgres
 ```
 
-## Migrar `users.json` (opcional)
+## Migrar usuarios desde `users.json`
 
-Si aún cuentas con `users.json` y necesitas insertar esos usuarios en la base de datos:
+Esta ruta sólo aplica si conservas un archivo legacy `users.json` y necesitas importar esos registros al modelo actual.
+
+### Paso a paso
+
+1. Verifica que el esquema de Prisma ya esté aplicado.
+2. Confirma que `DATABASE_URL` apunta a la base final.
+3. Ejecuta la migración:
 
 ```bash
 npm run db:migrate:users
-# Usa SKIP_PRIVATEKEY=true para no persistir claves
+```
+
+4. Si quieres evitar persistir claves privadas, usa:
+
+```bash
 SKIP_PRIVATEKEY=true npm run db:migrate:users
 ```
 
-## Limpiar claves privadas en la DB
+## Limpiar claves privadas migradas por error
 
-Si migraste claves por error, puedes borrarlas con:
+Si algún script dejó claves privadas almacenadas y necesitas borrarlas, ejecuta:
 
 ```bash
 npm run db:clear-private-keys
 ```
 
-## Nota final
+## Recomendación final
 
-Estas instrucciones son para casos muy específicos (recuperación de datos, migraciones legacy, auditoría). Para cualquier despliegue nuevo, configura `DATABASE_URL` a una instancia PostgreSQL gestionada y usa las migraciones estándar de Prisma desde `prisma/`.
+Para instalaciones nuevas, no necesitas copiar datos legacy. Basta con configurar `DATABASE_URL`, correr `npm run prisma:generate` y luego `npm run prisma:migrate`. Las rutas de SQLite y `users.json` existen sólo para recuperación o compatibilidad histórica.

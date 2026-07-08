@@ -31,7 +31,9 @@ Sistema de votación descentralizado sin gas (gasless) implementado en la red de
 
 ### 💰 Obtener ETH de Prueba
 
-Obtén ETH de testnet desde: [MegaETH Faucet](https://faucet.trade/megaeth-testnet-eth-faucet)
+Obtén ETH de testnet desde: [MegaETH Testnet Faucet](https://testnet.megaeth.com/)
+
+Usa la wallet del relayer que imprime `npm run setup:env`, pégala en la pestaña Faucet y luego ejecuta `npm run deploy`.
 
 ## 🚀 Instalación y Configuración
 
@@ -348,7 +350,7 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 ## 🔗 Enlaces Útiles
 
 - [MegaETH Testnet](https://megaeth.io)
-- [Faucet MegaETH](https://faucet.trade/megaeth-testnet-eth-faucet)
+- [Faucet MegaETH](https://testnet.megaeth.com/)
 - [Hardhat Documentation](https://hardhat.org/docs)
 - [Ethers.js Documentation](https://docs.ethers.org)
 
