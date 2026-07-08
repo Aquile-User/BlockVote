@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 const { ethers } = require("ethers");
 require("dotenv").config();
 
@@ -122,6 +123,51 @@ function writeEnvFile(filePath, values) {
   fs.writeFileSync(filePath, serializeEnv(values), "utf8");
 }
 
+function checkDatabaseConnection(databaseUrl) {
+  const scriptPath = path.join(
+    rootDir,
+    "scripts",
+    "checkDatabaseConnection.js",
+  );
+
+  console.log("\n🗄️  Verificando conexión a PostgreSQL...");
+
+  const result = spawnSync(process.execPath, [scriptPath], {
+    cwd: rootDir,
+    env: {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+    },
+    encoding: "utf8",
+  });
+
+  if (result.stdout) {
+    process.stdout.write(`${result.stdout}`);
+  }
+
+  if (result.stderr) {
+    process.stderr.write(`${result.stderr}`);
+  }
+
+  if (result.error) {
+    console.error("❌ No se pudo lanzar el script de verificación de DB:");
+    console.error(result.error.message || result.error);
+    process.exitCode = 1;
+    return false;
+  }
+
+  if (result.status !== 0) {
+    console.error(
+      "❌ La validación de la base de datos falló. Revisa DATABASE_URL y que PostgreSQL esté accesible.",
+    );
+    process.exitCode = 1;
+    return false;
+  }
+
+  console.log("✅ setupEnv confirmó que la base de datos responde.");
+  return true;
+}
+
 async function main() {
   console.log("🔧 Preparando configuración de BlockVote...\n");
 
@@ -215,6 +261,19 @@ async function main() {
     nextValues.ADMIN_JWT_SECRET = adminJwtSecretInput;
   }
 
+  const relayerPublicAddress =
+    needsRelayerGeneration ||
+    /^0x[a-fA-F0-9]{64}$/.test(relayerPrivateKeyInput || "")
+      ? new ethers.Wallet(nextValues.RELAYER_PRIVATE_KEY).address
+      : null;
+
+  if (relayerPublicAddress) {
+    console.log(
+      "\n💧 Esta es la wallet que debes poner en el faucet:",
+      relayerPublicAddress,
+    );
+  }
+
   if (
     needsDatabaseUrl ||
     needsContractAddress ||
@@ -237,7 +296,7 @@ async function main() {
 
   if (needsContractAddress) {
     localErrors.push(
-      "Falta VOTING_CONTRACT_ADDRESS. Debe ser una dirección de contrato válida.",
+      "Te falta VOTING_CONTRACT_ADDRESS. Usa la wallet de arriba en el faucet https://testnet.megaeth.com/ y luego ejecuta npm run deploy.",
     );
   } else if (!ethers.isAddress(contractAddress)) {
     localErrors.push("La dirección del contrato no tiene formato válido");
@@ -256,6 +315,27 @@ async function main() {
     for (const error of localErrors) {
       console.log("-", error);
     }
+  }
+
+  const databaseUrl = nextValues.DATABASE_URL;
+  const hasDatabaseUrl = Boolean(
+    databaseUrl && !isPlaceholderDatabaseUrl(databaseUrl),
+  );
+
+  if (hasDatabaseUrl) {
+    checkDatabaseConnection(databaseUrl);
+  } else {
+    console.log(
+      "\n⏭️  Se omite la verificación de PostgreSQL porque DATABASE_URL no tiene un valor real.",
+    );
+  }
+
+  if (needsContractAddress || !ethers.isAddress(contractAddress)) {
+    console.log(
+      "\n⏭️  Se omite la verificación en red hasta que VOTING_CONTRACT_ADDRESS tenga un valor válido.",
+    );
+    process.exitCode = 1;
+    return;
   }
 
   console.log("\n🌐 Verificación en red...");
